@@ -1,0 +1,256 @@
+.menuContainer {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  z-index: 10;
+  min-width: 320px;
+}
+
+/* Inner wrapper when not needing absolute centering again */
+.menuInner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menuButton {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 14px 0 12px;
+  font-family: "Minecraftia", "Press Start 2P", monospace;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: #ffffff;
+  background: linear-gradient(#8b8b8b, #6b6b6b 45%, #5a5a5a 55%, #4a4a4a);
+  border: 2px solid #000;
+  outline: 2px solid #353535;
+  outline-offset: -4px;
+  cursor: pointer;
+  text-shadow: 2px 2px #3f3f3f;
+  user-select: none;
+  box-shadow:
+    0 0 0 2px #000,
+    inset 0 4px 0 0 rgba(255,255,255,0.18),
+    inset 0 -4px 0 0 rgba(0,0,0,0.35);
+  transition: transform 60ms ease, filter 120ms, background 140ms;
+}
+
+.menuButton::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 4px;
+  height: 2px;
+  background: rgba(255,255,255,0.55);
+  pointer-events: none;
+}
+
+.menuButton::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 2px;
+  background: rgba(0,0,0,0.55);
+  pointer-events: none;
+}
+
+.menuButton:hover {
+  filter: brightness(1.1);
+}
+
+.menuButton:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 0 0 2px #000,
+    inset 0 2px 0 0 rgba(255,255,255,0.12),
+    inset 0 -2px 0 0 rgba(0,0,0,0.45);
+  background: linear-gradient(#7b7b7b, #5f5f5f 50%, #4e4e4e);
+}
+
+.menuButton:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
+/* Panel / list container */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px 18px;
+  background: repeating-linear-gradient(
+      45deg,
+      #3a3a3a 0px,
+      #3a3a3a 6px,
+      #343434 6px,
+      #343434 12px
+    );
+  border: 2px solid #000;
+  outline: 2px solid #2b2b2b;
+  outline-offset: -4px;
+  box-shadow: 0 0 0 2px #000, inset 0 4px 0 0 rgba(255,255,255,0.05), inset 0 -4px 0 0 rgba(0,0,0,0.4);
+}
+
+.panelHeader {
+  font-family: "Minecraftia", "Press Start 2P", monospace;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 2px 2px #2c2c2c;
+  margin-bottom: 4px;
+}
+
+.placeholderBody {
+  font-family: "Minecraftia", "Press Start 2P", monospace;
+  font-size: 12px;
+  color: #dcdcdc;
+  text-shadow: 1px 1px #2c2c2c;
+  padding: 12px 4px;
+}
+
+.footerRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.levelList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #5a5a5a #2c2c2c;
+}
+
+.levelList::-webkit-scrollbar {
+  width: 10px;
+}
+.levelList::-webkit-scrollbar-track {
+  background: #2c2c2c;
+}
+.levelList::-webkit-scrollbar-thumb {
+  background: linear-gradient(#6b6b6b, #4d4d4d);
+  border: 2px solid #1e1e1e;
+}
+.levelList::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(#7b7b7b, #5c5c5c);
+}
+
+.levelItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 8px;
+  background: linear-gradient(#5d5d5d, #4c4c4c 50%, #424242);
+  border: 2px solid #000;
+  outline: 2px solid #2f2f2f;
+  outline-offset: -4px;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 0 0 2px #000, inset 0 3px 0 0 rgba(255,255,255,0.15), inset 0 -3px 0 0 rgba(0,0,0,0.45);
+  transition: filter 120ms, transform 60ms ease;
+}
+
+.levelItem::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 4px;
+  height: 2px;
+  background: rgba(255,255,255,0.35);
+  pointer-events: none;
+}
+
+.levelItem::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 2px;
+  background: rgba(0,0,0,0.55);
+  pointer-events: none;
+}
+
+.levelItem:hover {
+  filter: brightness(1.1);
+}
+
+.levelItem:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 2px #000, inset 0 1px 0 0 rgba(255,255,255,0.1), inset 0 -2px 0 0 rgba(0,0,0,0.5);
+}
+
+.levelItemPrimary {
+  font-family: "Minecraftia", "Press Start 2P", monospace;
+  font-size: 14px;
+  color: #fff;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px #303030;
+  line-height: 1.2;
+}
+
+.levelItemMeta {
+  font-family: "Minecraftia", "Press Start 2P", monospace;
+  font-size: 10px;
+  color: #d0d0d0;
+  margin-top: 4px;
+  text-shadow: 1px 1px #2c2c2c;
+  opacity: 0.85;
+}
+
+/* Form styles */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.textLabel {
+  font-family: "Minecraftia", "Press Start 2P", monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 2px 2px #2d2d2d;
+}
+
+.textInput {
+  font-family: "Minecraftia", "Press Start 2P", monospace;
+  font-size: 14px;
+  padding: 10px 12px 8px;
+  background: linear-gradient(#4f4f4f, #3d3d3d 55%, #353535);
+  color: #fff;
+  border: 2px solid #000;
+  outline: 2px solid #262626;
+  outline-offset: -4px;
+  box-shadow: 0 0 0 2px #000, inset 0 3px 0 0 rgba(255,255,255,0.12), inset 0 -3px 0 0 rgba(0,0,0,0.5);
+  letter-spacing: 1px;
+  text-shadow: 1px 1px #2a2a2a;
+}
+
+.textInput:focus {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
+.textInput::placeholder {
+  color: #bdbdbd;
+  opacity: 0.85;
+}

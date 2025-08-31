@@ -1,31 +1,25 @@
-import { Boot } from './scenes/Boot';
-import { GameOver } from './scenes/GameOver';
-import { Game as MainGame } from './scenes/Game';
-import { MainMenu } from './scenes/MainMenu';
-import { AUTO, Game } from 'phaser';
-import { Preloader } from './scenes/Preloader';
+'use client';
 
-//  Find out more information about the Game Config at:
-//  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
-const config: Phaser.Types.Core.GameConfig = {
-    type: AUTO,
-    width: 1024,
-    height: 768,
-    parent: 'game-container',
-    backgroundColor: '#028af8',
-    scene: [
-        Boot,
-        Preloader,
-        MainMenu,
-        MainGame,
-        GameOver
-    ]
-};
+import Phaser from 'phaser';
+import { makeConfig } from './config';
 
+// Keep the same API the template expects:
+// StartGame('game-container') -> returns Phaser.Game
 const StartGame = (parent: string) => {
+  // The template passed a string ID; our config wants an HTMLElement.
+  const el = (typeof parent === 'string')
+    ? document.getElementById(parent)
+    : (parent as unknown as HTMLElement);
 
-    return new Game({ ...config, parent });
+  if (!el) {
+    throw new Error(
+      `StartGame: could not find element with id "${parent}". ` +
+      `Make sure <div id="${parent}"></div> exists on the page.`
+    );
+  }
 
-}
+  const config = makeConfig(el);
+  return new Phaser.Game(config);
+};
 
 export default StartGame;
