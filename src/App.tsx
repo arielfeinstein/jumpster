@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { IRefPhaserGame, PhaserGame } from './PhaserGame';
 import MainMenuUI from './game/scenes/MainMenu/MainMenuUI'
+import EditorUI from './game/scenes/Editor/EditorUI';
 
 
 function App()
@@ -13,6 +14,8 @@ function App()
     return ( <>
         <PhaserGame ref={phaserRef} currentActiveScene={scene => setCurrentScene(scene.scene.key)}  />
         {currentScene === 'MainMenu' && <MainMenuUI />}
+        {currentScene === 'Editor' && <EditorUI />}
+
     </> );
 }
 

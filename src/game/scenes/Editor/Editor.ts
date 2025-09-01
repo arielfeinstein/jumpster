@@ -8,7 +8,7 @@ export class Editor extends Scene {
     }
 
     create() {
-        //this.add.image(400, 600, 'background');
+        this.add.image(400, 600, 'background');
 
         
 
