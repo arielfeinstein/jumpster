@@ -1,9 +1,10 @@
 .palette {
-  position: fixed; /* pin to page top-left */
-  top: 8px;
-  left: 8px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 48px);
+  position: fixed; /* pin to bottom center */
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
   gap: 8px; /* space between tiles */
   padding: 8px;
   background: #eee;
