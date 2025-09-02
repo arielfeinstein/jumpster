@@ -25,7 +25,7 @@ export const makeConfig = (
     }
   },
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.NONE,
     autoCenter: Phaser.Scale.NO_CENTER
   },
   scene: [Boot, Preloader, Game, GameOver, MainMenu, Editor]

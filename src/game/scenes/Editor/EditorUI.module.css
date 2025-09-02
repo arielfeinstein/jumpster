@@ -1,5 +1,5 @@
 .palette {
-  position: absolute;
+  position: fixed; /* pin to page top-left */
   top: 8px;
   left: 8px;
   display: grid;
@@ -8,7 +8,7 @@
   padding: 8px;
   background: #eee;
   border: 1px solid #ccc;
-  z-index: 20; /* ensure above Phaser canvas */
+  z-index: 20; /* keep above game overlay */
 }
 
 /* Tile button */
@@ -36,6 +36,7 @@
 
 .hiddenCanvas {
     position: absolute;
+    inset: 0; /* fill shrink-wrapped #game-container */
     display: flex;
     align-items: center;
     justify-content: center;
