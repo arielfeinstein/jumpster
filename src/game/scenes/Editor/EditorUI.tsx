@@ -2,9 +2,11 @@ import styles from './EditorUI.module.css';
 import { useDrag } from 'react-dnd';
 import { useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend'
+import { pageToPhaser } from '../../utilities/Convertors';
+import { EventBus } from '../../EventBus'
 
 // Editor palette of placeable entities
-export default function EditorUI() {
+export default function EditorUI({game} : {game: Phaser.Game}) {
     return (
         <DndProvider backend={HTML5Backend}>
             <>
@@ -13,7 +15,7 @@ export default function EditorUI() {
                     <PaletteItem entityType="enemy" imgSrc="/assets/react/goomba.png" />
                     <PaletteItem entityType="coin" imgSrc="/assets/phaser/star.png" />
                 </div>
-                <HiddenCanvasWrapper />
+                <HiddenCanvasWrapper game={game} />
             </>
         </DndProvider>
     );
@@ -39,10 +41,21 @@ function PaletteItem({ entityType, imgSrc }: { entityType: string; imgSrc: strin
     );
 }
 
-function HiddenCanvasWrapper() {
+function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
     const [{ isOver }, dropRef] = useDrop({
         accept: 'game-object',
-        drop: (item) => { console.log('dropped', item); },
+        drop: (item: string, monitor) => { 
+            console.log('dropped', item); 
+            const clientOffset = monitor.getClientOffset(); // xy coordinates
+            if (!clientOffset) return;
+            const { canvas } = pageToPhaser(clientOffset, game);
+            console.log('canvas coords', canvas.x, canvas.y);
+            EventBus.emit('editor-place-entity', { 
+                entityType: item, 
+                x: canvas.x, 
+                y: canvas.y 
+            });
+        },
         collect: (monitor) => ({
             isOver: monitor.isOver()
         })
