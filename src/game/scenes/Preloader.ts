@@ -17,6 +17,7 @@ export class Preloader extends Scene
     {
         //  Load our actual game assets here, the Boot Scene is only for loading the minimum required to get us to the Preloader.
         this.load.image('star', '/assets/phaser/star.png');
+        this.load.image('platform', '/assets/phaser/platform.png');
     }
 
     create ()

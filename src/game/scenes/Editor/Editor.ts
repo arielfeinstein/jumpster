@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
-
 import { EventBus } from '../../EventBus';
+import { EntityType } from './EditorUI';
 
 export class Editor extends Scene {
 
@@ -25,11 +25,25 @@ export class Editor extends Scene {
         EventBus.emit('current-scene-ready', this);
     }
 
-    private addEntity({entityType, x, y}: {entityType: string, x: number, y: number}) {
+    private addEntity({entityType, x, y}: {entityType: EntityType, x: number, y: number}) {
         // Logic to add the entity to the scene
-        console.log('x: ' + x + ', y: ' + y, entityType);
-        // primitive: just to see if it works, remove later
-        this.platforms.create(x, y, 'star');
+        console.log('Adding entity:', entityType, 'at', x, y);
+        switch(entityType) {
+            case 'platform':
+                console.log('Adding platform at', x, y);
+                this.addPlatform(x, y);
+                break;
+            case 'enemy':
+                // todo
+                break;
+            case 'coin':
+                // todo
+                break;
+        }
+    }
+
+    private addPlatform(x: number, y: number) {
+        this.platforms.create(x, y, 'platform');
     }
 
 }
