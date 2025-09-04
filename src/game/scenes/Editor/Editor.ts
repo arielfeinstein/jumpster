@@ -5,6 +5,7 @@ import { EntityType } from './EditorUI';
 /* TODO: Implement entity placement logic
     * - Listen for 'editor-place-entity' events from EditorUI ✓
     * - build function to check if new entity can be placed at the given coordinates (no overlap, within bounds, etc.)
+    * - when an entity is in close proximity to a platform make the entity stick to the platform.
 */
 
 
@@ -12,6 +13,8 @@ export class Editor extends Scene {
 
     private platforms: Phaser.Physics.Arcade.StaticGroup;
     private allObjects: Phaser.GameObjects.Group;
+
+    private static readonly SNAP_THRESHOLD = 20; // used for deciding whether to snap entities to platforms
 
     constructor() {
         super('Editor');
@@ -51,10 +54,14 @@ export class Editor extends Scene {
     }
 
     private addPlatform(x: number, y: number) {
+        const geomRect = new Phaser.Geom.Rectangle(x - 25, y - 25, 50, 50);
+
         // this.platforms.create(x, y, 'platform');
 
-        if (this.canPlaceEntity(x, y, 100, 100)) {
-            const rect = this.add.rectangle(x, y, 100, 100, 0x000000);
+        if (this.canPlaceEntity(x, y, 50, 50)) {
+            const snappedRect = this.getSnapToPlatformCoord(geomRect);
+
+            const rect = this.add.rectangle(snappedRect.centerX, snappedRect.centerY, 50, 50, 0x000000);
             this.platforms.add(rect);
             this.allObjects.add(rect);
         }
@@ -80,6 +87,40 @@ export class Editor extends Scene {
         }
 
         return true;
+    }
+
+    private getSnapToPlatformCoord(rect : Readonly<Phaser.Geom.Rectangle>): Phaser.Geom.Rectangle {
+            const objAbovePlatform = false;
+
+            const platforms = this.platforms.getChildren() as Phaser.GameObjects.Image[];
+
+            const isXIntersecting = (rect1: Readonly<Phaser.Geom.Rectangle>, rect2: Readonly<Phaser.Geom.Rectangle>) => {
+                return Math.abs(rect1.centerX - rect2.centerX) < (rect1.width + rect2.width) / 2;
+            };
+
+            const isAbovePlat = (rect1: Readonly<Phaser.Geom.Rectangle>, rect2: Readonly<Phaser.Geom.Rectangle>) => {
+                return rect1.bottom <= rect2.top;
+            }
+
+            for (const platform of platforms) {
+                const platBounds = platform.getBounds();
+                console.log('isAbovePlat', isAbovePlat(rect, platBounds));
+                console.log('isXIntersecting', isXIntersecting(rect, platBounds));
+                if (isAbovePlat(rect, platBounds) && isXIntersecting(rect, platBounds)) {
+                    const yDiff = platBounds.top - rect.bottom;
+                    console.log('yDiff', yDiff);
+                    if (yDiff <= Editor.SNAP_THRESHOLD) {
+                        return new Phaser.Geom.Rectangle(
+                            rect.x,
+                            rect.y + yDiff,
+                            rect.width,
+                            rect.height
+                        );
+                    }
+                }
+                return rect;
+            }
+            return rect;
     }
 
 }
