@@ -12,6 +12,11 @@
   z-index: 20; /* keep above game overlay */
 }
 
+.popover {
+  position: fixed;
+  z-index: 100;
+}
+
 /* Tile button */
 .tileButton {
   width: 48px;
