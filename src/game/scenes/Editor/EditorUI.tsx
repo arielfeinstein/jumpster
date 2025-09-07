@@ -83,10 +83,10 @@ function ChangeDimensionPopover() {
     const heightInputRef = useRef<HTMLInputElement>(null);
 
     const handleDimensionChange = () => {
-        const width = parseInt(widthInputRef.current?.value || '0', 10);
-        const height = parseInt(heightInputRef.current?.value || '0', 10);
-        EventBus.emit('editor-change-dimensions', { width, height });
-        console.log('Change dimensions to:', width, height);
+        const worldWidthUnit = parseInt(widthInputRef.current?.value || '0', 10);
+        const worldHeightUnit = parseInt(heightInputRef.current?.value || '0', 10);
+        EventBus.emit('editor-change-dimensions', { worldWidthUnit, worldHeightUnit });
+        console.log('Change dimensions to:', worldWidthUnit, worldHeightUnit);
     }
     
     return (
