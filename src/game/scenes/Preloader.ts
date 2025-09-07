@@ -26,6 +26,9 @@ export class Preloader extends Scene
         //  For example, you can define global animations here, so we can use them in other scenes.
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
-        this.scene.start('MainMenu');
+        //this.scene.start('MainMenu');
+
+        //for easier work. change the mainmenu later.
+        this.scene.start('Editor');
     }
 }
