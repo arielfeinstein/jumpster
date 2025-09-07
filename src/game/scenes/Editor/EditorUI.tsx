@@ -7,21 +7,24 @@ import { EventBus } from '../../EventBus'
 import { Popover } from 'radix-ui';
 import { Component2Icon } from '@radix-ui/react-icons'
 import { Cross1Icon } from '@radix-ui/react-icons'
+import { useRef } from 'react';
 
 export type EntityType = 'platform' | 'enemy' | 'coin';
 
 // Editor palette of placeable entities
-export default function EditorUI({game} : {game: Phaser.Game}) {
+export default function EditorUI({ game }: { game: Phaser.Game }) {
     return (
         <DndProvider backend={HTML5Backend}>
             <>
-                <div className={styles.palette}>
-                    <PaletteItem entityType="platform" imgSrc="/assets/phaser/platform.png" />
-                    <PaletteItem entityType="enemy" imgSrc="/assets/react/goomba.png" />
-                    <PaletteItem entityType="coin" imgSrc="/assets/phaser/star.png" />
+                <div className={styles.controlsRow}>
+                    <div className={styles.palette}>
+                        <PaletteItem entityType="platform" imgSrc="/assets/phaser/platform.png" />
+                        <PaletteItem entityType="enemy" imgSrc="/assets/react/goomba.png" />
+                        <PaletteItem entityType="coin" imgSrc="/assets/phaser/star.png" />
+                    </div>
+                    <ChangeDimensionPopover />
                 </div>
                 <HiddenCanvasWrapper game={game} />
-                <ChangeDimensionPopover  />
             </>
         </DndProvider>
     );
@@ -50,16 +53,16 @@ function PaletteItem({ entityType, imgSrc }: { entityType: EntityType; imgSrc: s
 function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
     const [{ isOver }, dropRef] = useDrop({
         accept: 'game-object',
-        drop: (item: { entityType: EntityType }, monitor) => { 
-            console.log('dropped', item); 
+        drop: (item: { entityType: EntityType }, monitor) => {
+            console.log('dropped', item);
             const clientOffset = monitor.getClientOffset(); // xy coordinates
             if (!clientOffset) return;
             const { canvas } = pageToPhaser(clientOffset, game);
             console.log('canvas coords', canvas.x, canvas.y);
-            EventBus.emit('editor-place-entity', { 
-                entityType: item.entityType, 
-                x: canvas.x, 
-                y: canvas.y 
+            EventBus.emit('editor-place-entity', {
+                entityType: item.entityType,
+                x: canvas.x,
+                y: canvas.y
             });
         },
         collect: (monitor) => ({
@@ -75,40 +78,55 @@ function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
 }
 
 function ChangeDimensionPopover() {
+
+    const widthInputRef = useRef<HTMLInputElement>(null);
+    const heightInputRef = useRef<HTMLInputElement>(null);
+
+    const handleDimensionChange = () => {
+        const width = parseInt(widthInputRef.current?.value || '0', 10);
+        const height = parseInt(heightInputRef.current?.value || '0', 10);
+        EventBus.emit('editor-change-dimensions', { width, height });
+        console.log('Change dimensions to:', width, height);
+    }
+    
     return (
-    <div className={styles.popover}>
-    <Popover.Root>
-        <Popover.Trigger asChild>
-            <button className="IconButton" aria-label="Update dimensions">
-				<Component2Icon />
-            </button>
-        </Popover.Trigger>
-        <Popover.Portal>
-            <Popover.Content className="PopoverContent" sideOffset={5}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <p className="Text" style={{ marginBottom: 10 }}>
-                        Dimensions
-                    </p>
-                    <fieldset className="Fieldset">
-                        <label className="Label" htmlFor="width">
-                            Width
-                        </label>
-                        <input className="Input" id="width" defaultValue="100%" />
-                    </fieldset>
-                    <fieldset className="Fieldset">
-                        <label className="Label" htmlFor="maxWidth">
-                            Max. width
-                        </label>
-                        <input className="Input" id="maxWidth" defaultValue="300px" />
-                    </fieldset>
-                </div>
-                <Popover.Close className="PopoverClose" aria-label="Close">
-                    Close
-                </Popover.Close>
-                <Popover.Arrow className="PopoverArrow" />
-            </Popover.Content>
-        </Popover.Portal>
-    </Popover.Root>
-    </div>
+        <div className={styles.popover}>
+            <Popover.Root>
+                <Popover.Trigger asChild>
+                    <button className={styles.popoverTrigger} aria-label="Update dimensions">
+                        <Component2Icon />
+                    </button>
+                </Popover.Trigger>
+                <Popover.Portal>
+                    <Popover.Content className={styles.popoverContent}>
+                        <p className={styles.popoverTitle}>Dimensions</p>
+                        <fieldset className={styles.fieldset}>
+                            <label className={styles.label} htmlFor="width">
+                                Width
+                            </label>
+                            <input className={styles.input} id="width" ref={widthInputRef} />
+                        </fieldset>
+                        <fieldset className={styles.fieldset}>
+                            <label className={styles.label} htmlFor="height">
+                                Height
+                            </label>
+                            <input className={styles.input} id="height" ref={heightInputRef} />
+                        </fieldset>
+                        <Popover.Close className={styles.popoverClose} aria-label="Close">
+                            <Cross1Icon />
+                        </Popover.Close>
+                        {
+                            /* todo: - add submitButton
+                                      - add click listener
+                                      - add focus (don't exit when clicked on game canvas) */
+                        }
+                        <Popover.Close className={styles.submitButton} aria-label="Apply changes" onClick={handleDimensionChange}>
+                            Apply
+                        </Popover.Close>
+                        <Popover.Arrow className={styles.popoverArrow} />
+                    </Popover.Content>
+                </Popover.Portal>
+            </Popover.Root>
+        </div>
     );
 }

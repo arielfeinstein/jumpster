@@ -1,20 +1,106 @@
-.palette {
-  position: fixed; /* pin to bottom center */
+/* Fixed row that aligns palette and popover side-by-side */
+.controlsRow {
+  position: fixed;
   bottom: 8px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px; /* ensures not touching */
+  z-index: 20;
+}
+
+.palette {
   display: flex;
   flex-direction: row;
   gap: 8px; /* space between tiles */
   padding: 8px;
   background: #eee;
   border: 1px solid #ccc;
-  z-index: 20; /* keep above game overlay */
 }
 
+/* Popover trigger sits to the right of the palette */
 .popover {
-  position: fixed;
-  z-index: 100;
+  display: flex;
+  align-items: center;
+}
+
+.popoverTrigger {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.popoverTrigger:hover {
+  background: #f7f7f7;
+}
+
+.popoverContent {
+  position: relative; /* anchor close button */
+  z-index: 200; /* above canvas and palette */
+  pointer-events: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: grid;
+  grid-auto-rows: auto;
+  gap: 10px;
+}
+
+.popoverTitle {
+  margin: 0 0 2px 0;
+  font-weight: 600;
+}
+
+.fieldset {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.label {
+  font-size: 12px;
+  color: #333;
+}
+
+.input {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+}
+
+.popoverClose {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.popoverArrow {
+  fill: #fff;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
 }
 
 /* Tile button */
