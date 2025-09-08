@@ -15,9 +15,20 @@ export class Preloader extends Scene
 
     preload ()
     {
-        //  Load our actual game assets here, the Boot Scene is only for loading the minimum required to get us to the Preloader.
-        this.load.image('star', '/assets/phaser/star.png');
-        this.load.image('platform', '/assets/phaser/platform.png');
+        // Images
+        //todo: this.load.image('start-flag', 'assets/phaser/start-flag.png');
+        this.load.image('end-flag', 'assets/phaser/end-flag.png');
+        this.load.image('platform', 'assets/phaser/platform.png');
+        this.load.image('coin', 'assets/phaser/coin.png');
+        
+        // Spritesheets
+        this.load.spritesheet('enemy', 'assets/react/enemy.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('dude', 'assets/phaser/dude.png', { frameWidth: 32, frameHeight: 48 });
+        // todo: add checkpoint flag spritesheet
+
+        
+
+        //todo: load dude
     }
 
     create ()

@@ -9,7 +9,7 @@ import { Component2Icon } from '@radix-ui/react-icons'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import { useRef } from 'react';
 
-export type EntityType = 'platform' | 'enemy' | 'coin';
+export type EntityType = 'platform' | 'enemy' | 'coin' | 'checkpoint' | 'start-flag' | 'end-flag';
 
 // Editor palette of placeable entities
 // todo: add a prop for the current scene (editor)

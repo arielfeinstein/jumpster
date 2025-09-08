@@ -8,9 +8,18 @@ import { EntityType } from './EditorUI';
 export class Editor extends Scene {
 
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+
     grid: Phaser.GameObjects.Grid;
+    cellSize = 40;
+
     gameObjects: Phaser.GameObjects.Group;
-    cellSize = 40; // grid cell size in pixels
+    platforms: Phaser.GameObjects.Group;
+    enemies: Phaser.GameObjects.Group;
+    coins: Phaser.GameObjects.Group;
+    checkpoints: Phaser.GameObjects.Group;
+    // todo: starting flag
+    // todo: ending flag
+
 
     constructor() {
         super('Editor');
@@ -19,22 +28,22 @@ export class Editor extends Scene {
     create() {
         this.add.image(400, 300, 'background').setScrollFactor(0).setDepth(-10);
 
-        this.grid = this.add.grid(0, 0, this.canvasWidth(), this.canvasHeight(), this.cellSize, this.cellSize).setOrigin(0,0);
-        this.grid.setOutlineStyle(0x000000,1);
+        this.grid = this.add.grid(0, 0, this.canvasWidth(), this.canvasHeight(), this.cellSize, this.cellSize).setOrigin(0, 0);
+        this.grid.setOutlineStyle(0x000000, 1);
 
-         this.cameras.main.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
-         this.physics.world.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
+        this.cameras.main.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
+        this.physics.world.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
 
-         this.gameObjects = this.add.group();
+        this.gameObjects = this.add.group();
 
         this.cursors = this.input.keyboard!.createCursorKeys();
 
         EventBus.on('editor-change-dimensions', this.changeDimensions, this);
-        EventBus.on('editor-place-entity', this.addEntityTest, this);
-        
+        EventBus.on('editor-place-entity', this.addEntity, this);
+
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('editor-change-dimensions', this.changeDimensions, this);
-            EventBus.off('editor-place-entity', this.addEntityTest, this);
+            EventBus.off('editor-place-entity', this.addEntity, this);
         });
 
         EventBus.emit('current-scene-ready', this);
@@ -70,7 +79,7 @@ export class Editor extends Scene {
      * The camera and physics bounds are resized to match the new world size,
      * and the grid object is updated accordingly.
      */
-    changeDimensions({worldWidthUnit, worldHeightUnit}: {worldWidthUnit: number, worldHeightUnit: number}) {
+    changeDimensions({ worldWidthUnit, worldHeightUnit }: { worldWidthUnit: number, worldHeightUnit: number }) {
         if (worldWidthUnit <= 0 || worldHeightUnit <= 0) return;
         const width = this.canvasWidth() * worldWidthUnit;
         const height = this.canvasHeight() * worldHeightUnit;
@@ -88,14 +97,17 @@ export class Editor extends Scene {
         return this.scale.height;
     }
 
-    private addEntity({entityType, x, y}: {entityType: EntityType, x: number, y: number}) {
-        //todo: implement
+    private addEntity({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
+        switch (entityType) {
+            case 'platform':
+                
+        }
     }
 
     /* Test method to visualize entity placement and grid snapping */
-    private addEntityTest({entityType, x, y}: {entityType: EntityType, x: number, y: number}) {
+    private addEntityTest({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
         const topLeftSnappedPos: Phaser.Math.Vector2 = this.getSnappedCellPosition(x, y);
-        this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, this.cellSize, this.cellSize, 0xff0000,0.5).setOrigin(0,0);
+        this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, this.cellSize, this.cellSize, 0xff0000, 0.5).setOrigin(0, 0);
     }
 
     /**
@@ -112,5 +124,13 @@ export class Editor extends Scene {
         const snappedX = Math.floor(mouseX / this.cellSize) * this.cellSize;
         const snappedY = Math.floor(mouseY / this.cellSize) * this.cellSize;
         return new Phaser.Math.Vector2(snappedX, snappedY);
+    }
+
+    private initGroups() {
+        this.gameObjects = this.add.group();
+        this.platforms = this.add.group();
+        this.enemies = this.add.group();
+        this.coins = this.add.group();
+        this.checkpoints = this.add.group();
     }
 }
