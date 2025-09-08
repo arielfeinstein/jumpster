@@ -6,12 +6,15 @@ import { GameOver } from './scenes/GameOver';
 import { MainMenu } from './scenes/MainMenu/MainMenu';
 import { Editor } from './scenes/Editor/Editor';
 
+const DESING_WIDTH = 800;
+const DESING_HEIGHT = 600;
+
 export const makeConfig = (
   parent: HTMLElement
 ): Phaser.Types.Core.GameConfig => ({
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: DESING_WIDTH,
+  height: DESING_HEIGHT,
   parent,
   backgroundColor: '#028af8',
   physics: {
@@ -25,8 +28,14 @@ export const makeConfig = (
     }
   },
   scale: {
-    mode: Phaser.Scale.NONE,
-    autoCenter: Phaser.Scale.NO_CENTER
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    parent
+  },
+  render: {
+    pixelArt: true,
+    antialias: false,
+    roundPixels: true
   },
   scene: [Boot, Preloader, Game, GameOver, MainMenu, Editor]
 });
