@@ -9,6 +9,8 @@ export class Editor extends Scene {
 
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
     grid: Phaser.GameObjects.Grid;
+    gameObjects: Phaser.GameObjects.Group;
+    cellSize = 40; // grid cell size in pixels
 
     constructor() {
         super('Editor');
@@ -17,17 +19,22 @@ export class Editor extends Scene {
     create() {
         this.add.image(400, 300, 'background').setScrollFactor(0).setDepth(-10);
 
-        this.grid = this.add.grid(0, 0, 800, 600, 40, 40).setOrigin(0,0);
+        this.grid = this.add.grid(0, 0, this.canvasWidth(), this.canvasHeight(), this.cellSize, this.cellSize).setOrigin(0,0);
         this.grid.setOutlineStyle(0x000000,1);
 
-         this.cameras.main.setBounds(0, 0, 800, 600);
-         this.physics.world.setBounds(0, 0, 800, 600);
+         this.cameras.main.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
+         this.physics.world.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
+
+         this.gameObjects = this.add.group();
 
         this.cursors = this.input.keyboard!.createCursorKeys();
 
         EventBus.on('editor-change-dimensions', this.changeDimensions, this);
+        EventBus.on('editor-place-entity', this.addEntityTest, this);
+        
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('editor-change-dimensions', this.changeDimensions, this);
+            EventBus.off('editor-place-entity', this.addEntityTest, this);
         });
 
         EventBus.emit('current-scene-ready', this);
@@ -38,18 +45,18 @@ export class Editor extends Scene {
 
         // handle camera scroll
         if (this.cursors.left.isDown) {
-            this.cameras.main.scrollX -= 40;
+            this.cameras.main.scrollX -= this.cellSize;
         }
         else if (this.cursors.right.isDown) {
-            this.cameras.main.scrollX += 40;
+            this.cameras.main.scrollX += this.cellSize;
         }
 
         if (this.cursors.up.isDown) {
-            this.cameras.main.scrollY -= 40;
+            this.cameras.main.scrollY -= this.cellSize;
         }
 
         if (this.cursors.down.isDown) {
-            this.cameras.main.scrollY += 40;
+            this.cameras.main.scrollY += this.cellSize;
         }
     }
 
@@ -65,19 +72,45 @@ export class Editor extends Scene {
      */
     changeDimensions({worldWidthUnit, worldHeightUnit}: {worldWidthUnit: number, worldHeightUnit: number}) {
         if (worldWidthUnit <= 0 || worldHeightUnit <= 0) return;
-        const width = 800*worldWidthUnit;
-        const height = 600*worldHeightUnit;
+        const width = this.canvasWidth() * worldWidthUnit;
+        const height = this.canvasHeight() * worldHeightUnit;
         this.cameras.main.setBounds(0, 0, width, height);
         this.physics.world.setBounds(0, 0, width, height);
         this.grid.width = width;
         this.grid.height = height;
     }
 
+    private canvasWidth(): number {
+        return this.scale.width;
+    }
 
+    private canvasHeight(): number {
+        return this.scale.height;
+    }
 
+    private addEntity({entityType, x, y}: {entityType: EntityType, x: number, y: number}) {
+        //todo: implement
+    }
 
+    /* Test method to visualize entity placement and grid snapping */
+    private addEntityTest({entityType, x, y}: {entityType: EntityType, x: number, y: number}) {
+        const topLeftSnappedPos: Phaser.Math.Vector2 = this.getSnappedCellPosition(x, y);
+        this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, this.cellSize, this.cellSize, 0xff0000,0.5).setOrigin(0,0);
+    }
 
-
-
-
+    /**
+     * Snaps raw world coordinates to the nearest top-left corner of a grid cell.
+     *
+     * @param mouseX - The x-coordinate in world units to snap.
+     * @param mouseY - The y-coordinate in world units to snap.
+     * @returns A Phaser.Math.Vector2 representing the snapped top-left grid position.
+     *
+     * The snapping is based on the current cell size of the editor grid,
+     * ensuring that placed entities align perfectly with grid cells.
+     */
+    private getSnappedCellPosition(mouseX: number, mouseY: number): Phaser.Math.Vector2 {
+        const snappedX = Math.floor(mouseX / this.cellSize) * this.cellSize;
+        const snappedY = Math.floor(mouseY / this.cellSize) * this.cellSize;
+        return new Phaser.Math.Vector2(snappedX, snappedY);
+    }
 }

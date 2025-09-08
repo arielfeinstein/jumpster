@@ -12,6 +12,7 @@ import { useRef } from 'react';
 export type EntityType = 'platform' | 'enemy' | 'coin';
 
 // Editor palette of placeable entities
+// todo: add a prop for the current scene (editor)
 export default function EditorUI({ game }: { game: Phaser.Game }) {
     return (
         <DndProvider backend={HTML5Backend}>
@@ -57,12 +58,12 @@ function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
             console.log('dropped', item);
             const clientOffset = monitor.getClientOffset(); // xy coordinates
             if (!clientOffset) return;
-            const { canvas } = pageToPhaser(clientOffset, game);
-            console.log('canvas coords', canvas.x, canvas.y);
+            const { world } = pageToPhaser(clientOffset, game, game.scene.getScene('Editor').cameras.main);
+            console.log('world coords', world.x, world.y);
             EventBus.emit('editor-place-entity', {
                 entityType: item.entityType,
-                x: canvas.x,
-                y: canvas.y
+                x: world.x,
+                y: world.y
             });
         },
         collect: (monitor) => ({

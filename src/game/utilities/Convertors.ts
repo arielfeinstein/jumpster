@@ -12,7 +12,7 @@ type Point = { x: number; y: number };
 export function pageToPhaser(
   client: Point,
   game: Phaser.Game,
-  //camera: Phaser.Cameras.Scene2D.Camera = game.scene.getScene(game.scene.keys[0]).cameras.main // or pass explicitly
+  camera: Phaser.Cameras.Scene2D.Camera
 ) {
   // 1) Where is the canvas on the page right now?
   const rect = game.canvas.getBoundingClientRect();
@@ -31,10 +31,10 @@ export function pageToPhaser(
   const screenY = ny * game.scale.height;
 
   // 5) Convert to world space (respects camera scroll/zoom/rotation)
-  //const worldPoint = camera.getWorldPoint(screenX, screenY);
+  const worldPoint = camera.getWorldPoint(screenX, screenY);
 
   return {
     canvas: { x: screenX, y: screenY }, // Phaser "screen" coords
-    //world: { x: worldPoint.x, y: worldPoint.y }, // camera/world coords
+    world: { x: worldPoint.x, y: worldPoint.y }, // camera/world coords
   };
 }
