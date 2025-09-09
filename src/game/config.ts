@@ -6,15 +6,19 @@ import { GameOver } from './scenes/GameOver';
 import { MainMenu } from './scenes/MainMenu/MainMenu';
 import { Editor } from './scenes/Editor/Editor';
 
-const DESING_WIDTH = 800;
-const DESING_HEIGHT = 600;
+export const TILE_SIZE = 32;                 
+const TILES_ACROSS = 32;              
+const TILES_DOWN = 18;                
+
+const DESIGN_WIDTH = TILE_SIZE * TILES_ACROSS;   // 1024
+const DESIGN_HEIGHT = TILE_SIZE * TILES_DOWN;    // 576
 
 export const makeConfig = (
   parent: HTMLElement
 ): Phaser.Types.Core.GameConfig => ({
   type: Phaser.AUTO,
-  width: DESING_WIDTH,
-  height: DESING_HEIGHT,
+  width: DESIGN_WIDTH,
+  height: DESIGN_HEIGHT,
   parent,
   backgroundColor: '#028af8',
   physics: {
