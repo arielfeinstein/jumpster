@@ -11,7 +11,15 @@ export class MainMenu extends Scene
 
     create ()
     {
-        this.add.image(400, 600, 'background');
+        // Fill the visible canvas with the background
+        const vw = this.scale.width;
+        const vh = this.scale.height;
+        this.add
+            .image(0, 0, 'background')
+            .setOrigin(0, 0)
+            .setDisplaySize(vw, vh)
+            .setScrollFactor(0)
+            .setDepth(-10);
 
         
         const createLevelHandler = () => {

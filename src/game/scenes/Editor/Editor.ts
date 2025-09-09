@@ -26,11 +26,21 @@ export class Editor extends Scene {
     }
 
     create() {
-        this.add.image(400, 300, 'background').setScrollFactor(0).setDepth(-10);
+        // Fill the visible canvas with the background, independent of world size
+        const vw = this.scale.width;
+        const vh = this.scale.height;
+        this.add
+            .image(0, 0, 'background')
+            .setOrigin(0, 0)
+            .setDisplaySize(vw, vh)
+            .setScrollFactor(0)
+            .setDepth(-10);
 
+        // Create a grid that covers the entire canvas initially
         this.grid = this.add.grid(0, 0, this.canvasWidth(), this.canvasHeight(), TILE_SIZE, TILE_SIZE).setOrigin(0, 0);
         this.grid.setOutlineStyle(0x000000, 1);
 
+        // Set initial camera and physics bounds to match the canvas size
         this.cameras.main.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
         this.physics.world.setBounds(0, 0, this.canvasWidth(), this.canvasHeight());
 
@@ -39,11 +49,11 @@ export class Editor extends Scene {
         this.cursors = this.input.keyboard!.createCursorKeys();
 
         EventBus.on('editor-change-dimensions', this.changeDimensions, this);
-        EventBus.on('editor-place-entity', this.addEntity, this);
+        EventBus.on('editor-place-entity', this.addEntityTest, this);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('editor-change-dimensions', this.changeDimensions, this);
-            EventBus.off('editor-place-entity', this.addEntity, this);
+            EventBus.off('editor-place-entity', this.addEntityTest, this);
         });
 
         EventBus.emit('current-scene-ready', this);
@@ -108,6 +118,7 @@ export class Editor extends Scene {
     private addEntityTest({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
         const topLeftSnappedPos: Phaser.Math.Vector2 = this.getSnappedCellPosition(x, y);
         this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, TILE_SIZE, TILE_SIZE, 0xff0000, 0.5).setOrigin(0, 0);
+        console.log(`Placing entity '${entityType}' at world coords (${x}, ${y}), snapped to (${topLeftSnappedPos.x}, ${topLeftSnappedPos.y})`);
     }
 
     /**

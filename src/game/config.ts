@@ -33,8 +33,7 @@ export const makeConfig = (
   },
   scale: {
     mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    parent
+    autoCenter: Phaser.Scale.CENTER_BOTH
   },
   render: {
     pixelArt: true,
