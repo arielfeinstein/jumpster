@@ -22,7 +22,7 @@ export class Preloader extends Scene
         this.load.image('coin', 'assets/phaser/coin.png');
         
         // Spritesheets
-        this.load.spritesheet('enemy', 'assets/react/enemy.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('enemy', 'assets/phaser/enemy.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('dude', 'assets/phaser/dude.png', { frameWidth: 32, frameHeight: 48 });
         // todo: add checkpoint flag spritesheet
 
