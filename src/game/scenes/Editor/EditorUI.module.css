@@ -128,7 +128,7 @@
 
 .hiddenCanvas {
     position: absolute;
-    inset: 0; /* fill shrink-wrapped #game-container */
+    /* Positioned explicitly via inline top/left/width/height from ScaleManager */
     display: flex;
     align-items: center;
     justify-content: center;

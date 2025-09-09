@@ -7,7 +7,7 @@ import { EventBus } from '../../EventBus'
 import { Popover } from 'radix-ui';
 import { Component2Icon } from '@radix-ui/react-icons'
 import { Cross1Icon } from '@radix-ui/react-icons'
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 export type EntityType = 'platform' | 'enemy' | 'coin' | 'checkpoint' | 'start-flag' | 'end-flag';
 
@@ -51,14 +51,71 @@ function PaletteItem({ entityType, imgSrc }: { entityType: EntityType; imgSrc: s
     );
 }
 
-function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
-    const [{ isOver }, dropRef] = useDrop({
+type Bounds = { left: number; top: number; width: number; height: number };
+
+/**
+ * useScaleBounds
+ * Computes the visible game rectangle inside `#game-container` using Phaser's ScaleManager.
+ * - Positions are relative to the container (not the viewport).
+ * - Uses `displaySize` for width/height and container centering math for top/left.
+ * - Subscribes to `scale.resize` and updates state when the game resizes.
+ * Returns `null` until the first measurement completes.
+ */
+function useScaleBounds(game: Phaser.Game) {
+    const [bounds, setBounds] = useState<Bounds | null>(null);
+
+    useEffect(() => {
+        if (!game) return;
+        const scale = game.scale;
+
+        const update = () => {
+            const parentW = scale.parentSize.width;
+            const parentH = scale.parentSize.height;
+            const dispW = scale.displaySize.width;
+            const dispH = scale.displaySize.height;
+
+            const left = Math.floor((parentW - dispW) / 2);
+            const top = Math.floor((parentH - dispH) / 2);
+
+            setBounds({
+                left,
+                top,
+                width: Math.floor(dispW),
+                height: Math.floor(dispH),
+            });
+        };
+
+        update();
+        const onResize = () => update();
+        scale.on('resize', onResize);
+        return () => {
+            scale.off('resize', onResize);
+        };
+    }, [game]);
+
+    return bounds;
+}
+
+/**
+ * useEditorDrop
+ * Sets up the react-dnd drop target for game entities.
+ * - Accepts items of type `game-object` with `{ entityType }`.
+ * - Converts the drop point (client coords) to world coords via `pageToPhaser`.
+ * - Emits `editor-place-entity` with `{ entityType, x, y }`.
+ * Returns the standard `useDrop` tuple (collecting `{ isOver }`).
+ */
+function useEditorDrop(game: Phaser.Game) {
+    return useDrop({
         accept: 'game-object',
         drop: (item: { entityType: EntityType }, monitor) => {
             console.log('dropped', item);
-            const clientOffset = monitor.getClientOffset(); // xy coordinates
+            const clientOffset = monitor.getClientOffset();
             if (!clientOffset) return;
-            const { world } = pageToPhaser(clientOffset, game, game.scene.getScene('Editor').cameras.main);
+            const { world } = pageToPhaser(
+                clientOffset,
+                game,
+                game.scene.getScene('Editor').cameras.main
+            );
             console.log('world coords', world.x, world.y);
             EventBus.emit('editor-place-entity', {
                 entityType: item.entityType,
@@ -66,13 +123,34 @@ function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
                 y: world.y
             });
         },
-        collect: (monitor) => ({
-            isOver: monitor.isOver()
-        })
-    })
+        collect: (monitor) => ({ isOver: monitor.isOver() })
+    });
+}
+
+/**
+ * HiddenCanvasWrapper
+ * Absolutely positioned overlay that matches the scaled game area (excludes pillarboxing),
+ * used to capture drag/drop and pointer interactions aligned with the canvas.
+ * Relies on `useScaleBounds` for size/position and `useEditorDrop` for DnD behavior.
+ */
+function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
+    const [{ isOver }, dropRef] = useEditorDrop(game);
+    const bounds = useScaleBounds(game);
+
+    if (!bounds) return null;
 
     return (
-        <div ref={el => { dropRef(el) }} className={styles.hiddenCanvas} style={{ backgroundColor: isOver ? 'rgba(217, 15, 15, 0.2)' : undefined }}>
+        <div
+            ref={el => { dropRef(el) }}
+            className={styles.hiddenCanvas}
+            style={{
+                backgroundColor: isOver ? 'rgba(217, 15, 15, 0.2)' : undefined,
+                top: bounds.top,
+                left: bounds.left,
+                width: bounds.width,
+                height: bounds.height,
+            }}
+        >
             {isOver && <div className={styles.dropIndicator}>Release to drop</div>}
         </div>
     );
