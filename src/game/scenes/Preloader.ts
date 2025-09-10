@@ -16,15 +16,15 @@ export class Preloader extends Scene
     preload ()
     {
         // Images
-        //todo: this.load.image('start-flag', 'assets/phaser/start-flag.png');
+        this.load.image('start-flag', 'assets/phaser/start-flag.png');
         this.load.image('end-flag', 'assets/phaser/end-flag.png');
-        this.load.image('platform', 'assets/phaser/platform.png');
         this.load.image('coin', 'assets/phaser/coin.png');
         
         // Spritesheets
         this.load.spritesheet('enemy', 'assets/phaser/enemy.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('dude', 'assets/phaser/dude.png', { frameWidth: 32, frameHeight: 48 });
-        // todo: add checkpoint flag spritesheet
+        this.load.spritesheet('checkpoint-flag', 'assets/phaser/checkpoint-flag.png', { frameWidth: 32, frameHeight: 64 });
+        this.load.spritesheet('platform', 'assets/phaser/platform-tiles.png', {frameWidth: 32, frameHeight: 32});
 
         
 
@@ -36,6 +36,6 @@ export class Preloader extends Scene
         //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
         //  For example, you can define global animations here, so we can use them in other scenes.
 
-        this.scene.start('MainMenu');
+        this.scene.start('Editor');
     }
 }

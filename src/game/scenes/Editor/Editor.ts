@@ -56,6 +56,9 @@ export class Editor extends Scene {
             EventBus.off('editor-place-entity', this.addEntityTest, this);
         });
 
+        this.initGroups();
+        // continue from here
+
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -110,14 +113,16 @@ export class Editor extends Scene {
     private addEntity({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
         switch (entityType) {
             case 'platform':
-                
+
         }
     }
 
     /* Test method to visualize entity placement and grid snapping */
     private addEntityTest({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
         const topLeftSnappedPos: Phaser.Math.Vector2 = this.getSnappedCellPosition(x, y);
-        this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, TILE_SIZE, TILE_SIZE, 0xff0000, 0.5).setOrigin(0, 0);
+        //this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, TILE_SIZE, TILE_SIZE, 0xff0000, 0.5).setOrigin(0, 0);
+        //const flag = this.add.sprite(topLeftSnappedPos.x, topLeftSnappedPos.y, 'checkpoint-flag').setOrigin(0,0);
+        this.add.image(topLeftSnappedPos.x, topLeftSnappedPos.y, 'end-flag').setOrigin(0, 0);
         console.log(`Placing entity '${entityType}' at world coords (${x}, ${y}), snapped to (${topLeftSnappedPos.x}, ${topLeftSnappedPos.y})`);
     }
 

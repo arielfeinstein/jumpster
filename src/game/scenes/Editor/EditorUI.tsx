@@ -19,9 +19,13 @@ export default function EditorUI({ game }: { game: Phaser.Game }) {
             <>
                 <div className={styles.controlsRow}>
                     <div className={styles.palette}>
-                        <PaletteItem entityType="platform" imgSrc="/assets/phaser/platform.png" />
-                        <PaletteItem entityType="enemy" imgSrc="/assets/react/goomba.png" />
-                        <PaletteItem entityType="coin" imgSrc="/assets/phaser/star.png" />
+                        <PaletteItem entityType="platform" imgSrc="/assets/react/platform.png" />
+                        <PaletteItem entityType="enemy" imgSrc="/assets/react/enemy.png" />
+                        <PaletteItem entityType="coin" imgSrc="/assets/phaser/coin.png" />
+                        <PaletteItem entityType="checkpoint" imgSrc="/assets/react/checkpoint-flag.png" />
+                        <PaletteItem entityType="start-flag" imgSrc="/assets/phaser/start-flag.png" /> 
+                        <PaletteItem entityType="end-flag" imgSrc="/assets/phaser/end-flag.png" />
+
                     </div>
                     <ChangeDimensionPopover />
                 </div>
