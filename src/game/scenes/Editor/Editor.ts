@@ -5,8 +5,8 @@ import { TILE_SIZE } from '../../config';
 import Platform from '../../gameObjects/Platform';
 
 
-
 export class Editor extends Scene {
+
 
     cursors: Phaser.Types.Input.Keyboard.CursorKeys;
 
@@ -20,6 +20,9 @@ export class Editor extends Scene {
     checkpoints: Phaser.GameObjects.Group;
     startFlag: Phaser.GameObjects.Image | null = null;
     endFlag: Phaser.GameObjects.Image | null = null;
+
+    private selectedObject: Phaser.GameObjects.GameObject | null = null;
+    private selectionOutline: Phaser.GameObjects.Graphics;
 
 
     constructor() {
@@ -50,12 +53,18 @@ export class Editor extends Scene {
         EventBus.on('editor-change-dimensions', this.changeDimensions, this);
         EventBus.on('editor-place-entity', this.addEntity, this);
 
+        this.selectionOutline = this.add.graphics().setDepth(100); // High depth to be on top
+        this.selectionOutline.setVisible(false);
+
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('editor-change-dimensions', this.changeDimensions, this);
             EventBus.off('editor-place-entity', this.addEntity, this);
         });
 
         this.initGroups();
+
+        // Scene-level pointerdown for deselection when clicking on empty space.
+        this.input.on('pointerdown', () => this.deselectObject());
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -130,7 +139,6 @@ export class Editor extends Scene {
                 break;
 
         }
-        console.log('gameObjMap', this.gameObjMap);
     }
 
     /* Test method to visualize entity placement and grid snapping */
@@ -139,7 +147,6 @@ export class Editor extends Scene {
         //this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, TILE_SIZE, TILE_SIZE, 0xff0000, 0.5).setOrigin(0, 0);
         //const flag = this.add.sprite(topLeftSnappedPos.x, topLeftSnappedPos.y, 'checkpoint-flag').setOrigin(0,0);
         this.add.image(topLeftSnappedPos.x, topLeftSnappedPos.y, 'end-flag').setOrigin(0, 0);
-        console.log(`Placing entity '${entityType}' at world coords (${x}, ${y}), snapped to (${topLeftSnappedPos.x}, ${topLeftSnappedPos.y})`);
     }
 
     /**
@@ -177,6 +184,11 @@ export class Editor extends Scene {
     private addPlatform(pos: Phaser.Math.Vector2) {
         const platform = new Platform(this, pos.x, pos.y, TILE_SIZE, TILE_SIZE);
         this.platforms.add(platform);
+        // Platform is made interactive in its own constructor to ensure correct hit area.
+        platform.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+            this.selectObject(platform);
+            event.stopPropagation(); // Prevent scene-level listener from firing.
+        });
 
         const posKey = Editor.getPositionKey(pos);
         this.gameObjMap.set(posKey, 'platform');
@@ -187,6 +199,10 @@ export class Editor extends Scene {
             // platform below - add enemy
             const enemy = this.add.image(pos.x, pos.y, 'enemy', 1).setOrigin(0, 0);
             this.enemies.add(enemy);
+            enemy.setInteractive().on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+                this.selectObject(enemy);
+                event.stopPropagation();
+            });
 
             const posKey = Editor.getPositionKey(pos);
             this.gameObjMap.set(posKey, 'enemy');
@@ -196,6 +212,10 @@ export class Editor extends Scene {
     private addCoin(pos: Phaser.Math.Vector2) {
         const coin = this.add.image(pos.x, pos.y, 'coin').setOrigin(0, 0);
         this.coins.add(coin);
+        coin.setInteractive().on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+            this.selectObject(coin);
+            event.stopPropagation();
+        });
 
         const posKey = Editor.getPositionKey(pos);
         this.gameObjMap.set(posKey, 'coin');
@@ -222,12 +242,58 @@ export class Editor extends Scene {
             }
         }
     
+        flagImage.setInteractive().on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+            this.selectObject(flagImage);
+            event.stopPropagation();
+        });
         const posKeyTop = Editor.getPositionKey(pos);
         const posKeyBottom = Editor.getPositionKey(new Phaser.Math.Vector2(pos.x, pos.y + TILE_SIZE));
         this.gameObjMap.set(posKeyTop, entityType);
         this.gameObjMap.set(posKeyBottom, entityType);
     }
 
+
+    private selectObject(obj: Phaser.GameObjects.GameObject) {
+        // Do nothing if the object is already selected
+        if (this.selectedObject === obj) {
+            return;
+        }
+
+        this.deselectObject(); // Deselect previous object first
+
+        this.selectedObject = obj;
+        this.drawSelectionOutline();
+    }
+
+    private deselectObject() {
+        if (this.selectedObject) {
+            this.selectedObject = null;
+            // It's good practice to both clear and hide the graphics object.
+            this.selectionOutline.clear();
+            this.selectionOutline.setVisible(false);
+        }
+    }
+
+    private drawSelectionOutline() {
+        if (!this.selectedObject) return;
+
+        this.selectionOutline.clear();
+
+        // Using getBounds() on a Container can sometimes be problematic or return
+        // unexpected results depending on its children.
+        // A more reliable method, given our setup, is to construct the bounds manually.
+        // All our selectable objects (Images, and our Platform Container)
+        // are designed to have a top-left origin.
+        // - Images use .setOrigin(0, 0).
+        // - Containers inherently have a top-left origin.
+        // This means we can reliably use their x, y, width, and height properties.
+        const obj = this.selectedObject as any;
+        const bounds = new Phaser.Geom.Rectangle(obj.x, obj.y, obj.width, obj.height);
+
+        this.selectionOutline.lineStyle(2, 0xffff00, 1);
+        this.selectionOutline.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        this.selectionOutline.setVisible(true);
+    }
 
     /* ---- HELPERS ---- */
     private canFlagBePlacedAt(pos: Phaser.Math.Vector2): boolean {

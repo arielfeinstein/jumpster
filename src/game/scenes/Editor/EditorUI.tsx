@@ -127,7 +127,10 @@ function useEditorDrop(game: Phaser.Game) {
                 y: world.y
             });
         },
-        collect: (monitor) => ({ isOver: monitor.isOver() })
+        collect: (monitor) => ({
+            isOver: monitor.isOver(),
+            isDragging: monitor.canDrop(), 
+        })
     });
 }
 
@@ -138,7 +141,7 @@ function useEditorDrop(game: Phaser.Game) {
  * Relies on `useScaleBounds` for size/position and `useEditorDrop` for DnD behavior.
  */
 function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
-    const [{ isOver }, dropRef] = useEditorDrop(game);
+    const [{ isOver, isDragging }, dropRef] = useEditorDrop(game);
     const bounds = useScaleBounds(game);
 
     if (!bounds) return null;
@@ -148,14 +151,15 @@ function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
             ref={el => { dropRef(el) }}
             className={styles.hiddenCanvas}
             style={{
-                backgroundColor: isOver ? 'rgba(217, 15, 15, 0.2)' : undefined,
+                backgroundColor: isDragging && isOver ? 'rgba(217, 15, 15, 0.2)' : 'transparent',
                 top: bounds.top,
                 left: bounds.left,
                 width: bounds.width,
                 height: bounds.height,
+                pointerEvents: isDragging ? 'auto' : 'none'
             }}
         >
-            {isOver && <div className={styles.dropIndicator}>Release to drop</div>}
+            {isDragging && isOver && <div className={styles.dropIndicator}>Release to drop</div>}
         </div>
     );
 }
