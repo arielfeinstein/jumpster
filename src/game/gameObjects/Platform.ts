@@ -3,6 +3,8 @@ export default class Platform extends Phaser.GameObjects.Container {
 
     topLayer: Phaser.GameObjects.TileSprite;
     fillLayer: Phaser.GameObjects.TileSprite;
+    tint: number | null = null;
+    private objectsOnIt: Set<Phaser.GameObjects.GameObject> = new Set();
 
     constructor(scene: Phaser.Scene, x: number, y: number, width: number, height: number) {
         super(scene, x, y);
@@ -17,7 +19,13 @@ export default class Platform extends Phaser.GameObjects.Container {
         this.add([this.topLayer, this.fillLayer]);
 
         const hitArea = new Phaser.Geom.Rectangle(width / 2, height / 2, width, height);
-        this.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+
+        const interactiveOptions = {
+            hitArea: hitArea,
+            hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+            draggable: true
+        };
+        this.setInteractive(interactiveOptions);
 
         this.resize(width, height);
 
@@ -60,5 +68,35 @@ export default class Platform extends Phaser.GameObjects.Container {
             this.fillLayer.height = newHeight - TILE_SIZE;
         }
 
+    }
+
+    setTint(color: number) {
+        this.tint = color;
+        this.topLayer.setTint(color);
+        this.fillLayer.setTint(color);
+    }
+
+    clearTint() {
+        this.tint = null;
+        this.topLayer.clearTint();
+        this.fillLayer.clearTint();
+    }
+
+    addObjectOnIt(object: Phaser.GameObjects.GameObject) {
+        this.objectsOnIt.add(object);
+        if (this.objectsOnIt.size === 1) {
+            this.scene.input.setDraggable(this, false);
+        }
+    }
+
+    removeObjectOnIt(object: Phaser.GameObjects.GameObject) {
+        this.objectsOnIt.delete(object);
+        if (this.objectsOnIt.size === 0) {
+            this.scene.input.setDraggable(this, true);
+        }
+    }
+
+    getObjectsOnIt(): Set<Phaser.GameObjects.GameObject> {
+        return new Set(this.objectsOnIt);
     }
 }
