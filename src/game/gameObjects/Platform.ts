@@ -96,7 +96,12 @@ export default class Platform extends Phaser.GameObjects.Container {
         }
     }
 
+    //debug - remove later
     getObjectsOnIt(): Set<Phaser.GameObjects.GameObject> {
-        return new Set(this.objectsOnIt);
+        return this.objectsOnIt;
+    }
+
+    hasObjectOnIt(object: Phaser.GameObjects.GameObject): boolean {
+        return this.objectsOnIt.has(object);
     }
 }
