@@ -19,6 +19,7 @@ export class Preloader extends Scene
         this.load.image('start-flag', 'assets/phaser/start-flag.png');
         this.load.image('end-flag', 'assets/phaser/end-flag.png');
         this.load.image('coin', 'assets/phaser/coin.png');
+        this.load.image('red-cross', 'assets/phaser/icon_outline_cross.png');
         
         // Spritesheets
         this.load.spritesheet('enemy', 'assets/phaser/enemy.png', { frameWidth: 32, frameHeight: 32 });

@@ -9,6 +9,9 @@ type EditorEntity = {
     gameObject: Phaser.GameObjects.Image | Platform;
 }
 
+type compDir = 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
+
+
 const redTint = 0xff0000;
 
 
@@ -26,11 +29,14 @@ export class Editor extends Scene {
     checkpoints: Phaser.GameObjects.Group;
     startFlag: Phaser.GameObjects.Image | null = null;
     endFlag: Phaser.GameObjects.Image | null = null;
+
+    deleteButton: Phaser.GameObjects.Image;
+
     // each world unit one full viewport
     worldWidthUnit: number = 1;
     worldHeightUnit: number = 1;
 
-    private selectedObject: Phaser.GameObjects.GameObject | null = null;
+    private selectedObject: Phaser.GameObjects.Image | Platform | null = null;
     private selectionOutline: Phaser.GameObjects.Graphics;
 
 
@@ -77,7 +83,49 @@ export class Editor extends Scene {
         // Scene-level pointerdown for deselection when clicking on empty space.
         this.input.on('pointerdown', () => this.deselectObject());
 
+        this.setUpDeleteButton();
+
         EventBus.emit('current-scene-ready', this);
+    }
+
+    /* --- SETUP HELPERS --- */
+    private setUpDeleteButton() {
+        this.deleteButton = this.add.image(0, 0, 'red-cross')
+            .setOrigin(0, 0)
+            .setDepth(100)
+            .setInteractive()
+            .setVisible(false);
+
+        this.deleteButton.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+            if (!this.selectedObject) return;
+
+            // can't delete platform if it has objects on it
+            if (this.selectedObject instanceof Platform) {
+                const objectsOnIt = this.getObjectsAbove(this.selectedObject);
+                if (objectsOnIt.size > 0) return;
+            }
+
+            // remove selected object from platform below
+            const platformsBelow = this.getPlatformsBelow(this.selectedObject);
+            platformsBelow.forEach(platformBelow => {
+                platformBelow.removeObjectOnIt(this.selectedObject!);
+            });
+
+            // remove from gameObjMap
+            this.updateGameObjMap({ entityType: 'platform', gameObject: this.selectedObject }, 'remove');
+
+            // destroy game object
+            this.selectedObject.destroy();
+
+            // deselect object
+            this.deselectObject();
+
+            // make deleteButton invisible and not clickable
+            this.deleteButton.setVisible(false);
+            this.deleteButton.disableInteractive();
+
+            event.stopPropagation();
+        });
     }
 
     update() {
@@ -224,7 +272,7 @@ export class Editor extends Scene {
 
     /* ---- SELECTION ---- */
 
-    private selectObject(obj: Phaser.GameObjects.GameObject) {
+    private selectObject(obj: Phaser.GameObjects.Image | Platform) {
         // Do nothing if the object is already selected
         if (this.selectedObject === obj) {
             return;
@@ -234,6 +282,7 @@ export class Editor extends Scene {
 
         this.selectedObject = obj;
         this.drawSelectionOutline();
+        this.drawDeleteButton(obj.getBounds());
     }
 
     private deselectObject() {
@@ -242,6 +291,9 @@ export class Editor extends Scene {
 
             this.selectionOutline.clear();
             this.selectionOutline.setVisible(false);
+
+            this.deleteButton.setVisible(false);
+            this.deleteButton.disableInteractive();
         }
     }
 
@@ -257,7 +309,6 @@ export class Editor extends Scene {
         this.selectionOutline.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
         this.selectionOutline.setVisible(true);
     }
-
 
 
     private handleObjectDrag(object: Phaser.GameObjects.Image | Platform, entityType: EntityType) {
@@ -355,7 +406,7 @@ export class Editor extends Scene {
 
     private getPlatformsBelow(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Platform> {
         const platformsBelow: Set<Platform> = new Set();
-        
+
         if (rect.y === this.canvasHeight() * this.worldHeightUnit - TILE_SIZE) {
             return platformsBelow;
         }
@@ -452,5 +503,81 @@ export class Editor extends Scene {
                 }
             }
         }
+    }
+
+    /**
+     * Calculates the position of a rectangle relative to the camera's viewport edges.
+     * This is used to determine if the rectangle is at the north, south, east, west, or a corner of the viewport.
+     * @param rect The rectangle-like object to check. Can be a `Phaser.Geom.Rectangle`, `Phaser.GameObjects.Image`, or `Platform`.
+     * @returns A string representing the position ('n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw') or `null` if the rectangle is not at an edge.
+     */
+    private getViewportEdgeAlignment(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): compDir | null {
+        const camera = this.cameras.main;
+
+        const viewportWidth = camera.width;
+        const viewportHeight = camera.height;
+
+        const x = rect.x - camera.scrollX;
+        const y = rect.y - camera.scrollY;
+
+        if (y === 0) {
+            if (x === 0) return 'nw';
+            else if (x === viewportWidth - rect.width) return 'ne';
+            else return 'n';
+        }
+
+        if (y === viewportHeight - rect.height) {
+            if (x === 0) return 'sw';
+            else if (x === viewportWidth - rect.width) return 'se';            
+            else return 's';
+        }
+
+        if (x === 0) return 'w';
+        else if (x === viewportWidth - rect.width) return 'e';
+        return null;
+    }
+
+    private drawDeleteButton(rect: Phaser.Geom.Rectangle) {
+        const edgeAlignment = this.getViewportEdgeAlignment(rect);
+        
+        const buttonCoordinates = {
+            'nw': {x: rect.x - TILE_SIZE, y: rect.y - TILE_SIZE},
+            'ne': {x: rect.x + rect.width, y: rect.y - TILE_SIZE},
+            'sw': {x: rect.x - TILE_SIZE, y: rect.y + rect.height},
+            'se': {x: rect.x + rect.width, y: rect.y + rect.height}
+        }
+
+        if (!edgeAlignment) {
+            this.deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y).setVisible(true).setInteractive();
+            return;
+        }
+
+        switch (edgeAlignment) {
+            case 'nw':
+                this.deleteButton.setX(buttonCoordinates.se.x).setY(buttonCoordinates.se.y);
+                break;
+            case 'n':
+                this.deleteButton.setX(buttonCoordinates.sw.x).setY(buttonCoordinates.sw.y);
+                break;
+            case 'ne':
+                this.deleteButton.setX(buttonCoordinates.sw.x).setY(buttonCoordinates.sw.y);
+                break;
+            case 'w':
+                this.deleteButton.setX(buttonCoordinates.ne.x).setY(buttonCoordinates.ne.y);
+                break;
+            case 'e':
+                this.deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y);
+                break;
+            case 'sw':
+                this.deleteButton.setX(buttonCoordinates.ne.x).setY(buttonCoordinates.ne.y);
+                break;
+            case 's':
+                this.deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y);
+                break;
+            case 'se':
+                this.deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y)
+                break;
+        }
+        this.deleteButton.setVisible(true).setInteractive();
     }
 }
