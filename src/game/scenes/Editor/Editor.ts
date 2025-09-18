@@ -26,6 +26,9 @@ export class Editor extends Scene {
     checkpoints: Phaser.GameObjects.Group;
     startFlag: Phaser.GameObjects.Image | null = null;
     endFlag: Phaser.GameObjects.Image | null = null;
+    // each world unit one full viewport
+    worldWidthUnit: number = 1;
+    worldHeightUnit: number = 1;
 
     private selectedObject: Phaser.GameObjects.GameObject | null = null;
     private selectionOutline: Phaser.GameObjects.Graphics;
@@ -115,6 +118,8 @@ export class Editor extends Scene {
         this.physics.world.setBounds(0, 0, width, height);
         this.grid.width = width;
         this.grid.height = height;
+        this.worldWidthUnit = worldWidthUnit;
+        this.worldHeightUnit = worldHeightUnit;
     }
 
     private canvasWidth(): number {
@@ -317,7 +322,7 @@ export class Editor extends Scene {
                     this.updateGameObjMap({ entityType: entityType, gameObject: object }, 'remove');
                     object.x = ghostDrag!.x;
                     object.y = ghostDrag!.y;
-                    
+
                     this.updateGameObjMap({ entityType: entityType, gameObject: object }, 'add');
 
                     // if there was a platform below before the drag - remove this object from its objectsOnIt set
@@ -350,6 +355,10 @@ export class Editor extends Scene {
 
     private getPlatformsBelow(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Platform> {
         const platformsBelow: Set<Platform> = new Set();
+        
+        if (rect.y === this.canvasHeight() * this.worldHeightUnit - TILE_SIZE) {
+            return platformsBelow;
+        }
 
         let y = rect.y + rect.height;
         for (let x = rect.x; x < rect.x + rect.width; x += TILE_SIZE) {
@@ -364,9 +373,9 @@ export class Editor extends Scene {
     }
 
     private getObjectsAbove(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Phaser.GameObjects.Image | Platform> {
-        if (rect.y === 0) return new Set();
-        
         const platformsAbove: Set<Phaser.GameObjects.Image | Platform> = new Set();
+
+        if (rect.y === 0) return platformsAbove;
 
         let y = rect.y - TILE_SIZE;
         for (let x = rect.x; x < rect.x + rect.width; x += TILE_SIZE) {
@@ -376,7 +385,7 @@ export class Editor extends Scene {
                 platformsAbove.add(editorEntity.gameObject);
             }
         }
-        
+
         return platformsAbove;
     }
 
@@ -403,8 +412,8 @@ export class Editor extends Scene {
 
         if (requirePlatformBelow) {
             const platformsBelow = this.getPlatformsBelow(rect);
-            if (platformsBelow.size === 0) { 
-                return false; 
+            if (platformsBelow.size === 0) {
+                return false;
             }
         }
         return true;
@@ -424,12 +433,12 @@ export class Editor extends Scene {
         return false;
     }
 
-        /**
-     * Adds or removes the occuptions of the tiles in the game object map.
-     *
-     * @param editorEntity The entity to add or remove from the map.
-     * @param operation Whether to 'add' or 'remove' the entity from the map.
-     */
+    /**
+ * Adds or removes the occuptions of the tiles in the game object map.
+ *
+ * @param editorEntity The entity to add or remove from the map.
+ * @param operation Whether to 'add' or 'remove' the entity from the map.
+ */
     private updateGameObjMap(editorEntity: EditorEntity, operation: 'add' | 'remove') {
         const gameObject = editorEntity.gameObject;
 
