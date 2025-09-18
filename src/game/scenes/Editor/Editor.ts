@@ -126,35 +126,64 @@ export class Editor extends Scene {
     }
 
     private addEntity({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
-        const topLeftSnappedPos: Phaser.Math.Vector2 = this.getSnappedCellPosition(x, y);
+        const snappedPos = this.getSnappedCellPosition(x, y);
+        // calculating logical rectangle based on entity type
+        let geomRect: Phaser.Geom.Rectangle;
+        if (entityType === 'platform' || entityType === 'enemy' || entityType === 'coin') {
+            geomRect = new Phaser.Geom.Rectangle(snappedPos.x, snappedPos.y, TILE_SIZE, TILE_SIZE);
+        }
+        else {
+            geomRect = new Phaser.Geom.Rectangle(snappedPos.x, snappedPos.y, TILE_SIZE, TILE_SIZE * 2);
+        }
 
-        const posKey = Editor.getPositionKey(topLeftSnappedPos);
-        if (this.gameObjMap.has(posKey)) { return; } // already occupied
+        if (!this.canObjectBePlaced(geomRect, entityType)) return;
 
+        let gameObject: Phaser.GameObjects.Image | Platform;
         switch (entityType) {
             case 'platform':
-                this.addPlatform(topLeftSnappedPos)
+                gameObject = new Platform(this, geomRect.x, geomRect.y, geomRect.width, geomRect.height);
+                const objectsOnIt = this.getObjectsAbove(gameObject);
+                objectsOnIt.forEach(objectOnIt => {
+                    (gameObject as Platform).addObjectOnIt(objectOnIt);
+                });
                 break;
             case 'enemy':
-                this.addEnemy(topLeftSnappedPos);
+                gameObject = this.add.image(geomRect.x, geomRect.y, entityType, 1).setOrigin(0, 0);
                 break;
             case 'coin':
-                this.addCoin(topLeftSnappedPos);
+                gameObject = this.add.image(geomRect.x, geomRect.y, entityType).setOrigin(0, 0);
                 break;
-            default:
-                // default: it's a flag type ('checkpoint', 'start-flag', 'end-flag')
-                this.addFlag(entityType, topLeftSnappedPos);
+            case 'checkpoint':
+                gameObject = this.add.image(geomRect.x, geomRect.y, 'checkpoint-flag', 4).setOrigin(0, 0);
                 break;
-
+            case 'start-flag':
+                gameObject = this.add.image(geomRect.x, geomRect.y, entityType).setOrigin(0, 0);
+                this.startFlag = gameObject;
+                break;
+            case 'end-flag':
+                gameObject = this.add.image(geomRect.x, geomRect.y, entityType).setOrigin(0, 0);
+                this.endFlag = gameObject;
+                break;
         }
-    }
 
-    /* Test method to visualize entity placement and grid snapping */
-    private addEntityTest({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
-        const topLeftSnappedPos: Phaser.Math.Vector2 = this.getSnappedCellPosition(x, y);
-        //this.add.rectangle(topLeftSnappedPos.x, topLeftSnappedPos.y, TILE_SIZE, TILE_SIZE, 0xff0000, 0.5).setOrigin(0, 0);
-        //const flag = this.add.sprite(topLeftSnappedPos.x, topLeftSnappedPos.y, 'checkpoint-flag').setOrigin(0,0);
-        this.add.image(topLeftSnappedPos.x, topLeftSnappedPos.y, 'end-flag').setOrigin(0, 0);
+        if (entityType !== 'platform') {
+            gameObject.setInteractive({ draggable: true })
+        }
+
+        gameObject.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+            this.selectObject(gameObject);
+            event.stopPropagation();
+        });
+
+        this.handleObjectDrag(gameObject, entityType);
+
+        this.updateGameObjMap({ entityType: entityType, gameObject: gameObject }, 'add');
+
+        // if there is a platform below - add this platform to its objectsOnIt set
+        const platformsBelow = this.getPlatformsBelow(gameObject);
+        platformsBelow.forEach(platformBelow => {
+            platformBelow.addObjectOnIt(gameObject);
+        });
     }
 
     /**
@@ -188,118 +217,6 @@ export class Editor extends Scene {
         this.checkpoints = this.add.group();
     }
 
-    /* ---- ADD ENTITY METHODS ---- */
-    private addPlatform(pos: Phaser.Math.Vector2) {
-        const platform = new Platform(this, pos.x, pos.y, TILE_SIZE, TILE_SIZE);
-        this.platforms.add(platform);
-        // Platform is made interactive in its own constructor to ensure correct hit area.
-
-        platform.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-            this.selectObject(platform);
-            event.stopPropagation(); // Prevent scene-level listener from firing.
-        });
-
-        this.handleObjectDrag(platform, 'platform');
-
-        const posKey = Editor.getPositionKey(pos);
-        this.gameObjMap.set(posKey, { entityType: 'platform', gameObject: platform });
-
-        // if there is a platform below - add this platform to its objectsOnIt set
-        const platformsBelow = this.getPlatformsBelow(platform);
-        platformsBelow.forEach(platformBelow => {
-            platformBelow.addObjectOnIt(platform);
-        });
-    }
-
-    private addEnemy(pos: Phaser.Math.Vector2) {
-        if (this.canObjectBePlaced(new Phaser.Geom.Rectangle(pos.x, pos.y, TILE_SIZE, TILE_SIZE), true)) {
-            // platform below - add enemy
-            const enemy = this.add.image(pos.x, pos.y, 'enemy', 1).setOrigin(0, 0);
-            this.enemies.add(enemy);
-
-            enemy.setInteractive({ draggable: true }).on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-                this.selectObject(enemy);
-                event.stopPropagation();
-            });
-
-            this.handleObjectDrag(enemy, 'enemy');
-
-            const posKey = Editor.getPositionKey(pos);
-            this.gameObjMap.set(posKey, { entityType: 'enemy', gameObject: enemy });
-
-            // if there is a platform below - add this platform to its objectsOnIt set
-            const platformsBelow = this.getPlatformsBelow(enemy);
-            platformsBelow.forEach(platformBelow => {
-                platformBelow.addObjectOnIt(enemy);
-            });
-        }
-    }
-
-    private addCoin(pos: Phaser.Math.Vector2) {
-        const coin = this.add.image(pos.x, pos.y, 'coin').setOrigin(0, 0);
-        this.coins.add(coin);
-
-        coin.setInteractive({ draggable: true }).on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-            this.selectObject(coin);
-            event.stopPropagation();
-        });
-
-        this.handleObjectDrag(coin, 'coin');
-
-        const posKey = Editor.getPositionKey(pos);
-        this.gameObjMap.set(posKey, { entityType: 'coin', gameObject: coin });
-
-        // if there is a platform below - add this platform to its objectsOnIt set
-        const platformsBelow = this.getPlatformsBelow(coin);
-        platformsBelow.forEach(platformBelow => {
-            platformBelow.addObjectOnIt(coin);
-        });
-    }
-
-    private addFlag(flagType: 'checkpoint' | 'start-flag' | 'end-flag', pos: Phaser.Math.Vector2) {
-        if ((flagType === 'start-flag' && this.startFlag) || (flagType === 'end-flag' && this.endFlag)) {
-            return; // already exists
-        }
-
-        if (!this.canObjectBePlaced(new Phaser.Geom.Rectangle(pos.x, pos.y, TILE_SIZE, TILE_SIZE * 2), true)) return;
-
-        const flagImage = this.getFlagImage(flagType, pos);
-
-        switch (flagType) {
-            case 'checkpoint':
-                this.add.existing(flagImage);
-                this.checkpoints.add(flagImage);
-                break;
-            case 'start-flag':
-                this.add.existing(flagImage);
-                this.startFlag = flagImage;
-                break;
-            case 'end-flag':
-                this.add.existing(flagImage);
-                this.endFlag = flagImage;
-                break;
-        }
-
-
-        flagImage.setInteractive({ draggable: true }).on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-            this.selectObject(flagImage);
-            event.stopPropagation();
-        });
-
-        this.handleObjectDrag(flagImage, flagType);
-
-        const posKeyTop = Editor.getPositionKey(pos);
-        const posKeyBottom = Editor.getPositionKey(new Phaser.Math.Vector2(pos.x, pos.y + TILE_SIZE));
-        this.gameObjMap.set(posKeyTop, { entityType: flagType, gameObject: flagImage });
-        this.gameObjMap.set(posKeyBottom, { entityType: flagType, gameObject: flagImage });
-
-        // if there is a platform below - add this platform to its objectsOnIt set
-        const platformsBelow = this.getPlatformsBelow(flagImage);
-        platformsBelow.forEach(platformBelow => {
-            platformBelow.addObjectOnIt(flagImage);
-        });
-    }
-
     /* ---- SELECTION ---- */
 
     private selectObject(obj: Phaser.GameObjects.GameObject) {
@@ -315,14 +232,9 @@ export class Editor extends Scene {
     }
 
     private deselectObject() {
-        //debug
-        console.log('occupied tiles:');
-        console.log(this.gameObjMap.keys());
-        //end debug
-
         if (this.selectedObject) {
             this.selectedObject = null;
-            // It's good practice to both clear and hide the graphics object.
+
             this.selectionOutline.clear();
             this.selectionOutline.setVisible(false);
         }
@@ -341,19 +253,27 @@ export class Editor extends Scene {
         this.selectionOutline.setVisible(true);
     }
 
-    /* ---- HANDLE OBJECT DRAGGING ---- */
+
+
     private handleObjectDrag(object: Phaser.GameObjects.Image | Platform, entityType: EntityType) {
         let ghostDrag: Phaser.GameObjects.Image | Platform | null = null;
         let platformsBelowBeforeDrag: Set<Platform>;
+
+        let tempStartFlag: Phaser.GameObjects.Image | null;
+        let tempEndFlag: Phaser.GameObjects.Image | null;
+
 
         // Drag events
         object.on(
             "dragstart",
             (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
-                platformsBelowBeforeDrag = this.getPlatformsBelow(object);
+                // used to avoid placement logic check errors
+                tempStartFlag = this.startFlag;
+                tempEndFlag = this.endFlag;
+                this.startFlag = null;
+                this.endFlag = null;
 
-                // ghostDrag = entityType === 'platform' ? ghostDrag = new Platform(this, object.x, object.y, object.width, object.height) :
-                //     this.add.image(object.x, object.y, entityType).setOrigin(0, 0);
+                platformsBelowBeforeDrag = this.getPlatformsBelow(object);
 
                 if (entityType === 'platform') {
                     ghostDrag = new Platform(this, object.x, object.y, object.width, object.height)
@@ -378,11 +298,7 @@ export class Editor extends Scene {
                 ghostDrag!.x = snappedPos.x;
                 ghostDrag!.y = snappedPos.y;
 
-                let requirePlatformBelow = false;
-                if (entityType === 'enemy' || entityType === 'checkpoint' || entityType === 'start-flag' || entityType === 'end-flag') {
-                    requirePlatformBelow = true;
-                }
-                if (!this.canObjectBePlaced(ghostDrag!, requirePlatformBelow)) {
+                if (!this.canObjectBePlaced(ghostDrag!, entityType)) {
                     ghostDrag!.setTint(redTint);
                 }
                 else {
@@ -398,12 +314,11 @@ export class Editor extends Scene {
                 }
                 else {
                     // valid position - move the enemy and update the map
-                    const oldPosKey = Editor.getPositionKey(new Phaser.Math.Vector2(object.x, object.y));
-                    this.gameObjMap.delete(oldPosKey);
+                    this.updateGameObjMap({ entityType: entityType, gameObject: object }, 'remove');
                     object.x = ghostDrag!.x;
                     object.y = ghostDrag!.y;
-                    const newPosKey = Editor.getPositionKey(new Phaser.Math.Vector2(object.x, object.y));
-                    this.gameObjMap.set(newPosKey, { entityType: entityType, gameObject: object });
+                    
+                    this.updateGameObjMap({ entityType: entityType, gameObject: object }, 'add');
 
                     // if there was a platform below before the drag - remove this object from its objectsOnIt set
                     platformsBelowBeforeDrag.forEach(platformBelow => {
@@ -414,16 +329,25 @@ export class Editor extends Scene {
                     platformsBelowAfterDrag.forEach(platformBelow => {
                         platformBelow.addObjectOnIt(object);
                     });
+                    // if it's a platform add objects above it
+                    if (entityType === 'platform') {
+                        const objectsAbove = this.getObjectsAbove(object);
+                        objectsAbove.forEach(objectAbove => {
+                            (object as Platform).addObjectOnIt(objectAbove);
+                        });
+                    }
                 }
                 ghostDrag!.destroy();
                 ghostDrag = null;
                 this.selectObject(object);
+                this.startFlag = tempStartFlag;
+                this.endFlag = tempEndFlag;
             }
         );
     }
 
     /* ---- HELPERS ---- */
-    
+
     private getPlatformsBelow(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Platform> {
         const platformsBelow: Set<Platform> = new Set();
 
@@ -439,19 +363,49 @@ export class Editor extends Scene {
         return platformsBelow;
     }
 
+    private getObjectsAbove(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Phaser.GameObjects.Image | Platform> {
+        if (rect.y === 0) return new Set();
+        
+        const platformsAbove: Set<Phaser.GameObjects.Image | Platform> = new Set();
 
-    private getFlagImage(flagType: 'checkpoint' | 'start-flag' | 'end-flag', pos: Phaser.Math.Vector2) {
+        let y = rect.y - TILE_SIZE;
+        for (let x = rect.x; x < rect.x + rect.width; x += TILE_SIZE) {
+            const posAboveRectKey = Editor.getPositionKey(new Phaser.Math.Vector2(x, y));
+            const editorEntity = this.gameObjMap.get(posAboveRectKey);
+            if (editorEntity) {
+                platformsAbove.add(editorEntity.gameObject);
+            }
+        }
+        
+        return platformsAbove;
+    }
+
+
+    private getFlagImage(flagType: 'checkpoint' | 'start-flag' | 'end-flag', pos: Phaser.Math.Vector2): Phaser.GameObjects.Image {
         if (flagType === 'checkpoint')
             return new Phaser.GameObjects.Image(this, pos.x, pos.y, 'checkpoint-flag', 4).setOrigin(0, 0);
         return new Phaser.GameObjects.Image(this, pos.x, pos.y, flagType).setOrigin(0, 0);
     }
 
 
-    private canObjectBePlaced(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform, requirePlatformBelow: boolean = false): boolean {
+    private canObjectBePlaced(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform, entityType: EntityType): boolean {
         if (this.isOverlapping(rect)) return false;
+
+        if ((entityType === 'start-flag' && this.startFlag) || (entityType === 'end-flag' && this.endFlag)) {
+            return false; //can only be one start/end flag
+        }
+
+        let requirePlatformBelow = true;
+
+        if (entityType === 'coin' || entityType === 'platform') {
+            requirePlatformBelow = false;
+        }
+
         if (requirePlatformBelow) {
             const platformsBelow = this.getPlatformsBelow(rect);
-            if (platformsBelow.size === 0) return false;
+            if (platformsBelow.size === 0) { 
+                return false; 
+            }
         }
         return true;
     }
@@ -470,32 +424,24 @@ export class Editor extends Scene {
         return false;
     }
 
+        /**
+     * Adds or removes the occuptions of the tiles in the game object map.
+     *
+     * @param editorEntity The entity to add or remove from the map.
+     * @param operation Whether to 'add' or 'remove' the entity from the map.
+     */
+    private updateGameObjMap(editorEntity: EditorEntity, operation: 'add' | 'remove') {
+        const gameObject = editorEntity.gameObject;
 
-
-
-
-
-
-
-
-
-
-    //todo: make generic add entity method
-
-
-
-
-
-
-
-    // private createCompositePlatform(x: number, y: number, width: number, height: number) {
-    //     const myPlatform = new Platform(this, x, y, width, height);
-
-    //     // IMPORTANT: You make the CONTAINER interactive, not its children.
-    //     // myPlatform.setInteractive();
-    //     // this.input.setDraggable(myPlatform);
-
-    //     // Add it to your data model just like before
-    //     // (You'd add properties to the Platform class or manage it in a separate data object)
-    // }
+        for (let x = gameObject.x; x < gameObject.x + gameObject.width; x += TILE_SIZE) {
+            for (let y = gameObject.y; y < gameObject.y + gameObject.height; y += TILE_SIZE) {
+                if (operation === 'add') {
+                    this.gameObjMap.set(Editor.getPositionKey(new Phaser.Math.Vector2(x, y)), editorEntity);
+                }
+                else {
+                    this.gameObjMap.delete(Editor.getPositionKey(new Phaser.Math.Vector2(x, y)));
+                }
+            }
+        }
+    }
 }
