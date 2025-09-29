@@ -74,12 +74,14 @@ export default class Platform extends Phaser.GameObjects.Container {
         this.tint = color;
         this.topLayer.setTint(color);
         this.fillLayer.setTint(color);
+        return this;
     }
 
     clearTint() {
         this.tint = null;
         this.topLayer.clearTint();
         this.fillLayer.clearTint();
+        return this;
     }
 
     addObjectOnIt(object: Phaser.GameObjects.GameObject) {
