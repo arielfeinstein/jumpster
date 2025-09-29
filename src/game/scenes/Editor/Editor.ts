@@ -324,7 +324,7 @@ export class Editor extends Scene {
         this.selectionOutline.setVisible(true);
     }
 
-
+    //todo (optional): make dragging more convinient for platforms (when a platform is big you have to move the entire thing otherwise its going to overlap)
     private handleObjectDrag(object: Phaser.GameObjects.Image | Platform, entityType: EntityType) {
         let ghostDrag: Phaser.GameObjects.Image | Platform | null = null;
         let platformsBelowBeforeDrag: Set<Platform>;
@@ -713,12 +713,12 @@ export class Editor extends Scene {
                     }
                     break;
                 case 'ne':
-                    if (snappedX > platformLeft && snappedY < platformBottom) {
+                    if (snappedX >= platformLeft && snappedY < platformBottom) {
                         return {
                             showGhost: true,
                             x: platformLeft,
                             y: snappedY,
-                            width: snappedX - platformLeft,
+                            width: snappedX - platformLeft + TILE_SIZE,
                             height: platformBottom - snappedY
                         }
                     }
@@ -735,46 +735,46 @@ export class Editor extends Scene {
                     }
                     break;
                 case 'e':
-                    if (snappedX > platformLeft) {
+                    if (snappedX >= platformLeft) {
                         return {
                             showGhost: true,
                             x: platformLeft,
                             y: platformTop,
-                            width: snappedX - platformLeft,
+                            width: snappedX - platformLeft + TILE_SIZE,
                             height: platformHeight
                         }
                     }
                     break;
                 case 'sw':
-                    if (snappedX < platformRight && snappedY > platformTop) {
+                    if (snappedX < platformRight && snappedY >= platformTop) {
                         return {
                             showGhost: true,
                             x: snappedX,
                             y: platformTop,
                             width: platformRight - snappedX,
-                            height: snappedY - platformTop
+                            height: snappedY - platformTop + TILE_SIZE
                         }
                     }
                     break;
                 case 's':
-                    if (snappedY > platformTop) {
+                    if (snappedY >= platformTop) {
                         return {
                             showGhost: true,
                             x: platformLeft,
                             y: platformTop,
                             width: platformWidth,
-                            height: snappedY - platformTop
+                            height: snappedY - platformTop + TILE_SIZE
                         }
                     }
                     break;
                 case 'se':
-                    if (snappedX > platformLeft && snappedY > platformTop) {
+                    if (snappedX >= platformLeft && snappedY >= platformTop) {
                         return {
                             showGhost: true,
                             x: platformLeft,
                             y: platformTop,
-                            width: snappedX - platformLeft,
-                            height: snappedY - platformTop
+                            width: snappedX - platformLeft + TILE_SIZE,
+                            height: snappedY - platformTop + TILE_SIZE
                         }
                     }
                     break;
