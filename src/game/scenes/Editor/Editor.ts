@@ -9,10 +9,10 @@ type EditorEntity = {
     gameObject: Phaser.GameObjects.Image | Platform;
 }
 
-type compDir = 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
+type cardinalDir = 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
 
 
-const redTint = 0xff0000;
+const RED_TINT = 0xff0000;
 
 
 export class Editor extends Scene {
@@ -31,6 +31,8 @@ export class Editor extends Scene {
     endFlag: Phaser.GameObjects.Image | null = null;
 
     deleteButton: Phaser.GameObjects.Image;
+
+    sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics> = new Map();
 
     // each world unit one full viewport
     worldWidthUnit: number = 1;
@@ -83,13 +85,15 @@ export class Editor extends Scene {
         // Scene-level pointerdown for deselection when clicking on empty space.
         this.input.on('pointerdown', () => this.deselectObject());
 
-        this.setUpDeleteButton();
+        this.setupDeleteButton();
+
+        this.setupSizingHandles();
 
         EventBus.emit('current-scene-ready', this);
     }
 
     /* --- SETUP HELPERS --- */
-    private setUpDeleteButton() {
+    private setupDeleteButton() {
         this.deleteButton = this.add.image(0, 0, 'red-cross')
             .setOrigin(0, 0)
             .setDepth(100)
@@ -125,6 +129,14 @@ export class Editor extends Scene {
             this.deleteButton.disableInteractive();
 
             event.stopPropagation();
+        });
+    }
+
+    private setupSizingHandles() {
+        const dirs: cardinalDir[] = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
+        dirs.forEach(dir => {
+            const handle = this.add.graphics().setDepth(150).setVisible(false);
+            this.sizingHandles.set(dir, handle);
         });
     }
 
@@ -283,6 +295,7 @@ export class Editor extends Scene {
         this.selectedObject = obj;
         this.drawSelectionOutline();
         this.drawDeleteButton(obj.getBounds());
+        this.drawSizingHandles(obj);
     }
 
     private deselectObject() {
@@ -294,6 +307,7 @@ export class Editor extends Scene {
 
             this.deleteButton.setVisible(false);
             this.deleteButton.disableInteractive();
+            this.clearSizingHanles();
         }
     }
 
@@ -355,7 +369,7 @@ export class Editor extends Scene {
                 ghostDrag!.y = snappedPos.y;
 
                 if (!this.canObjectBePlaced(ghostDrag!, entityType)) {
-                    ghostDrag!.setTint(redTint);
+                    ghostDrag!.setTint(RED_TINT);
                 }
                 else {
                     ghostDrag!.clearTint();
@@ -365,7 +379,7 @@ export class Editor extends Scene {
         object.on(
             "dragend",
             (pointer: Phaser.Input.Pointer, dragX: number, dragY: number, dropped: boolean) => {
-                if (ghostDrag!.tint === redTint) {
+                if (ghostDrag!.tint === RED_TINT) {
                     // invalid position - do nothing
                 }
                 else {
@@ -449,7 +463,9 @@ export class Editor extends Scene {
 
 
     private canObjectBePlaced(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform, entityType: EntityType): boolean {
-        if (this.isOverlapping(rect)) return false;
+        if (this.isOverlapping(rect)) { 
+            return false;
+        }
 
         if ((entityType === 'start-flag' && this.startFlag) || (entityType === 'end-flag' && this.endFlag)) {
             return false; //can only be one start/end flag
@@ -511,7 +527,7 @@ export class Editor extends Scene {
      * @param rect The rectangle-like object to check. Can be a `Phaser.Geom.Rectangle`, `Phaser.GameObjects.Image`, or `Platform`.
      * @returns A string representing the position ('n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw') or `null` if the rectangle is not at an edge.
      */
-    private getViewportEdgeAlignment(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): compDir | null {
+    private getViewportEdgeAlignment(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): cardinalDir | null {
         const camera = this.cameras.main;
 
         const viewportWidth = camera.width;
@@ -528,7 +544,7 @@ export class Editor extends Scene {
 
         if (y === viewportHeight - rect.height) {
             if (x === 0) return 'sw';
-            else if (x === viewportWidth - rect.width) return 'se';            
+            else if (x === viewportWidth - rect.width) return 'se';
             else return 's';
         }
 
@@ -539,12 +555,12 @@ export class Editor extends Scene {
 
     private drawDeleteButton(rect: Phaser.Geom.Rectangle) {
         const edgeAlignment = this.getViewportEdgeAlignment(rect);
-        
+
         const buttonCoordinates = {
-            'nw': {x: rect.x - TILE_SIZE, y: rect.y - TILE_SIZE},
-            'ne': {x: rect.x + rect.width, y: rect.y - TILE_SIZE},
-            'sw': {x: rect.x - TILE_SIZE, y: rect.y + rect.height},
-            'se': {x: rect.x + rect.width, y: rect.y + rect.height}
+            'nw': { x: rect.x - TILE_SIZE, y: rect.y - TILE_SIZE },
+            'ne': { x: rect.x + rect.width, y: rect.y - TILE_SIZE },
+            'sw': { x: rect.x - TILE_SIZE, y: rect.y + rect.height },
+            'se': { x: rect.x + rect.width, y: rect.y + rect.height }
         }
 
         if (!edgeAlignment) {
@@ -579,5 +595,263 @@ export class Editor extends Scene {
                 break;
         }
         this.deleteButton.setVisible(true).setInteractive();
+    }
+
+    private drawSizingHandles(obj: Phaser.GameObjects.Image | Platform) {
+        const handleSize = 6;
+        const handleOffset = handleSize / 2;
+
+        const positions: { [key in cardinalDir]: { x: number, y: number } } = {
+            nw: { x: obj.x, y: obj.y },
+            n: { x: obj.x + obj.width / 2, y: obj.y },
+            ne: { x: obj.x + obj.width, y: obj.y },
+            w: { x: obj.x, y: obj.y + obj.height / 2 },
+            e: { x: obj.x + obj.width, y: obj.y + obj.height / 2 },
+            sw: { x: obj.x, y: obj.y + obj.height },
+            s: { x: obj.x + obj.width / 2, y: obj.y + obj.height },
+            se: { x: obj.x + obj.width, y: obj.y + obj.height },
+        };
+
+        for (const [dir, handle] of this.sizingHandles.entries()) {
+            handle.removeAllListeners();
+            const pos = positions[dir];
+
+            handle.x = pos.x - handleOffset;
+            handle.y = pos.y - handleOffset;
+
+            handle.fillStyle(0xffffff, 1)
+                .fillRect(0, 0, handleSize, handleSize)
+                .setVisible(true)
+                .setInteractive({
+                    hitArea: new Phaser.Geom.Rectangle(0, 0, handleSize, handleSize),
+                    hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+                    draggable: true
+                });
+
+            handle.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+                event.stopPropagation();
+            });
+
+            this.handlePlatformResize(handle, dir);
+        }
+    }
+
+    private clearSizingHanles() {
+        for (const handle of this.sizingHandles.values()) {
+            handle.clear();
+            handle.setVisible(false);
+            handle.disableInteractive();
+        }
+    }
+
+    /**
+     * Sets up drag event listeners for a platform's sizing handle to allow interactive resizing.
+     *
+     * This method is called when creating the sizing handles for a selected platform. It attaches
+     * 'dragstart', 'drag', and 'dragend' listeners to a given handle.
+     *
+     * The drag behavior provides real-time visual feedback:
+     * - On 'dragstart', the platform becomes semi-transparent, and its original state is saved.
+     * - During 'drag', a "ghost" of the platform shows the new dimensions. The ghost is tinted red
+     *   if the new size/position is invalid (e.g., overlaps another object or would orphan an
+     *   object that was on top of it).
+     * - On 'dragend', if the final size is valid, the platform's properties are updated. If invalid,
+     *   the platform reverts to its original state.
+     *
+     * @param handle The Phaser.GameObjects.Graphics object representing the sizing handle being dragged.
+     * @param dir The cardinal direction ('nw', 'n', 'ne', etc.) of the handle, which determines the resize logic.
+     */
+    private handlePlatformResize(handle: Phaser.GameObjects.Graphics, dir: cardinalDir) {
+
+        if (!(this.selectedObject instanceof Platform)) return;        
+        
+        let platform: Platform;
+        let originalPlatformProperties: {x:number, y: number, width: number, height: number, objectOnTop: Set<Phaser.GameObjects.GameObject>};
+
+        /**
+         * Calculates the rendering properties for a "ghost" platform during a resize operation.
+         * This provides visual feedback to the user, showing what the new platform dimensions will be.
+         * The calculation depends on an external `dir` variable, which specifies the resize handle's direction (e.g., 'nw', 's', 'e').
+         *
+         * @param snappedX - The current grid-snapped X coordinate of the pointer.
+         * @param snappedY - The current grid-snapped Y coordinate of the pointer.
+         * @returns An object with properties for the ghost platform's position and size.
+         *          If the resize is invalid (e.g., dragging a top handle below the bottom edge),
+         *          it returns `{ showGhost: false }` to hide the ghost.
+         */
+        const calcPlatRenderProps = (snappedX: number, snappedY: number): { showGhost: boolean, x?: number, y?: number, width?: number, height?: number } => {
+
+            const platformLeft = this.selectedObject!.x;
+            const platformRight = this.selectedObject!.x + this.selectedObject!.width;
+            const platformTop = this.selectedObject!.y;
+            const platformBottom = this.selectedObject!.y + this.selectedObject!.height;
+            const platformWidth = this.selectedObject!.width;
+            const platformHeight = this.selectedObject!.height;
+
+            switch (dir) {
+                case 'nw':
+                    if (snappedX < platformRight && snappedY < platformBottom) {
+                        return {
+                            showGhost: true,
+                            x: snappedX,
+                            y: snappedY,
+                            width: platformRight - snappedX,
+                            height: platformBottom - snappedY
+                        };
+                    }
+                    break;
+                case 'n':
+                    if (snappedY < platformBottom) {
+                        return {
+                            showGhost: true,
+                            x: platformLeft,
+                            y: snappedY,
+                            width: platformWidth,
+                            height: platformBottom - snappedY
+
+                        }
+                    }
+                    break;
+                case 'ne':
+                    if (snappedX > platformLeft && snappedY < platformBottom) {
+                        return {
+                            showGhost: true,
+                            x: platformLeft,
+                            y: snappedY,
+                            width: snappedX - platformLeft,
+                            height: platformBottom - snappedY
+                        }
+                    }
+                    break;
+                case 'w':
+                    if (snappedX < platformRight) {
+                        return {
+                            showGhost: true,
+                            x: snappedX,
+                            y: platformTop,
+                            width: platformRight - snappedX,
+                            height: platformHeight
+                        }
+                    }
+                    break;
+                case 'e':
+                    if (snappedX > platformLeft) {
+                        return {
+                            showGhost: true,
+                            x: platformLeft,
+                            y: platformTop,
+                            width: snappedX - platformLeft,
+                            height: platformHeight
+                        }
+                    }
+                    break;
+                case 'sw':
+                    if (snappedX < platformRight && snappedY > platformTop) {
+                        return {
+                            showGhost: true,
+                            x: snappedX,
+                            y: platformTop,
+                            width: platformRight - snappedX,
+                            height: snappedY - platformTop
+                        }
+                    }
+                    break;
+                case 's':
+                    if (snappedY > platformTop) {
+                        return {
+                            showGhost: true,
+                            x: platformLeft,
+                            y: platformTop,
+                            width: platformWidth,
+                            height: snappedY - platformTop
+                        }
+                    }
+                    break;
+                case 'se':
+                    if (snappedX > platformLeft && snappedY > platformTop) {
+                        return {
+                            showGhost: true,
+                            x: platformLeft,
+                            y: platformTop,
+                            width: snappedX - platformLeft,
+                            height: snappedY - platformTop
+                        }
+                    }
+                    break;
+            }
+            return { showGhost: false };
+        }
+
+        handle.on(
+            "dragstart",
+            (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+                platform = this.selectedObject! as Platform;
+                platform.setAlpha(0.5);
+                this.updateGameObjMap({ entityType: 'platform', gameObject: platform! }, 'remove');
+                
+                // remove platform from the current platforms below
+                this.getPlatformsBelow(platform).forEach(platBelow => {
+                    platBelow.removeObjectOnIt(platform);
+                })
+
+                originalPlatformProperties = {
+                    x: platform.x,
+                    y: platform.y,
+                    width: platform.width,
+                    height: platform.height,
+                    objectOnTop: platform.getObjectsOnIt()
+                }
+            }
+        );
+        handle.on(
+            "drag",
+            (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+                const snappedPos = this.getSnappedCellPosition(pointer.worldX, pointer.worldY);
+                const renderProps = calcPlatRenderProps(snappedPos.x, snappedPos.y);
+                if (renderProps.showGhost) {
+                    platform.x = renderProps.x!;
+                    platform.y = renderProps.y!;
+                    platform.resize(renderProps.width!, renderProps.height!);
+                    platform.setObjectsOnIt(this.getObjectsAbove(platform));
+                    platform.setVisible(true);
+                    if (!this.canObjectBePlaced(platform,'platform') || platform.getObjectsOnIt().size < originalPlatformProperties.objectOnTop.size) {
+                        // cannot be placed - tint red 
+                        platform.setTint(RED_TINT);
+                    }
+                    else { 
+                        platform.clearTint();
+                    }
+                }
+                else {
+                    platform.setVisible(false);
+                }
+            }
+
+        );
+    
+        handle.on(
+            "dragend",
+            (pointer: Phaser.Input.Pointer, dragX: number, dragY: number, dropped: boolean) => {
+                this.deselectObject();
+
+                if (!platform.visible || platform.tint === RED_TINT) {
+                    // resize is illegal - restore to previous properties
+                    platform.x = originalPlatformProperties.x;
+                    platform.y = originalPlatformProperties.y;
+                    platform.resize(originalPlatformProperties.width, originalPlatformProperties.height);
+                    platform.setObjectsOnIt(originalPlatformProperties.objectOnTop);
+                }
+                
+                platform.setVisible(true).setAlpha(1).clearTint();
+                this.updateGameObjMap({ entityType: 'platform', gameObject: platform }, 'add');
+                
+                // add to platforms below the updated platform
+                this.getPlatformsBelow(platform).forEach((platformBelow) => {
+                    platformBelow.addObjectOnIt(platform);
+                })
+
+                this.selectObject(platform);
+            }
+        );
     }
 }
