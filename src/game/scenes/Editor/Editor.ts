@@ -4,6 +4,8 @@ import { EntityType } from './EditorUI';
 import { TILE_SIZE } from '../../config';
 import Platform from '../../gameObjects/Platform';
 
+// todo: implement multiple select and drag
+
 type EditorEntity = {
     entityType: EntityType;
     gameObject: Phaser.GameObjects.Image | Platform;
@@ -38,7 +40,7 @@ export class Editor extends Scene {
     worldWidthUnit: number = 1;
     worldHeightUnit: number = 1;
 
-    private selectedObject: Phaser.GameObjects.Image | Platform | null = null;
+    private selectedObjects: Set<Phaser.GameObjects.Image | Platform> = new Set();
     private selectionOutline: Phaser.GameObjects.Graphics;
 
 
@@ -101,25 +103,27 @@ export class Editor extends Scene {
             .setVisible(false);
 
         this.deleteButton.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-            if (!this.selectedObject) return;
+            if (this.selectedObjects.size === 0) return;
+
+            const selectedObject = this.selectedObjects.values().next().value;
 
             // can't delete platform if it has objects on it
-            if (this.selectedObject instanceof Platform) {
-                const objectsOnIt = this.getObjectsAbove(this.selectedObject);
+            if (selectedObject instanceof Platform) {
+                const objectsOnIt = this.getObjectsAbove(selectedObject);
                 if (objectsOnIt.size > 0) return;
             }
 
             // remove selected object from platform below
-            const platformsBelow = this.getPlatformsBelow(this.selectedObject);
+            const platformsBelow = this.getPlatformsBelow(selectedObject!);
             platformsBelow.forEach(platformBelow => {
-                platformBelow.removeObjectOnIt(this.selectedObject!);
+                platformBelow.removeObjectOnIt(selectedObject!);
             });
 
             // remove from gameObjMap
-            this.updateGameObjMap({ entityType: 'platform', gameObject: this.selectedObject }, 'remove');
+            this.updateGameObjMap({ entityType: 'platform', gameObject: selectedObject! }, 'remove');
 
             // destroy game object
-            this.selectedObject.destroy();
+            selectedObject!.destroy();
 
             // deselect object
             this.deselectObject();
@@ -285,22 +289,29 @@ export class Editor extends Scene {
     /* ---- SELECTION ---- */
 
     private selectObject(obj: Phaser.GameObjects.Image | Platform) {
+        const selectedObject = this.selectedObjects.values().next().value;
+        
         // Do nothing if the object is already selected
-        if (this.selectedObject === obj) {
+        if (selectedObject === obj) {
             return;
         }
 
         this.deselectObject(); // Deselect previous object first
 
-        this.selectedObject = obj;
+        // selectedObject = obj;
+        this.selectedObjects.delete(selectedObject!);
+        this.selectedObjects.add(obj);
         this.drawSelectionOutline();
         this.drawDeleteButton(obj.getBounds());
         this.drawSizingHandles(obj);
     }
 
     private deselectObject() {
-        if (this.selectedObject) {
-            this.selectedObject = null;
+        const selectedObject = this.selectedObjects.values().next().value;
+
+        if (selectedObject) {
+            // this.selectedObject = null;
+            this.selectedObjects.delete(selectedObject);
 
             this.selectionOutline.clear();
             this.selectionOutline.setVisible(false);
@@ -312,11 +323,11 @@ export class Editor extends Scene {
     }
 
     private drawSelectionOutline() {
-        if (!this.selectedObject) return;
+        if (this.selectedObjects.size === 0) return;
 
         this.selectionOutline.clear();
 
-        const obj = this.selectedObject as any;
+        const obj = this.selectedObjects.values().next().value as any;
         const bounds = new Phaser.Geom.Rectangle(obj.x, obj.y, obj.width, obj.height);
 
         this.selectionOutline.lineStyle(2, 0xffff00, 1);
@@ -463,7 +474,7 @@ export class Editor extends Scene {
 
 
     private canObjectBePlaced(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform, entityType: EntityType): boolean {
-        if (this.isOverlapping(rect)) { 
+        if (this.isOverlapping(rect)) {
             return false;
         }
 
@@ -662,11 +673,13 @@ export class Editor extends Scene {
      * @param dir The cardinal direction ('nw', 'n', 'ne', etc.) of the handle, which determines the resize logic.
      */
     private handlePlatformResize(handle: Phaser.GameObjects.Graphics, dir: cardinalDir) {
+        const selectedObject = this.selectedObjects.values().next().value;
 
-        if (!(this.selectedObject instanceof Platform)) return;        
-        
+
+        if (!(selectedObject instanceof Platform)) return;
+
         let platform: Platform;
-        let originalPlatformProperties: {x:number, y: number, width: number, height: number, objectOnTop: Set<Phaser.GameObjects.GameObject>};
+        let originalPlatformProperties: { x: number, y: number, width: number, height: number, objectOnTop: Set<Phaser.GameObjects.GameObject> };
 
         /**
          * Calculates the rendering properties for a "ghost" platform during a resize operation.
@@ -681,12 +694,12 @@ export class Editor extends Scene {
          */
         const calcPlatRenderProps = (snappedX: number, snappedY: number): { showGhost: boolean, x?: number, y?: number, width?: number, height?: number } => {
 
-            const platformLeft = this.selectedObject!.x;
-            const platformRight = this.selectedObject!.x + this.selectedObject!.width;
-            const platformTop = this.selectedObject!.y;
-            const platformBottom = this.selectedObject!.y + this.selectedObject!.height;
-            const platformWidth = this.selectedObject!.width;
-            const platformHeight = this.selectedObject!.height;
+            const platformLeft = selectedObject!.x;
+            const platformRight = selectedObject!.x + selectedObject!.width;
+            const platformTop = selectedObject!.y;
+            const platformBottom = selectedObject!.y + selectedObject!.height;
+            const platformWidth = selectedObject!.width;
+            const platformHeight = selectedObject!.height;
 
             switch (dir) {
                 case 'nw':
@@ -785,10 +798,10 @@ export class Editor extends Scene {
         handle.on(
             "dragstart",
             (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
-                platform = this.selectedObject! as Platform;
+                platform = selectedObject! as Platform;
                 platform.setAlpha(0.5);
                 this.updateGameObjMap({ entityType: 'platform', gameObject: platform! }, 'remove');
-                
+
                 // remove platform from the current platforms below
                 this.getPlatformsBelow(platform).forEach(platBelow => {
                     platBelow.removeObjectOnIt(platform);
@@ -814,11 +827,11 @@ export class Editor extends Scene {
                     platform.resize(renderProps.width!, renderProps.height!);
                     platform.setObjectsOnIt(this.getObjectsAbove(platform));
                     platform.setVisible(true);
-                    if (!this.canObjectBePlaced(platform,'platform') || platform.getObjectsOnIt().size < originalPlatformProperties.objectOnTop.size) {
+                    if (!this.canObjectBePlaced(platform, 'platform') || platform.getObjectsOnIt().size < originalPlatformProperties.objectOnTop.size) {
                         // cannot be placed - tint red 
                         platform.setTint(RED_TINT);
                     }
-                    else { 
+                    else {
                         platform.clearTint();
                     }
                 }
@@ -828,7 +841,7 @@ export class Editor extends Scene {
             }
 
         );
-    
+
         handle.on(
             "dragend",
             (pointer: Phaser.Input.Pointer, dragX: number, dragY: number, dropped: boolean) => {
@@ -841,10 +854,10 @@ export class Editor extends Scene {
                     platform.resize(originalPlatformProperties.width, originalPlatformProperties.height);
                     platform.setObjectsOnIt(originalPlatformProperties.objectOnTop);
                 }
-                
+
                 platform.setVisible(true).setAlpha(1).clearTint();
                 this.updateGameObjMap({ entityType: 'platform', gameObject: platform }, 'add');
-                
+
                 // add to platforms below the updated platform
                 this.getPlatformsBelow(platform).forEach((platformBelow) => {
                     platformBelow.addObjectOnIt(platform);
