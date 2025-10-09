@@ -1,10 +1,9 @@
 import Platform from '@/game/gameObjects/Platform';
 import Phaser, { Game } from 'phaser';
-import { cardinalDir, DRAG_THRESHOLD, getPositionKey, EditorEntity } from './Editor';
+import { cardinalDir, DRAG_THRESHOLD, getPositionKey, EditorEntity, GameObject } from './Editor';
 import ControllerEvents from './ControllerEvents';
 import { TILE_SIZE } from '@/game/config';
 
-type GameObject = Phaser.GameObjects.Image | Platform
 
 
 export default class SelectionController extends Phaser.Events.EventEmitter {
