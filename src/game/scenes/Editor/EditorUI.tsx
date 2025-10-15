@@ -112,7 +112,6 @@ function useEditorDrop(game: Phaser.Game) {
     return useDrop({
         accept: 'game-object',
         drop: (item: { entityType: EntityType }, monitor) => {
-            console.log('dropped', item);
             const clientOffset = monitor.getClientOffset();
             if (!clientOffset) return;
             const { world } = pageToPhaser(
@@ -120,7 +119,6 @@ function useEditorDrop(game: Phaser.Game) {
                 game,
                 game.scene.getScene('Editor').cameras.main
             );
-            console.log('world coords', world.x, world.y);
             EventBus.emit('editor-place-entity', {
                 entityType: item.entityType,
                 x: world.x,
@@ -173,7 +171,6 @@ function ChangeDimensionPopover() {
         const worldWidthUnit = parseInt(widthInputRef.current?.value || '0', 10);
         const worldHeightUnit = parseInt(heightInputRef.current?.value || '0', 10);
         EventBus.emit('editor-change-dimensions', { worldWidthUnit, worldHeightUnit });
-        console.log('Change dimensions to:', worldWidthUnit, worldHeightUnit);
     }
     
     return (
