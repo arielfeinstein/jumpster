@@ -39,6 +39,11 @@ function PaletteItem({ entityType, imgSrc }: { entityType: EntityType; imgSrc: s
     const [{ isDragging }, dragRef] = useDrag({
         type: 'game-object',
         item: { entityType },
+        end: (item, monitor) => {
+            if (!monitor.didDrop()) {
+                EventBus.emit('ui-drag-cancelled');
+            }
+        },
         collect: (monitor) => ({
             isDragging: monitor.isDragging()
         })
