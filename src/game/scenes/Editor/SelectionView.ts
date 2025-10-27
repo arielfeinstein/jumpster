@@ -1,4 +1,4 @@
-import { DimensionPos, GameObject, cardinalDir } from "./Editor";
+import { GameObject, cardinalDir } from "./Editor";
 import { TILE_SIZE } from '../../config';
 
 const selectionBoxConfig = {
@@ -14,7 +14,7 @@ const selectionOutlineConfig = {
     THICKNESS: 2
 } as const;
 
-const handleResizeConfig = {
+export const handleResizeConfig = {
     SIZE: 6,
     OFFSET: 3
 } as const;
@@ -26,11 +26,7 @@ export default class SelectionView {
     // related to selection box
     private selectionBoxGraphics: Phaser.GameObjects.Graphics;
 
-    private scene: Phaser.Scene;
-
     constructor(scene: Phaser.Scene) {
-        this.scene = scene;
-
         this.outlineGraphics = scene.add.graphics();
 
         this.selectionBoxGraphics = scene.add.graphics();
@@ -38,8 +34,8 @@ export default class SelectionView {
 
     /* ---- SELECTION BOX ---- */
 
-    drawSelectionBox(spec: DimensionPos) {
-        this.selectionBoxGraphics.clear()
+    drawSelectionBox(rect: Phaser.Geom.Rectangle): SelectionView {
+        this.selectionBoxGraphics.clear();
 
         // set fill style
         this.selectionBoxGraphics.fillStyle(selectionBoxConfig.FILL_COLOR, selectionBoxConfig.FILL_ALPHA);
@@ -48,56 +44,67 @@ export default class SelectionView {
         this.selectionBoxGraphics.lineStyle(2, selectionBoxConfig.LINE_COLOR, selectionBoxConfig.LINE_ALPHA);
 
         // draw
-        this.selectionBoxGraphics.fillRect(spec.x, spec.y, spec.width, spec.height);
-        this.selectionBoxGraphics.strokeRect(spec.x, spec.y, spec.width, spec.height);
+        this.selectionBoxGraphics.fillRect(rect.x, rect.y, rect.width, rect.height);
+        this.selectionBoxGraphics.strokeRect(rect.x, rect.y, rect.width, rect.height);
+        return this;
     }
 
-    clearSelectionBox() {
+    clearSelectionBox(): SelectionView {
         this.selectionBoxGraphics.clear();
+        return this;
     }
 
     /* ---- END SELECTION BOX ---- */
 
     /* ---- OBJECT HIGHLIGHT ---- */
 
-    private highlightObject(spec: GameObject | DimensionPos) {
+    private highlightRect(rect: GameObject | Phaser.Geom.Rectangle) {
         this.outlineGraphics.lineStyle(
             selectionOutlineConfig.THICKNESS,
             selectionOutlineConfig.LINE_COLOR,
             selectionOutlineConfig.ALPHA
         );
-        this.outlineGraphics.strokeRect(spec.x, spec.y, spec.width, spec.height);
+        this.outlineGraphics.strokeRect(rect.x, rect.y, rect.width, rect.height);
     }
 
-    drawSelectionOutlines(specs: Set<GameObject | DimensionPos>) {
+    drawSelectionOutlines(rects: Set<GameObject | Phaser.Geom.Rectangle>): SelectionView {
         this.outlineGraphics.clear();
 
-        specs.forEach((spec) => {
-            this.highlightObject(spec);
+        rects.forEach((rect) => {
+            this.highlightRect(rect);
         });
+        return this;
     }
 
-    clearSelectionOutlines() {
+    drawSelectionOutline(rect: GameObject | Phaser.Geom.Rectangle): SelectionView {
         this.outlineGraphics.clear();
+
+        this.highlightRect(rect);
+        return this;
+    }
+
+    clearSelectionOutlines(): SelectionView {
+        this.outlineGraphics.clear();
+        return this;
     }
 
     /* ---- END OBJECT HIGHLIGHT ---- */
 
     /* ---- DELETE BUTON ---- */
 
-    drawDeleteButton(rectSpec: DimensionPos, camera: Phaser.Cameras.Scene2D.Camera, deleteButton: Phaser.GameObjects.Image) {
-        const edgeAlignment = this.getViewportEdgeAlignment(rectSpec, camera);
+    drawDeleteButton(rect: Phaser.Geom.Rectangle, camera: Phaser.Cameras.Scene2D.Camera, deleteButton: Phaser.GameObjects.Image): SelectionView {
+        const edgeAlignment = this.getViewportEdgeAlignment(rect, camera);
 
         const buttonCoordinates = {
-            'nw': { x: rectSpec.x - TILE_SIZE, y: rectSpec.y - TILE_SIZE },
-            'ne': { x: rectSpec.x + rectSpec.width, y: rectSpec.y - TILE_SIZE },
-            'sw': { x: rectSpec.x - TILE_SIZE, y: rectSpec.y + rectSpec.height },
-            'se': { x: rectSpec.x + rectSpec.width, y: rectSpec.y + rectSpec.height }
+            'nw': { x: rect.x - TILE_SIZE, y: rect.y - TILE_SIZE },
+            'ne': { x: rect.x + rect.width, y: rect.y - TILE_SIZE },
+            'sw': { x: rect.x - TILE_SIZE, y: rect.y + rect.height },
+            'se': { x: rect.x + rect.width, y: rect.y + rect.height }
         }
 
         if (!edgeAlignment) {
             deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y).setVisible(true).setInteractive();
-            return;
+            return this;
         }
 
         switch (edgeAlignment) {
@@ -123,14 +130,16 @@ export default class SelectionView {
                 deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y);
                 break;
             case 'se':
-                deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y)
+                deleteButton.setX(buttonCoordinates.nw.x).setY(buttonCoordinates.nw.y);
                 break;
         }
         deleteButton.setVisible(true);
+        return this;
     }
 
-    hideDeleteButton(deleteButton: Phaser.GameObjects.Image) {
+    clearDeleteButton(deleteButton: Phaser.GameObjects.Image): SelectionView {
         deleteButton.setVisible(false);
+        return this;
     }
 
     /**
@@ -139,7 +148,7 @@ export default class SelectionView {
          * @param rect The rectangle-like object to check. Can be a `Phaser.Geom.Rectangle`, `Phaser.GameObjects.Image`, or `Platform`.
          * @returns A string representing the position ('n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw') or `null` if the rectangle is not at an edge.
     */
-    private getViewportEdgeAlignment(rect: DimensionPos | GameObject, camera: Phaser.Cameras.Scene2D.Camera): cardinalDir | null {
+    private getViewportEdgeAlignment(rect: Phaser.Geom.Rectangle | GameObject, camera: Phaser.Cameras.Scene2D.Camera): cardinalDir | null {
         const viewportWidth = camera.width;
         const viewportHeight = camera.height;
 
@@ -167,16 +176,16 @@ export default class SelectionView {
 
     /* ---- SIZING HANDLES ---- */
 
-    drawSizingHandles(rectSpec: GameObject | DimensionPos, sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics>) {
+    drawSizingHandles(rect: GameObject | Phaser.Geom.Rectangle, sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics>): SelectionView {
         const positions: { [key in cardinalDir]: { x: number, y: number } } = {
-            nw: { x: rectSpec.x, y: rectSpec.y },
-            n: { x: rectSpec.x + rectSpec.width / 2, y: rectSpec.y },
-            ne: { x: rectSpec.x + rectSpec.width, y: rectSpec.y },
-            w: { x: rectSpec.x, y: rectSpec.y + rectSpec.height / 2 },
-            e: { x: rectSpec.x + rectSpec.width, y: rectSpec.y + rectSpec.height / 2 },
-            sw: { x: rectSpec.x, y: rectSpec.y + rectSpec.height },
-            s: { x: rectSpec.x + rectSpec.width / 2, y: rectSpec.y + rectSpec.height },
-            se: { x: rectSpec.x + rectSpec.width, y: rectSpec.y + rectSpec.height },
+            nw: { x: rect.x, y: rect.y },
+            n: { x: rect.x + rect.width / 2, y: rect.y },
+            ne: { x: rect.x + rect.width, y: rect.y },
+            w: { x: rect.x, y: rect.y + rect.height / 2 },
+            e: { x: rect.x + rect.width, y: rect.y + rect.height / 2 },
+            sw: { x: rect.x, y: rect.y + rect.height },
+            s: { x: rect.x + rect.width / 2, y: rect.y + rect.height },
+            se: { x: rect.x + rect.width, y: rect.y + rect.height },
         };
 
         for (const [dir, handle] of sizingHandles.entries()) {
@@ -189,12 +198,14 @@ export default class SelectionView {
                 .fillRect(0, 0, handleResizeConfig.SIZE, handleResizeConfig.SIZE)
                 .setVisible(true);
         }
+        return this;
     }
 
-    hideSizingHandles(sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics>) {
+    clearSizingHandles(sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics>): SelectionView {
         for (const handle of sizingHandles.values()) {
             handle.setVisible(false);
         }
+        return this;
     }
 
     /* ---- END SIZING HANDLES ---- */

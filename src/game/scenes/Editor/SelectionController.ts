@@ -10,49 +10,49 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
     private scene: Phaser.Scene;
 
     private getObjectMap: () => Map<string, EditorEntity>;
-    private getSnappedCoord: (x: number, y: number) => { x: number, y: number };
-    private getHandleResizeSize: () => number;
+    private updateToSnappedCoord: (coord: Phaser.Math.Vector2) => void;
     private deleteObjects: (gameObjects: Set<GameObject>) => void;
-    private resizeSelectionRect: (x: number, y: number, width: number, height: number) => void;
-    private highlightObj: (obj: GameObject) => void;
-    private dehighlightObj: (obj: GameObject) => void;
+    private resizeSelectionRect: (rect: Phaser.Geom.Rectangle) => void;
 
     private selectedObjects: Set<GameObject> = new Set();
 
     // props related to select drag event
     private startCoordX: number = 0;
     private startCoordY: number = 0;
-    private isDragging: boolean = false;
+    private pointerSnappedCoord = new Phaser.Math.Vector2();
+    private isDragging: boolean = false; 
     private highlighted: Set<GameObject> = new Set();
     private prevHighlighedFrame: Set<GameObject> = new Set();
     private currHighlightedFrame: Set<GameObject> = new Set();
+    private selectRect: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
+
+    public disableSelectDrag = false;
 
     private deleteButton: Phaser.GameObjects.Image;
-    sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics> = new Map();
+    private sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics>;
 
-    constructor(scene: Phaser.Scene,
+    constructor(
+        scene: Phaser.Scene,
         getObjectMap: () => Map<string, EditorEntity>,
-        getHandleResizeSize: () => number,
-        getSnappedCoord: (x: number, y: number) => { x: number, y: number },
+        updateToSnappedCoord: (coord: Phaser.Math.Vector2) => void,
         deleteObjects: (gameObjects: Set<GameObject>) => void,
-        resizeSelectionRect: (x: number, y: number, width: number, height: number) => void,
-        highlightObj: (obj: GameObject) => void,
-        dehighlightObj: (obj: GameObject) => void
-    ) {
+        resizeSelectionRect: (rect: Phaser.Geom.Rectangle) => void,
+        deleteButton: Phaser.GameObjects.Image,
+        sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics>
+        ) {
 
         super();
 
         this.scene = scene;
 
         this.getObjectMap = getObjectMap;
-        this.getHandleResizeSize = getHandleResizeSize;
-        this.getSnappedCoord = getSnappedCoord;
+        this.updateToSnappedCoord = updateToSnappedCoord;
         this.deleteObjects = deleteObjects;
         this.resizeSelectionRect = resizeSelectionRect;
 
 
-        this.setupDeleteButton();
-        this.setupSizingHandles();
+        this.deleteButton = deleteButton;
+        this.sizingHandles = sizingHandles;
         this.setupInputListeners();
     }
 
@@ -65,46 +65,64 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         this.scene.input.on('pointerup', this.handlePointerUp, this);
     }
 
-    private setupDeleteButton() {
-        this.deleteButton = this.scene.add.image(0, 0, 'red-cross')
-            .setOrigin(0, 0)
-            .setDepth(100)
-            .setVisible(false);
+    // pauseListeners() {
+    //     this.scene.input.off('pointerdown', this.handlePointerDown, this);
+    //     this.scene.input.off('pointermove', this.handlePointerMove, this);
+    //     this.scene.input.off('pointerup', this.handlePointerUp, this);
+    // }
 
-        this.deleteButton.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-            this.deleteObjects(this.selectedObjects);
+    // resumeListeners() {
+    //     this.isDragging = false;
+    //     this.setupInputListeners();
+    // }
 
-            this.deselectAllObjects();
+    // pauseSelectionDrag() {
+    //     this.isDragging = false;
+    //     this.scene.input.off('pointermove', this.handlePointerMove, this);
+    // }
 
-            this.deleteButton.setVisible(false);
-            this.deleteButton.disableInteractive();
+    // resumeSelectionDrag() {
+    //     this.scene.input.on('pointermove', this.handlePointerMove, this);
+    // }
 
-            event.stopPropagation();
-        });
-    }
+    // private setupDeleteButton() {
+    //     this.deleteButton = this.scene.add.image(0, 0, 'red-cross')
+    //         .setOrigin(0, 0)
+    //         .setDepth(100)
+    //         .setVisible(false);
 
-    private setupSizingHandles() {
-        const handleSize = this.getHandleResizeSize();
+    //     this.deleteButton.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+    //         this.deleteObjects(this.selectedObjects);
 
-        const dirs: cardinalDir[] = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
-        dirs.forEach(dir => {
-            const handle = this.scene.add.graphics().setDepth(150).setVisible(false);
+    //         this.deselectAllObjects();
 
-            handle.setInteractive({
-                hitArea: new Phaser.Geom.Rectangle(0, 0, handleSize, handleSize),
-                hitAreaCallback: Phaser.Geom.Rectangle.Contains,
-                draggable: true
-            })
+    //         this.deleteButton.setVisible(false);
+    //         this.deleteButton.disableInteractive();
 
-            handle.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-                event.stopPropagation();
-            });
+    //         event.stopPropagation();
+    //     });
+    // }
 
-            handle.disableInteractive();
+    // private setupSizingHandles() {
+    //     const dirs: cardinalDir[] = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
+    //     dirs.forEach(dir => {
+    //         const handle = this.scene.add.graphics().setDepth(150).setVisible(false);
 
-            this.sizingHandles.set(dir, handle);
-        });
-    }
+    //         handle.setInteractive({
+    //             hitArea: new Phaser.Geom.Rectangle(0, 0, this.handleResizeSize, this.handleResizeSize),
+    //             hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+    //             draggable: true
+    //         })
+
+    //         handle.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
+    //             event.stopPropagation();
+    //         });
+
+    //         handle.disableInteractive();
+
+    //         this.sizingHandles.set(dir, handle);
+    //     });
+    // }
 
     /* ---- END SETUP ---- */
 
@@ -112,31 +130,34 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
 
     private handlePointerDown(pointer: Phaser.Input.Pointer) {
         this.deselectAllObjects();
-        const startingCoordinates = this.getSnappedCoord(pointer.worldX, pointer.worldY);
+        const startingCoordinates = new Phaser.Math.Vector2(pointer.worldX, pointer.worldY);
+        this.updateToSnappedCoord(startingCoordinates);
         this.startCoordX = startingCoordinates.x;
         this.startCoordY = startingCoordinates.y;
     }
 
     //todo doc
     private handlePointerMove(pointer: Phaser.Input.Pointer) {
+        if (this.disableSelectDrag) return;
         // first check if dragging and update 'isDragging' if needed
-        if (!this.isDragging) {
-            if (Math.sqrt((pointer.worldX - this.startCoordX) ^ 2 + (pointer.worldY - this.startCoordY) ^ 2) > DRAG_THRESHOLD) {
+        if (pointer.isDown && !this.isDragging) {
+            const distFromStartCoord = Math.sqrt((pointer.worldX - this.startCoordX) ** 2 + (pointer.worldY - this.startCoordY) ** 2);
+            if (distFromStartCoord > DRAG_THRESHOLD) {
                 this.isDragging = true;
             }
-            else {
-                return;
-            }
         }
+        if (!this.isDragging || !pointer.isDown) return;
 
         // selection box logic
 
+        this.updatePointerSnappedCoord(pointer.worldX, pointer.worldY);
+
         // resize selection box
-        const selectRectProperties = this.calcSelectRect(pointer.worldX, pointer.worldY);
-        this.resizeSelectionRect(selectRectProperties.rectX, selectRectProperties.rectY, selectRectProperties.rectWidth, selectRectProperties.rectHeight);
+        this.updateSelectRect();
+        this.resizeSelectionRect(this.selectRect);
 
         // add objects in the outer frame to curr
-        const frameKeys = this.getFrameKeys(selectRectProperties.rectX, selectRectProperties.rectY, selectRectProperties.rectWidth, selectRectProperties.rectHeight);
+        const frameKeys = this.getFrameKeys(this.selectRect);
         frameKeys.forEach((key: string) => {
             const objMap = this.getObjectMap();
             if (objMap.has(key)) {
@@ -176,20 +197,23 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
             this.selectObjects(this.highlighted);
 
             // clear highlights
-            this.highlighted.forEach((obj) => {
-                this.dehighlightObj(obj);
-            });
             this.highlighted.clear();
             this.currHighlightedFrame.clear();
             this.prevHighlighedFrame.clear();
         }
+
+        this.isDragging = false;
+
+        this.disableSelectDrag = false;
+
+        this.emit(ControllerEvents.SELECTION_DRAG_ENDED);
     }
 
     /* ---- END EVENTS ---- */
 
     /* ---- SELECT/DESELECT ---- */
 
-    private selectObjects(objectsToSelect: Set<GameObject>) {
+    selectObjects(objectsToSelect: Set<GameObject>) {
         // if this.selectedObjects is equal to objectsToSelect then do nothing
         if (this.selectedObjects.size === objectsToSelect.size && this.selectedObjects.isSubsetOf(objectsToSelect)) {
             return;
@@ -206,16 +230,14 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
 
         // if there is only one object to select and it's a platform, enable resizing handles
         const obj = objectsToSelect.values().next().value;
-        if (objectsToSelect.size === 1 && obj instanceof Platform) {
-            this.setSizingHanlesInteractive(true);
-            this.emit(ControllerEvents.SELECTED_OBJECTS, this.selectedObjects, 'single-platform-selected');
-        }
-        else {
-            this.emit(ControllerEvents.SELECTED_OBJECTS, this.selectedObjects);
-        }
+        const resizeHandlesNeeded = objectsToSelect.size === 1 && obj instanceof Platform;
+        if (resizeHandlesNeeded) this.setSizingHanlesInteractive(true);
+       
+        // emit selected objects
+        this.emit(ControllerEvents.SELECTED_OBJECTS, this.selectedObjects, resizeHandlesNeeded);
     }
 
-    private deselectAllObjects() {
+    deselectAllObjects() {
         if (this.selectedObjects.size === 0) return;
 
         this.selectedObjects.clear();
@@ -252,38 +274,61 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         this.deleteButton.removeAllListeners();
     }
 
+    /* ---- GETTERS ---- */
+
+    getSelectedObjs(): Set<GameObject> {
+        return this.selectedObjects;
+    }
+
     /* ---- HELPERS ---- */
 
     //todo: doc
-    private calcSelectRect(currentX: number, currentY: number): { rectX: number, rectY: number, rectWidth: number, rectHeight: number } {
-        const snappedCoord = this.getSnappedCoord(currentX, currentY);
-        currentX = snappedCoord.x;
-        currentY = snappedCoord.y;
+    private updateSelectRect() {
+        const currentX = this.pointerSnappedCoord.x;
+        const currentY = this.pointerSnappedCoord.y;
 
-        return {
-            rectX: Math.min(this.startCoordX, currentX),
-            rectY: Math.min(this.startCoordY, currentY),
-            rectWidth: Math.abs(currentX - this.startCoordX),
-            rectHeight: Math.abs(currentY - this.startCoordY)
+        const x = Math.min(this.startCoordX, currentX);
+        const y = Math.min(this.startCoordY, currentY);
+        let width = Math.abs(currentX - this.startCoordX);
+        let height = Math.abs(currentY - this.startCoordY);
+
+        if (currentX >= this.startCoordX) {
+            width += TILE_SIZE;
         }
+        if (currentY >= this.startCoordY) {
+            height += TILE_SIZE;
+        }
+        
+        // update rectangle
+        this.selectRect.x = x;
+        this.selectRect.y = y;
+        this.selectRect.width = width;
+        this.selectRect.height = height;
     }
 
     //todo: doc
-    private getFrameKeys(x: number, y: number, width: number, height: number): string[] {
+    private getFrameKeys(rect: Phaser.Geom.Rectangle): string[] {
         const keys: string[] = [];
 
         // top and buttom
-        for (let i = x; i < x + width; i += TILE_SIZE) {
-            keys.push(getPositionKey(new Phaser.Math.Vector2(i, y)));
-            keys.push(getPositionKey(new Phaser.Math.Vector2(i, y + height - TILE_SIZE)));
+        for (let i = rect.x; i < rect.x + rect.width; i += TILE_SIZE) {
+            keys.push(getPositionKey(new Phaser.Math.Vector2(i, rect.y)));
+            keys.push(getPositionKey(new Phaser.Math.Vector2(i, rect.y + rect.height - TILE_SIZE)));
         }
 
         // left and right
-        for (let i = y + TILE_SIZE; i < y + height - TILE_SIZE; i += TILE_SIZE) {
-            keys.push(getPositionKey(new Phaser.Math.Vector2(x, i)));
-            keys.push(getPositionKey(new Phaser.Math.Vector2(x + width - TILE_SIZE, i)));
+        for (let i = rect.y + TILE_SIZE; i < rect.y + rect.height - TILE_SIZE; i += TILE_SIZE) {
+            keys.push(getPositionKey(new Phaser.Math.Vector2(rect.x, i)));
+            keys.push(getPositionKey(new Phaser.Math.Vector2(rect.x + rect.width - TILE_SIZE, i)));
         }
 
         return keys;
+    }
+
+    private updatePointerSnappedCoord(x: number, y: number) {
+        this.pointerSnappedCoord.x = x;
+        this.pointerSnappedCoord.y = y;
+
+        this.updateToSnappedCoord(this.pointerSnappedCoord);
     }
 }
