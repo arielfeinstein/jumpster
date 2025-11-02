@@ -199,10 +199,9 @@ export class Editor extends Scene {
             this.platformResizeController.removeDragListeners();
         });
 
-        const selectionBoxRect = new Phaser.Geom.Rectangle();
-        this.selectionController.on(ControllerEvents.SELECTION_BOX_UPDATED, (inSelection: Set<GameObject>) => {
-            this.calcRectOutline(inSelection, selectionBoxRect);
-            this.selectionView.drawSelectionBox(selectionBoxRect);
+        // todo: draw select around selected objects individually
+        this.selectionController.on(ControllerEvents.HIGHLITED_OBJS_UPDATED, (inSelection: Set<GameObject>) => {
+            this.selectionView.drawSelectionOutlines(inSelection);
         });
 
         this.selectionController.on(ControllerEvents.SELECTION_DRAG_ENDED, this.selectionView.clearSelectionBox, this.selectionView);

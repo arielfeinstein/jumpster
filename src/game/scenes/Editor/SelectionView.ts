@@ -2,8 +2,8 @@ import { GameObject, cardinalDir } from "./Editor";
 import { TILE_SIZE } from '../../config';
 
 const selectionBoxConfig = {
-    LINE_COLOR: 0x00FFFF,
-    FILL_COLOR: 0x00FFFF,
+    LINE_COLOR: 0x808080,
+    FILL_COLOR: 0x808080,
     LINE_ALPHA: 1,
     FILL_ALPHA: 0.15
 } as const;
@@ -59,6 +59,7 @@ export default class SelectionView {
     /* ---- OBJECT HIGHLIGHT ---- */
 
     private highlightRect(rect: GameObject | Phaser.Geom.Rectangle) {
+        console.log(`x: ${rect.x}, y: ${rect.y}, w: ${rect.width}, h: ${rect.height}`);
         this.outlineGraphics.lineStyle(
             selectionOutlineConfig.THICKNESS,
             selectionOutlineConfig.LINE_COLOR,

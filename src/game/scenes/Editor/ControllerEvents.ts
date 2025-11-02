@@ -1,7 +1,7 @@
 const ControllerEvents = {
     SELECTED_OBJECTS: 'selected-objects',
     DESELECTED_ALL: 'deselected-all',
-    SELECTION_BOX_UPDATED: 'selection-box-updated',
+    HIGHLITED_OBJS_UPDATED: 'highlited-objects-updated', /* when the set of highlighted objects changes during selection changes */
     SELECTION_DRAG_ENDED: 'select-drag-end',
     OBJECT_DRAG_STARTED: 'object-drag-started',
     OBJECT_DRAG_ENDED: 'object-drag-ended',

@@ -20,11 +20,14 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
     private startCoordX: number = 0;
     private startCoordY: number = 0;
     private pointerSnappedCoord = new Phaser.Math.Vector2();
-    private isDragging: boolean = false; 
+    private isDragging: boolean = false;
     private highlighted: Set<GameObject> = new Set();
     private prevHighlighedFrame: Set<GameObject> = new Set();
     private currHighlightedFrame: Set<GameObject> = new Set();
     private selectRect: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
+    private gameObjectMap: Map<string, EditorEntity>;
+    // used to check if a rectangle of a game object intersects with the selction box
+    private gameObjectRect: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
 
     public disableSelectDrag = false;
 
@@ -39,7 +42,7 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         resizeSelectionRect: (rect: Phaser.Geom.Rectangle) => void,
         deleteButton: Phaser.GameObjects.Image,
         sizingHandles: Map<cardinalDir, Phaser.GameObjects.Graphics>
-        ) {
+    ) {
 
         super();
 
@@ -134,6 +137,7 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         this.updateToSnappedCoord(startingCoordinates);
         this.startCoordX = startingCoordinates.x;
         this.startCoordY = startingCoordinates.y;
+        this.gameObjectMap = this.getObjectMap(); // used for 'handlePointerMove'
     }
 
     //todo doc
@@ -156,39 +160,50 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         this.updateSelectRect();
         this.resizeSelectionRect(this.selectRect);
 
-        // add objects in the outer frame to curr
+
+        // determine highlighted objects
+
         const frameKeys = this.getFrameKeys(this.selectRect);
         frameKeys.forEach((key: string) => {
-            const objMap = this.getObjectMap();
-            if (objMap.has(key)) {
-                this.currHighlightedFrame.add(objMap.get(key)!.gameObject)
+            if (this.gameObjectMap.has(key)) {
+                this.currHighlightedFrame.add(this.gameObjectMap.get(key)!.gameObject);
             }
-
         });
-        
+
         let hasSelectedObjsChanged = false;
 
-        this.prevHighlighedFrame.forEach((obj) => {
-            if (!this.currHighlightedFrame.has(obj)) {
-                this.highlighted.delete(obj);
+        this.highlighted.forEach((highlightedObj) => {
+            this.gameObjectRect.x = highlightedObj.x;
+            this.gameObjectRect.y = highlightedObj.y;
+            this.gameObjectRect.height = highlightedObj.height;
+            this.gameObjectRect.width = highlightedObj.width;
+
+            const inSelectionBox = Phaser.Geom.Intersects.RectangleToRectangle(
+                this.gameObjectRect,
+                this.selectRect
+            );
+
+            if (!inSelectionBox) {
+                this.highlighted.delete(highlightedObj);
                 hasSelectedObjsChanged = true;
             }
         });
 
-        // add new objects that are in the selection box
         this.currHighlightedFrame.forEach((obj) => {
-            // this.highlightObj(obj);
             this.highlighted.add(obj);
+            hasSelectedObjsChanged = true;
         });
 
-        // get ready for next iteration
-        this.prevHighlighedFrame = this.currHighlightedFrame;
         this.currHighlightedFrame.clear();
 
-        // emit changes
         if (hasSelectedObjsChanged) {
-            this.emit(ControllerEvents.SELECTION_BOX_UPDATED, this.highlighted);
+            this.emit(ControllerEvents.HIGHLITED_OBJS_UPDATED, this.highlighted);
         }
+
+        console.log(`highlited: ${this.highlighted.size}`);
+
+
+
     }
 
     private handlePointerUp(pointer: Phaser.Input.Pointer) {
@@ -232,7 +247,7 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         const obj = objectsToSelect.values().next().value;
         const resizeHandlesNeeded = objectsToSelect.size === 1 && obj instanceof Platform;
         if (resizeHandlesNeeded) this.setSizingHanlesInteractive(true);
-       
+
         // emit selected objects
         this.emit(ControllerEvents.SELECTED_OBJECTS, this.selectedObjects, resizeHandlesNeeded);
     }
@@ -298,7 +313,7 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         if (currentY >= this.startCoordY) {
             height += TILE_SIZE;
         }
-        
+
         // update rectangle
         this.selectRect.x = x;
         this.selectRect.y = y;
