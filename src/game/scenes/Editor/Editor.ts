@@ -323,6 +323,9 @@ export class Editor extends Scene {
     }
 
     private addEntity({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
+        // to fix the issue where after placing an object the selection drag would start immediately
+        this.input.activePointer.isDown = false;
+
         // calculating snapped coordinates
         const snappedPos = new Phaser.Math.Vector2(x, y);
         this.updateToSnappedCoord(snappedPos);
@@ -385,9 +388,6 @@ export class Editor extends Scene {
         platformsBelow.forEach(platformBelow => {
             platformBelow.addObjectOnIt(gameObject);
         });
-
-        // to fix the issue where after placing an object the selection drag would start immediately
-        this.input.activePointer.isDown = false;
 
 
     }

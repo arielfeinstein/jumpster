@@ -25,7 +25,7 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
     private prevHighlighedFrame: Set<GameObject> = new Set();
     private currHighlightedFrame: Set<GameObject> = new Set();
     private selectRect: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
-    private gameObjectMap: Map<string, EditorEntity>;
+    private gameObjectMap: Map<string, EditorEntity>; // set on pointer down
     // used to check if a rectangle of a game object intersects with the selction box
     private gameObjectRect: Phaser.Geom.Rectangle = new Phaser.Geom.Rectangle();
 
@@ -67,65 +67,6 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         this.scene.input.on('pointermove', this.handlePointerMove, this);
         this.scene.input.on('pointerup', this.handlePointerUp, this);
     }
-
-    // pauseListeners() {
-    //     this.scene.input.off('pointerdown', this.handlePointerDown, this);
-    //     this.scene.input.off('pointermove', this.handlePointerMove, this);
-    //     this.scene.input.off('pointerup', this.handlePointerUp, this);
-    // }
-
-    // resumeListeners() {
-    //     this.isDragging = false;
-    //     this.setupInputListeners();
-    // }
-
-    // pauseSelectionDrag() {
-    //     this.isDragging = false;
-    //     this.scene.input.off('pointermove', this.handlePointerMove, this);
-    // }
-
-    // resumeSelectionDrag() {
-    //     this.scene.input.on('pointermove', this.handlePointerMove, this);
-    // }
-
-    // private setupDeleteButton() {
-    //     this.deleteButton = this.scene.add.image(0, 0, 'red-cross')
-    //         .setOrigin(0, 0)
-    //         .setDepth(100)
-    //         .setVisible(false);
-
-    //     this.deleteButton.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-    //         this.deleteObjects(this.selectedObjects);
-
-    //         this.deselectAllObjects();
-
-    //         this.deleteButton.setVisible(false);
-    //         this.deleteButton.disableInteractive();
-
-    //         event.stopPropagation();
-    //     });
-    // }
-
-    // private setupSizingHandles() {
-    //     const dirs: cardinalDir[] = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
-    //     dirs.forEach(dir => {
-    //         const handle = this.scene.add.graphics().setDepth(150).setVisible(false);
-
-    //         handle.setInteractive({
-    //             hitArea: new Phaser.Geom.Rectangle(0, 0, this.handleResizeSize, this.handleResizeSize),
-    //             hitAreaCallback: Phaser.Geom.Rectangle.Contains,
-    //             draggable: true
-    //         })
-
-    //         handle.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-    //             event.stopPropagation();
-    //         });
-
-    //         handle.disableInteractive();
-
-    //         this.sizingHandles.set(dir, handle);
-    //     });
-    // }
 
     /* ---- END SETUP ---- */
 
@@ -237,7 +178,7 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
 
         this.deselectAllObjects();
 
-        this.selectedObjects = objectsToSelect;
+        this.selectedObjects = new Set(objectsToSelect);
 
         this.deleteButton.setInteractive();
 
