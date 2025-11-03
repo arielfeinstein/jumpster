@@ -200,8 +200,6 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
             this.emit(ControllerEvents.HIGHLITED_OBJS_UPDATED, this.highlighted);
         }
 
-        console.log(`highlited: ${this.highlighted.size}`);
-
 
 
     }
