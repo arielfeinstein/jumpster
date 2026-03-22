@@ -8,6 +8,7 @@ import { handleResizeConfig } from './SelectionView';
 import SelectionView from './SelectionView';
 import ControllerEvents from './ControllerEvents';
 import PlatformResizeController from './PlatformResizeController';
+import ObjectDragController from './ObjectDragController';
 
 // todo: debug selection and check the rest works as before
 
@@ -71,10 +72,11 @@ export class Editor extends Scene {
     worldWidthUnit: number = 1;
     worldHeightUnit: number = 1;
 
-    private selectionController: SelectionController;
+    public selectionController: SelectionController;
     private selectionView: SelectionView;
 
     private platformResizeController: PlatformResizeController;
+    public objectDragController: ObjectDragController;
 
     private deleteButton: Phaser.GameObjects.Image;
 
@@ -116,6 +118,8 @@ export class Editor extends Scene {
         this.setupPlatformResizeController();
         
         this.setupSelection();
+
+        this.objectDragController = new ObjectDragController(this);
 
         this.setupEventListeners();
 
@@ -379,7 +383,7 @@ export class Editor extends Scene {
             event.stopPropagation();
         });
 
-        this.handleObjectDrag(gameObject, entityType);
+        this.objectDragController.setupDrag(gameObject, entityType);
 
         this.updateGameObjMap({ entityType: entityType, gameObject: gameObject }, 'add');
 
@@ -395,7 +399,7 @@ export class Editor extends Scene {
     /*
        updates raw coord to the nearest top-left corner of a grid cell.
     */
-    private updateToSnappedCoord(coord: Phaser.Math.Vector2) {
+    public updateToSnappedCoord(coord: Phaser.Math.Vector2) {
         coord.x = Math.floor(coord.x / TILE_SIZE) * TILE_SIZE;
         coord.y = Math.floor(coord.y / TILE_SIZE) * TILE_SIZE;
     }
@@ -408,112 +412,9 @@ export class Editor extends Scene {
         this.checkpoints = this.add.group();
     }
 
-    //todo (optional): make dragging more convinient for platforms (when a platform is big you have to move the entire thing otherwise its going to overlap)
-    private handleObjectDrag(object: Phaser.GameObjects.Image | Platform, entityType: EntityType) {
-        let ghostDrag: Phaser.GameObjects.Image | Platform | null = null;
-        let platformsBelowBeforeDrag: Set<Platform>;
-
-        let tempStartFlag: Phaser.GameObjects.Image | null;
-        let tempEndFlag: Phaser.GameObjects.Image | null;
-
-        const snappedPointerCoord = new Phaser.Math.Vector2(); // used in the 'drag' event
-
-
-        // Drag events
-        object.on(
-            "dragstart",
-            (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
-
-                this.selectionController.disableSelectDrag = true;
-
-                // used to avoid placement logic check errors
-                tempStartFlag = this.startFlag;
-                tempEndFlag = this.endFlag;
-                this.startFlag = null;
-                this.endFlag = null;
-
-                platformsBelowBeforeDrag = this.getPlatformsBelow(object);
-
-                if (entityType === 'platform') {
-                    ghostDrag = new Platform(this, object.x, object.y, object.width, object.height)
-                }
-                else if (entityType === 'enemy' || entityType === 'coin') {
-                    ghostDrag = this.add.image(object.x, object.y, entityType).setOrigin(0, 0);
-                }
-                else {
-                    ghostDrag = this.getFlagImage(entityType, new Phaser.Math.Vector2(object.x, object.y));
-                    this.add.existing(ghostDrag);
-                }
-
-
-                ghostDrag.setAlpha(0.5);
-                
-                this.selectionController.deselectAllObjects();
-            }
-        );
-        object.on(
-            "drag",
-            (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
-                // calculate current pointer snapped coord
-                snappedPointerCoord.x = pointer.worldX;
-                snappedPointerCoord.y = pointer.worldY;
-                this.updateToSnappedCoord(snappedPointerCoord);
-
-                ghostDrag!.x = snappedPointerCoord.x;
-                ghostDrag!.y = snappedPointerCoord.y;
-
-                if (!this.canObjectBePlaced(ghostDrag!, entityType)) {
-                    ghostDrag!.setTint(RED_TINT);
-                }
-                else {
-                    ghostDrag!.clearTint();
-                }
-            }
-        );
-        object.on(
-            "dragend",
-            (pointer: Phaser.Input.Pointer, dragX: number, dragY: number, dropped: boolean) => {
-
-                if (ghostDrag!.tint === RED_TINT) {
-                    // invalid position - do nothing
-                }
-                else {
-                    // valid position - move the enemy and update the map
-                    this.updateGameObjMap({ entityType: entityType, gameObject: object }, 'remove');
-                    object.x = ghostDrag!.x;
-                    object.y = ghostDrag!.y;
-
-                    this.updateGameObjMap({ entityType: entityType, gameObject: object }, 'add');
-
-                    // if there was a platform below before the drag - remove this object from its objectsOnIt set
-                    platformsBelowBeforeDrag.forEach(platformBelow => {
-                        platformBelow.removeObjectOnIt(object);
-                    });
-                    // if there is a platform below after the drag - add this object to its objectsOnIt set
-                    const platformsBelowAfterDrag = this.getPlatformsBelow(object);
-                    platformsBelowAfterDrag.forEach(platformBelow => {
-                        platformBelow.addObjectOnIt(object);
-                    });
-                    // if it's a platform add objects above it
-                    if (entityType === 'platform') {
-                        const objectsAbove = this.getObjectsAbove(object);
-                        objectsAbove.forEach(objectAbove => {
-                            (object as Platform).addObjectOnIt(objectAbove);
-                        });
-                    }
-                }
-                ghostDrag!.destroy();
-                ghostDrag = null;
-                this.selectionController.selectObjects(new Set([object]));
-                this.startFlag = tempStartFlag;
-                this.endFlag = tempEndFlag;
-            }
-        );
-    }
-
     /* ---- HELPERS ---- */
 
-    private getPlatformsBelow(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Platform> {
+    public getPlatformsBelow(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Platform> {
         const platformsBelow: Set<Platform> = new Set();
 
         if (rect.y === this.canvasHeight() * this.worldHeightUnit - TILE_SIZE) {
@@ -532,7 +433,7 @@ export class Editor extends Scene {
         return platformsBelow;
     }
 
-    private getObjectsAbove(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Phaser.GameObjects.Image | Platform> {
+    public getObjectsAbove(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Phaser.GameObjects.Image | Platform> {
         const platformsAbove: Set<Phaser.GameObjects.Image | Platform> = new Set();
 
         if (rect.y === 0) return platformsAbove;
@@ -637,14 +538,14 @@ export class Editor extends Scene {
     }
 
 
-    private getFlagImage(flagType: 'checkpoint' | 'start-flag' | 'end-flag', pos: Phaser.Math.Vector2): Phaser.GameObjects.Image {
+    public getFlagImage(flagType: 'checkpoint' | 'start-flag' | 'end-flag', pos: Phaser.Math.Vector2): Phaser.GameObjects.Image {
         if (flagType === 'checkpoint')
             return new Phaser.GameObjects.Image(this, pos.x, pos.y, 'checkpoint-flag', 4).setOrigin(0, 0);
         return new Phaser.GameObjects.Image(this, pos.x, pos.y, flagType).setOrigin(0, 0);
     }
 
 
-    private canObjectBePlaced(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform, entityType: EntityType): boolean {
+    public canObjectBePlaced(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform, entityType: EntityType): boolean {
         if (this.isOverlapping(rect)) {
             return false;
         }
@@ -688,7 +589,7 @@ export class Editor extends Scene {
  * @param editorEntity The entity to add or remove from the map.
  * @param operation Whether to 'add' or 'remove' the entity from the map.
  */
-    private updateGameObjMap(editorEntity: EditorEntity, operation: 'add' | 'remove') {
+    public updateGameObjMap(editorEntity: EditorEntity, operation: 'add' | 'remove') {
         const gameObject = editorEntity.gameObject;
 
         for (let x = gameObject.x; x < gameObject.x + gameObject.width; x += TILE_SIZE) {
