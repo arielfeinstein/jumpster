@@ -22,6 +22,13 @@ import GridManager from './GridManager';
 export default class EntityManager implements IEntityManager {
 
     /**
+     * Optional hook called after every successful addEntity().
+     * Used by the editor to set up interactivity on newly registered entities
+     * without creating a circular dependency between EntityManager and the scene.
+     */
+    onEntityAdded?: (entity: GameEntity) => void;
+
+    /**
      * Spatial map: position key → entity occupying that tile.
      * A single entity may occupy multiple keys (platforms wider than one tile).
      */
@@ -54,6 +61,7 @@ export default class EntityManager implements IEntityManager {
         }
 
         this.occupyTiles(entity, 'add');
+        this.onEntityAdded?.(entity);
     }
 
     /**
