@@ -11,6 +11,7 @@ import PlatformResizeController from './PlatformResizeController';
 import ObjectDragController from './ObjectDragController';
 import EntityManager from './EntityManager';
 import GridManager from './GridManager';
+import PlacementController from './PlacementController';
 
 // todo: debug selection and check the rest works as before
 
@@ -71,6 +72,7 @@ export class Editor extends Scene {
 
     private platformResizeController: PlatformResizeController;
     public objectDragController: ObjectDragController;
+    private placementController: PlacementController;
 
     private deleteButton: Phaser.GameObjects.Image;
 
@@ -116,6 +118,7 @@ export class Editor extends Scene {
         this.setupSelection();
 
         this.objectDragController = new ObjectDragController(this);
+        this.placementController = new PlacementController(this, this.entityManager, this.selectionController, this.objectDragController);
 
         this.setupEventListeners();
 
@@ -165,7 +168,7 @@ export class Editor extends Scene {
     private setupEventListeners() {
         // event bus listeners
         EventBus.on('editor-change-dimensions', this.changeDimensions, this);
-        EventBus.on('editor-place-entity', this.addEntity, this);
+        EventBus.on('editor-place-entity', this.placementController.placeEntity, this.placementController);
         EventBus.on('ui-drag-cancelled', () => {
             this.input.activePointer.isDown = false;
         }, this);
@@ -221,7 +224,7 @@ export class Editor extends Scene {
         // shutdwon listener - when scene is shutdown remove listeners
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('editor-change-dimensions', this.changeDimensions, this);
-            EventBus.off('editor-place-entity', this.addEntity, this);
+            EventBus.off('editor-place-entity', this.placementController.placeEntity, this.placementController);
             EventBus.off('ui-drag-cancelled');
             this.selectionController.destroy();
             this.platformResizeController.destroy();
@@ -319,73 +322,7 @@ export class Editor extends Scene {
     }
 
     private addEntity({ entityType, x, y }: { entityType: EntityType, x: number, y: number }) {
-        // to fix the issue where after placing an object the selection drag would start immediately
-        this.input.activePointer.isDown = false;
-
-        // calculating snapped coordinates
-        const snappedPos = new Phaser.Math.Vector2(x, y);
-        GridManager.updateToSnappedCoord(snappedPos);
-
-        // calculating logical rectangle based on entity type
-        let geomRect: Phaser.Geom.Rectangle;
-        if (entityType === 'platform' || entityType === 'enemy' || entityType === 'coin') {
-            geomRect = new Phaser.Geom.Rectangle(snappedPos.x, snappedPos.y, TILE_SIZE, TILE_SIZE);
-        }
-        else {
-            geomRect = new Phaser.Geom.Rectangle(snappedPos.x, snappedPos.y, TILE_SIZE, TILE_SIZE * 2);
-        }
-
-        if (!this.entityManager.canObjectBePlaced(geomRect, entityType)) return;
-
-        let gameObject: Phaser.GameObjects.Image | Platform;
-        switch (entityType) {
-            case 'platform':
-                gameObject = new Platform(this, geomRect.x, geomRect.y, geomRect.width, geomRect.height);
-                const objectsOnIt = this.entityManager.getObjectsAbove(gameObject);
-                objectsOnIt.forEach(objectOnIt => {
-                    (gameObject as Platform).addObjectOnIt(objectOnIt);
-                });
-                break;
-            case 'enemy':
-                gameObject = this.add.image(geomRect.x, geomRect.y, entityType, 1).setOrigin(0, 0);
-                break;
-            case 'coin':
-                gameObject = this.add.image(geomRect.x, geomRect.y, entityType).setOrigin(0, 0);
-                break;
-            case 'checkpoint':
-                gameObject = this.add.image(geomRect.x, geomRect.y, 'checkpoint-flag', 4).setOrigin(0, 0);
-                break;
-            case 'start-flag':
-                gameObject = this.add.image(geomRect.x, geomRect.y, entityType).setOrigin(0, 0);
-                this.startFlag = gameObject;
-                break;
-            case 'end-flag':
-                gameObject = this.add.image(geomRect.x, geomRect.y, entityType).setOrigin(0, 0);
-                this.endFlag = gameObject;
-                break;
-        }
-
-        if (entityType !== 'platform') {
-            gameObject.setInteractive({ draggable: true })
-        }
-
-        gameObject.on('pointerdown', (pointer: Phaser.Input.Pointer, localX: number, localY: number, event: Phaser.Types.Input.EventData) => {
-            this.selectionController.selectObjects(new Set([gameObject]));
-            this.selectionController.disableSelectDrag = true;
-            event.stopPropagation();
-        });
-
-        this.objectDragController.setupDrag(gameObject, entityType);
-
-        this.entityManager.updateGameObjMap({ entityType: entityType, gameObject: gameObject }, 'add');
-
-        // if there is a platform below - add this platform to its objectsOnIt set
-        const platformsBelow = this.entityManager.getPlatformsBelow(gameObject);
-        platformsBelow.forEach(platformBelow => {
-            platformBelow.addObjectOnIt(gameObject);
-        });
-
-
+        this.placementController.placeEntity({ entityType, x, y });
     }
 
     private initGroups() {
