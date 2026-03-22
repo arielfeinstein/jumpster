@@ -1,6 +1,7 @@
 import Platform from '@/game/gameObjects/Platform';
 import Phaser, { Game } from 'phaser';
-import { cardinalDir, DRAG_THRESHOLD, getPositionKey, EditorEntity, GameObject } from './Editor';
+import { cardinalDir, DRAG_THRESHOLD, EditorEntity, GameObject } from './Editor';
+import GridManager from './GridManager';
 import ControllerEvents from './ControllerEvents';
 import { TILE_SIZE } from '@/game/config';
 
@@ -266,14 +267,14 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
 
         // top and buttom
         for (let i = rect.x; i < rect.x + rect.width; i += TILE_SIZE) {
-            keys.push(getPositionKey(new Phaser.Math.Vector2(i, rect.y)));
-            keys.push(getPositionKey(new Phaser.Math.Vector2(i, rect.y + rect.height - TILE_SIZE)));
+            keys.push(GridManager.getPositionKey(new Phaser.Math.Vector2(i, rect.y)));
+            keys.push(GridManager.getPositionKey(new Phaser.Math.Vector2(i, rect.y + rect.height - TILE_SIZE)));
         }
 
         // left and right
         for (let i = rect.y + TILE_SIZE; i < rect.y + rect.height - TILE_SIZE; i += TILE_SIZE) {
-            keys.push(getPositionKey(new Phaser.Math.Vector2(rect.x, i)));
-            keys.push(getPositionKey(new Phaser.Math.Vector2(rect.x + rect.width - TILE_SIZE, i)));
+            keys.push(GridManager.getPositionKey(new Phaser.Math.Vector2(rect.x, i)));
+            keys.push(GridManager.getPositionKey(new Phaser.Math.Vector2(rect.x + rect.width - TILE_SIZE, i)));
         }
 
         return keys;

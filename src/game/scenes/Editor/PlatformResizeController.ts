@@ -3,6 +3,8 @@ import { cardinalDir, GameObject, RED_TINT, depthConfig } from './Editor';
 import { handleResizeConfig } from './SelectionView';
 import { TILE_SIZE } from '../../config';
 import ControllerEvents from './ControllerEvents';
+import GridManager from './GridManager';
+import EntityManager from './EntityManager';
 
 type PlatformProperties = { x: number, y: number, width: number, height: number, objectOnTop: Set<Phaser.GameObjects.GameObject> };
 
@@ -21,30 +23,17 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
     private snappedPointerCoord = new Phaser.Math.Vector2();
     private ghostProps = { showGhost: false, rect: new Phaser.Geom.Rectangle(0, 0, 0, 0) };
 
-    // methods to Editor
-    private removePlatfromFromGameObjectMap: (platform: Platform) => void;
-    private getPlatformsBelow: (platform: Platform) => Set<Platform>;
-    private getObjectsAbove: (platform: Platform) => Set<GameObject>;
-    private updateToSnappedCoord: (coord: Phaser.Math.Vector2) => void;
-    private canPlatformBePlaced: (platform: Platform) => boolean;
+    private entityManager: EntityManager;
     private deselectAllObjects: () => void;
 
 
     constructor(
         scene: Phaser.Scene,
-        removePlatfromFromGameObjectMap: (platform: Platform) => void,
-        getPlatformsBelow: (platform: Platform) => Set<Platform>,
-        updateToSnappedCoord: (coord: Phaser.Math.Vector2) => void,
-        getObjectsAbove: (platform: Platform) => Set<GameObject>,
-        canPlatformBePlaced: (platform: Platform) => boolean
+        entityManager: EntityManager
     ) {
         super();
         this.scene = scene;
-        this.removePlatfromFromGameObjectMap = removePlatfromFromGameObjectMap;
-        this.getPlatformsBelow = getPlatformsBelow;
-        this.updateToSnappedCoord = updateToSnappedCoord;
-        this.getObjectsAbove = getObjectsAbove;
-        this.canPlatformBePlaced = canPlatformBePlaced;
+        this.entityManager = entityManager;
 
         this.setupSizingHandles();
     }
@@ -92,7 +81,7 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
         this.emit('platform-resize-started', this.platform);
 
         // remove platform from the current platforms below
-        this.getPlatformsBelow(this.platform!).forEach(platBelow => {
+        this.entityManager.getPlatformsBelow(this.platform!).forEach(platBelow => {
             platBelow.removeObjectOnIt(this.platform!);
         })
 
@@ -111,7 +100,7 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
         // update snapped pointer coordinates
         this.snappedPointerCoord.x = pointer.worldX;
         this.snappedPointerCoord.y = pointer.worldY;
-        this.updateToSnappedCoord(this.snappedPointerCoord);
+        GridManager.updateToSnappedCoord(this.snappedPointerCoord);
 
         // update render props
         this.updatePlatRenderProps(this.snappedPointerCoord, this.ghostProps, this.currentResizeDir);
@@ -121,9 +110,9 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
             this.platform.x = this.ghostProps.rect.x;
             this.platform.y = this.ghostProps.rect.y;
             this.platform.resize(this.ghostProps.rect.width, this.ghostProps.rect.height);
-            this.platform.setObjectsOnIt(this.getObjectsAbove(this.platform));
+            this.platform.setObjectsOnIt(this.entityManager.getObjectsAbove(this.platform));
             this.platform.setVisible(true);
-            if (!this.canPlatformBePlaced(this.platform) || this.platform.getObjectsOnIt().size < this.originalPlatformProperties.objectOnTop.size) {
+            if (!this.entityManager.canObjectBePlaced(this.platform, 'platform') || this.platform.getObjectsOnIt().size < this.originalPlatformProperties.objectOnTop.size) {
                 // cannot be placed - tint red 
                 this.platform.setTint(RED_TINT);
             }
@@ -150,7 +139,7 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
         this.platform!.setVisible(true).setAlpha(1).clearTint();
 
         // add to platforms below the updated platform
-        this.getPlatformsBelow(this.platform!).forEach((platformBelow) => {
+        this.entityManager.getPlatformsBelow(this.platform!).forEach((platformBelow) => {
             platformBelow.addObjectOnIt(this.platform!);
         });
 

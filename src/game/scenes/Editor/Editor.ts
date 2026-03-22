@@ -9,6 +9,8 @@ import SelectionView from './SelectionView';
 import ControllerEvents from './ControllerEvents';
 import PlatformResizeController from './PlatformResizeController';
 import ObjectDragController from './ObjectDragController';
+import EntityManager from './EntityManager';
+import GridManager from './GridManager';
 
 // todo: debug selection and check the rest works as before
 
@@ -24,15 +26,6 @@ export type GameObject = Phaser.GameObjects.Image | Platform;
 export type cardinalDir = 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
 
 /* ---- GLOBAL HELPERS ---- */
-
-/**
-     * Creates a consistent, canonical string key from a position vector.
-     * @param pos The position vector.
-     * @returns A string representation in the format "x,y".
-*/
-export function getPositionKey(pos: Phaser.Math.Vector2): string {
-    return `${pos.x},${pos.y}`;
-}
 
 /* ---- CONSTANTS ---- */
 
@@ -59,6 +52,7 @@ export class Editor extends Scene {
 
     grid: Phaser.GameObjects.Grid;
 
+    public entityManager!: EntityManager;
     gameObjMap: Map<string, EditorEntity> = new Map();
 
     platforms: Phaser.GameObjects.Group;
@@ -113,6 +107,8 @@ export class Editor extends Scene {
 
         this.input.dragDistanceThreshold = DRAG_THRESHOLD;
 
+        this.entityManager = new EntityManager(this, this.gameObjMap);
+        
         this.setupDeleteButton();
 
         this.setupPlatformResizeController();
@@ -129,11 +125,7 @@ export class Editor extends Scene {
     private setupPlatformResizeController() {
         this.platformResizeController = new PlatformResizeController(
             this,
-            (plat: Platform) => {this.updateGameObjMap({ entityType: 'platform', gameObject: plat }, 'remove' );},
-            this.getPlatformsBelow.bind(this),
-            this.updateToSnappedCoord.bind(this),
-            this.getObjectsAbove.bind(this),
-            (plat: Platform) => { return this.canObjectBePlaced(plat, 'platform'); }
+            this.entityManager
         );
     }
 
@@ -162,7 +154,7 @@ export class Editor extends Scene {
         this.selectionController = new SelectionController(
             this,
             () => { return this.gameObjMap; },
-            this.updateToSnappedCoord,
+            GridManager.updateToSnappedCoord,
             this.deleteObjs.bind(this),
             this.selectionView.drawSelectionBox.bind(this.selectionView),
             this.deleteButton,
@@ -217,11 +209,11 @@ export class Editor extends Scene {
 
         this.platformResizeController.on(ControllerEvents.PLATFORM_RESIZE_STARTED, (plat: Platform) => {
             // remove from game objects map to not interfere with placement check logic
-            this.updateGameObjMap({entityType: 'platform', gameObject: plat}, 'remove');
+            this.entityManager.updateGameObjMap({entityType: 'platform', gameObject: plat}, 'remove');
         });
 
         this.platformResizeController.on(ControllerEvents.PLATFORM_RESIZE_ENDED, (plat: Platform) => {
-            this.updateGameObjMap({ entityType: 'platform', gameObject: plat }, 'add');
+            this.entityManager.updateGameObjMap({ entityType: 'platform', gameObject: plat }, 'add');
             this.selectionController.deselectAllObjects();
             this.selectionController.selectObjects(new Set([plat]));
         });
@@ -283,7 +275,7 @@ export class Editor extends Scene {
 
         // remove lower objects from platforms below them
         lowerObjs.forEach((obj) => {
-            const platsBelow = this.getPlatformsBelow(obj);
+            const platsBelow = this.entityManager.getPlatformsBelow(obj);
             platsBelow.forEach((platBelow) => {
                 platBelow.removeObjectOnIt(obj);
             });
@@ -291,7 +283,7 @@ export class Editor extends Scene {
 
         // safe to delete objects
         objs.forEach((obj) => {
-            this.updateGameObjMap({ entityType: 'platform', gameObject: obj }, 'remove'); // entity type does not have effect when removing
+            this.entityManager.updateGameObjMap({ entityType: 'platform', gameObject: obj }, 'remove'); // entity type does not have effect when removing
             obj.destroy();
         });
     }
@@ -332,7 +324,7 @@ export class Editor extends Scene {
 
         // calculating snapped coordinates
         const snappedPos = new Phaser.Math.Vector2(x, y);
-        this.updateToSnappedCoord(snappedPos);
+        GridManager.updateToSnappedCoord(snappedPos);
 
         // calculating logical rectangle based on entity type
         let geomRect: Phaser.Geom.Rectangle;
@@ -343,13 +335,13 @@ export class Editor extends Scene {
             geomRect = new Phaser.Geom.Rectangle(snappedPos.x, snappedPos.y, TILE_SIZE, TILE_SIZE * 2);
         }
 
-        if (!this.canObjectBePlaced(geomRect, entityType)) return;
+        if (!this.entityManager.canObjectBePlaced(geomRect, entityType)) return;
 
         let gameObject: Phaser.GameObjects.Image | Platform;
         switch (entityType) {
             case 'platform':
                 gameObject = new Platform(this, geomRect.x, geomRect.y, geomRect.width, geomRect.height);
-                const objectsOnIt = this.getObjectsAbove(gameObject);
+                const objectsOnIt = this.entityManager.getObjectsAbove(gameObject);
                 objectsOnIt.forEach(objectOnIt => {
                     (gameObject as Platform).addObjectOnIt(objectOnIt);
                 });
@@ -385,25 +377,16 @@ export class Editor extends Scene {
 
         this.objectDragController.setupDrag(gameObject, entityType);
 
-        this.updateGameObjMap({ entityType: entityType, gameObject: gameObject }, 'add');
+        this.entityManager.updateGameObjMap({ entityType: entityType, gameObject: gameObject }, 'add');
 
         // if there is a platform below - add this platform to its objectsOnIt set
-        const platformsBelow = this.getPlatformsBelow(gameObject);
+        const platformsBelow = this.entityManager.getPlatformsBelow(gameObject);
         platformsBelow.forEach(platformBelow => {
             platformBelow.addObjectOnIt(gameObject);
         });
 
 
     }
-
-    /*
-       updates raw coord to the nearest top-left corner of a grid cell.
-    */
-    public updateToSnappedCoord(coord: Phaser.Math.Vector2) {
-        coord.x = Math.floor(coord.x / TILE_SIZE) * TILE_SIZE;
-        coord.y = Math.floor(coord.y / TILE_SIZE) * TILE_SIZE;
-    }
-
 
     private initGroups() {
         this.platforms = this.add.group();
@@ -413,42 +396,6 @@ export class Editor extends Scene {
     }
 
     /* ---- HELPERS ---- */
-
-    public getPlatformsBelow(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Platform> {
-        const platformsBelow: Set<Platform> = new Set();
-
-        if (rect.y === this.canvasHeight() * this.worldHeightUnit - TILE_SIZE) {
-            return platformsBelow;
-        }
-
-        let y = rect.y + rect.height;
-        for (let x = rect.x; x < rect.x + rect.width; x += TILE_SIZE) {
-            const posBelowRectKey = getPositionKey(new Phaser.Math.Vector2(x, y));
-            const editorEntity = this.gameObjMap.get(posBelowRectKey);
-            if (editorEntity?.entityType === 'platform') {
-                platformsBelow.add(editorEntity.gameObject as Platform);
-            }
-        }
-
-        return platformsBelow;
-    }
-
-    public getObjectsAbove(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): Set<Phaser.GameObjects.Image | Platform> {
-        const platformsAbove: Set<Phaser.GameObjects.Image | Platform> = new Set();
-
-        if (rect.y === 0) return platformsAbove;
-
-        let y = rect.y - TILE_SIZE;
-        for (let x = rect.x; x < rect.x + rect.width; x += TILE_SIZE) {
-            const posAboveRectKey = getPositionKey(new Phaser.Math.Vector2(x, y));
-            const editorEntity = this.gameObjMap.get(posAboveRectKey);
-            if (editorEntity) {
-                platformsAbove.add(editorEntity.gameObject);
-            }
-        }
-
-        return platformsAbove;
-    }
 
     /*
     return a set of objects with the minimal y value
@@ -542,66 +489,6 @@ export class Editor extends Scene {
         if (flagType === 'checkpoint')
             return new Phaser.GameObjects.Image(this, pos.x, pos.y, 'checkpoint-flag', 4).setOrigin(0, 0);
         return new Phaser.GameObjects.Image(this, pos.x, pos.y, flagType).setOrigin(0, 0);
-    }
-
-
-    public canObjectBePlaced(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform, entityType: EntityType): boolean {
-        if (this.isOverlapping(rect)) {
-            return false;
-        }
-
-        if ((entityType === 'start-flag' && this.startFlag) || (entityType === 'end-flag' && this.endFlag)) {
-            return false; //can only be one start/end flag
-        }
-
-        let requirePlatformBelow = true;
-
-        if (entityType === 'coin' || entityType === 'platform') {
-            requirePlatformBelow = false;
-        }
-
-        if (requirePlatformBelow) {
-            const platformsBelow = this.getPlatformsBelow(rect);
-            if (platformsBelow.size === 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /* return true if rect is overlapping with an occupied tile */
-    private isOverlapping(rect: Phaser.Geom.Rectangle | Phaser.GameObjects.Image | Platform): boolean {
-        for (let x = rect.x; x < rect.x + rect.width; x += TILE_SIZE) {
-            for (let y = rect.y; y < rect.y + rect.height; y += TILE_SIZE) {
-                const posKey = getPositionKey(new Phaser.Math.Vector2(x, y));
-                if (this.gameObjMap.has(posKey)) {
-                    // An object at this position already exists.
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
- * Adds or removes the occuptions of the tiles in the game object map.
- *
- * @param editorEntity The entity to add or remove from the map.
- * @param operation Whether to 'add' or 'remove' the entity from the map.
- */
-    public updateGameObjMap(editorEntity: EditorEntity, operation: 'add' | 'remove') {
-        const gameObject = editorEntity.gameObject;
-
-        for (let x = gameObject.x; x < gameObject.x + gameObject.width; x += TILE_SIZE) {
-            for (let y = gameObject.y; y < gameObject.y + gameObject.height; y += TILE_SIZE) {
-                if (operation === 'add') {
-                    this.gameObjMap.set(getPositionKey(new Phaser.Math.Vector2(x, y)), editorEntity);
-                }
-                else {
-                    this.gameObjMap.delete(getPositionKey(new Phaser.Math.Vector2(x, y)));
-                }
-            }
-        }
     }
 
     /**

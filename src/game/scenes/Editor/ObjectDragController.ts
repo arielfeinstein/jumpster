@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import GridManager from './GridManager';
 import Platform from '../../gameObjects/Platform';
 import { EntityType } from './EditorUI';
 import { Editor, RED_TINT, GameObject } from './Editor';
@@ -30,7 +31,7 @@ export default class ObjectDragController {
                 this.scene.startFlag = null;
                 this.scene.endFlag = null;
 
-                platformsBelowBeforeDrag = this.scene.getPlatformsBelow(object);
+                platformsBelowBeforeDrag = this.scene.entityManager.getPlatformsBelow(object);
 
                 if (entityType === 'platform') {
                     ghostDrag = new Platform(this.scene, object.x, object.y, object.width, object.height)
@@ -54,12 +55,12 @@ export default class ObjectDragController {
                 // calculate current pointer snapped coord
                 snappedPointerCoord.x = pointer.worldX;
                 snappedPointerCoord.y = pointer.worldY;
-                this.scene.updateToSnappedCoord(snappedPointerCoord);
+                GridManager.updateToSnappedCoord(snappedPointerCoord);
 
                 ghostDrag!.x = snappedPointerCoord.x;
                 ghostDrag!.y = snappedPointerCoord.y;
 
-                if (!this.scene.canObjectBePlaced(ghostDrag!, entityType)) {
+                if (!this.scene.entityManager.canObjectBePlaced(ghostDrag!, entityType)) {
                     ghostDrag!.setTint(RED_TINT);
                 }
                 else {
@@ -76,24 +77,24 @@ export default class ObjectDragController {
                 }
                 else {
                     // valid position - move the enemy and update the map
-                    this.scene.updateGameObjMap({ entityType: entityType, gameObject: object }, 'remove');
+                    this.scene.entityManager.updateGameObjMap({ entityType: entityType, gameObject: object }, 'remove');
                     object.x = ghostDrag!.x;
                     object.y = ghostDrag!.y;
 
-                    this.scene.updateGameObjMap({ entityType: entityType, gameObject: object }, 'add');
+                    this.scene.entityManager.updateGameObjMap({ entityType: entityType, gameObject: object }, 'add');
 
                     // if there was a platform below before the drag - remove this object from its objectsOnIt set
                     platformsBelowBeforeDrag.forEach((platformBelow: Platform) => {
                         platformBelow.removeObjectOnIt(object);
                     });
                     // if there is a platform below after the drag - add this object to its objectsOnIt set
-                    const platformsBelowAfterDrag = this.scene.getPlatformsBelow(object);
+                    const platformsBelowAfterDrag = this.scene.entityManager.getPlatformsBelow(object);
                     platformsBelowAfterDrag.forEach((platformBelow: Platform) => {
                         platformBelow.addObjectOnIt(object);
                     });
                     // if it's a platform add objects above it
                     if (entityType === 'platform') {
-                        const objectsAbove = this.scene.getObjectsAbove(object);
+                        const objectsAbove = this.scene.entityManager.getObjectsAbove(object);
                         objectsAbove.forEach(objectAbove => {
                             (object as Platform).addObjectOnIt(objectAbove);
                         });
