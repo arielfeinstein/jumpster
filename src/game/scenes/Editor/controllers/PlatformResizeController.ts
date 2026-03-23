@@ -92,6 +92,9 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
     /** Rect at the moment the drag started (before any resize). */
     private fromRect: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
+    /** Set to true during drag when the current geometry is invalid. */
+    private dragInvalid = false;
+
     private readonly snappedPointer = new Phaser.Math.Vector2();
     private readonly entityManager: EntityManager;
     private readonly relManager: PlatformRelationshipManager;
@@ -152,6 +155,7 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
     private onDragStart(dir: CardinalDir): void {
         if (!this.platform) return;
         this.currentDir = dir;
+        this.dragInvalid = false;
 
         // Snapshot the platform's rect before any modification.
         this.fromRect = {
@@ -197,15 +201,17 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
 
         if (!canPlace || aboveCount < prevAboveCount) {
             this.platform.setTint(RED_TINT);
+            this.dragInvalid = true;
         } else {
             this.platform.clearTint();
+            this.dragInvalid = false;
         }
     }
 
     private onDragEnd(): void {
         if (!this.platform) return;
 
-        const invalid = !this.platform.visible || this.platform.tint === RED_TINT;
+        const invalid = !this.platform.displayObject.visible || this.dragInvalid;
 
         // Always restore visibility and tint first.
         this.platform.setVisible(true).setAlpha(1).clearTint();

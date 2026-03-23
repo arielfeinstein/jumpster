@@ -3,24 +3,15 @@
  *
  * Single source of truth for which entities are "on top of" a given platform.
  *
- * Previously this logic was scattered across PlacementController,
- * ObjectDragController, and Editor.ts.  Centralising it here means Commands
- * can call a single method after execute() or undo() and trust the
- * relationships are correct.
- *
- * The manager uses EntityManager for spatial lookups; it does NOT maintain a
- * separate tile map.
+ * Owns a private Map<platformId, Set<GameEntity>> so Platform.ts carries no
+ * relationship state of its own.  The draggability side-effect (a platform
+ * with objects on it cannot be dragged) is managed here as well, by calling
+ * Phaser's input manager directly through platform.displayObject.scene.
  *
  * Relationship semantics:
  *   An entity E is "on" platform P when E's bottom edge aligns with P's top
  *   edge AND at least one tile column of E overlaps P horizontally.
- *   This is exactly what EntityManager.getPlatformsBelow() detects.
- *
- * Platform draggability:
- *   A platform is only draggable when nothing is standing on it.
- *   The manager updates Phaser's input draggable flag whenever objectsOnIt
- *   changes, delegating to Platform's (deprecated) transition shim until
- *   Phase 6 removes it.
+ *   Spatial queries delegate to EntityManager.getPlatformsBelow / getEntitiesAbove.
  */
 
 import GameEntity from '../../../gameObjects/GameEntity';
@@ -29,6 +20,9 @@ import { IPlatformRelManager } from '../types/ManagerInterfaces';
 import EntityManager from './EntityManager';
 
 export default class PlatformRelationshipManager implements IPlatformRelManager {
+
+    /** platform.id → set of entities standing on that platform. */
+    private readonly platformObjects = new Map<string, Set<GameEntity>>();
 
     constructor(private readonly entityManager: EntityManager) {}
 
@@ -39,85 +33,70 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
     /**
      * Called after an entity is placed (or recreated on redo).
      *
-     * - If the entity is NOT a platform: register it with any platforms below it.
-     * - If the entity IS a platform: collect any entities now sitting on top.
+     * - Platform placed: collect entities already above it.
+     * - Other entity placed: register it with the platforms below it.
      */
     onEntityPlaced(entity: GameEntity): void {
         if (entity instanceof Platform) {
-            // Collect entities that were floating above this tile range and now
-            // have a platform supporting them.
             const above = this.entityManager.getEntitiesAbove(entity);
             above.forEach(e => {
-                if (!(e instanceof Platform)) {
-                    entity.addObjectOnIt(e);
-                }
+                if (!(e instanceof Platform)) this.add(entity, e);
             });
         } else {
-            // Register this entity with every platform directly below it.
             const below = this.entityManager.getPlatformsBelow(entity);
-            below.forEach(p => p.addObjectOnIt(entity));
+            below.forEach(p => this.add(p, entity));
         }
     }
 
     /**
      * Called before an entity is removed (deleted or undone place).
      *
-     * - If the entity is NOT a platform: remove it from any platforms it was on.
-     * - If the entity IS a platform: it carries no objectsOnIt that need cleanup
-     *   here — the platform's own set is discarded with the entity.
+     * - Non-platform removed: deregister it from any platforms below it.
+     * - Platform removed: its entry in platformObjects is discarded with it;
+     *   no further action needed because removing a platform while entities
+     *   stand on it is already blocked by canDeleteEntities().
      */
     onEntityRemoved(entity: GameEntity): void {
-        if (!(entity instanceof Platform)) {
+        if (entity instanceof Platform) {
+            this.platformObjects.delete(entity.id);
+        } else {
             const below = this.entityManager.getPlatformsBelow(entity);
-            below.forEach(p => p.removeObjectOnIt(entity));
+            below.forEach(p => this.remove(p, entity));
         }
     }
 
     /**
      * Called after an entity is moved to a new position.
-     * Updates both the platform it came from and the platform it moved to.
-     *
-     * @param entity  Already at its NEW position when this is called.
-     * @param oldPos  The position the entity was at before the move.
+     * `entity` is already at its NEW position when this is called.
      */
     onEntityMoved(entity: GameEntity, oldPos: { x: number; y: number }): void {
-        // Temporarily position at old coords to look up what was below.
         const newX = entity.x;
         const newY = entity.y;
 
+        // Look up platforms at the old position.
         entity.x = oldPos.x;
         entity.y = oldPos.y;
         const oldBelow = this.entityManager.getPlatformsBelow(entity);
 
+        // Restore new position and look up platforms there.
         entity.x = newX;
         entity.y = newY;
         const newBelow = this.entityManager.getPlatformsBelow(entity);
 
-        // Remove from platforms that no longer support this entity.
-        oldBelow.forEach(p => {
-            if (!newBelow.has(p)) p.removeObjectOnIt(entity);
-        });
-
-        // Add to platforms that now support this entity.
-        newBelow.forEach(p => {
-            if (!oldBelow.has(p)) p.addObjectOnIt(entity);
-        });
+        oldBelow.forEach(p => { if (!newBelow.has(p)) this.remove(p, entity); });
+        newBelow.forEach(p => { if (!oldBelow.has(p)) this.add(p, entity); });
     }
 
     /**
      * Called after a platform is resized.
-     * Rebuilds objectsOnIt from scratch by re-querying the spatial map.
+     * Clears its set and rebuilds from the spatial map.
      */
     onPlatformResized(platform: Platform): void {
-        // Clear the current set.
-        platform.setObjectsOnIt(new Set());
+        this.platformObjects.delete(platform.id);
 
-        // Re-collect entities above the new rectangle.
         const above = this.entityManager.getEntitiesAbove(platform);
         above.forEach(e => {
-            if (!(e instanceof Platform)) {
-                platform.addObjectOnIt(e);
-            }
+            if (!(e instanceof Platform)) this.add(platform, e);
         });
     }
 
@@ -126,26 +105,62 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
     // -----------------------------------------------------------------------
 
     /**
-     * Returns false if deleting `entities` would leave orphaned entities with
-     * no supporting platform.
-     *
-     * A platform P blocks deletion if it has objects on top AND none of those
-     * objects are also being deleted.
+     * Returns false if deleting `entities` would leave objects stranded on a
+     * platform that is also being deleted but has entities not in the delete set.
      */
     canDeleteEntities(entities: GameEntity[]): boolean {
-        const deleteSet = new Set(entities.map(e => e.id));
+        const deleteIds = new Set(entities.map(e => e.id));
 
         for (const entity of entities) {
             if (entity instanceof Platform) {
-                for (const obj of entity.getObjectsOnIt()) {
-                    const gameEntity = obj as GameEntity;
-                    if (!deleteSet.has(gameEntity.id)) {
-                        return false;
-                    }
+                for (const obj of this.getObjectsOnPlatform(entity)) {
+                    if (!deleteIds.has(obj.id)) return false;
                 }
             }
         }
 
         return true;
+    }
+
+    // -----------------------------------------------------------------------
+    // Public query
+    // -----------------------------------------------------------------------
+
+    /** Returns the set of entities currently standing on `platform`. */
+    getObjectsOnPlatform(platform: Platform): Set<GameEntity> {
+        return this.platformObjects.get(platform.id) ?? new Set();
+    }
+
+    // -----------------------------------------------------------------------
+    // Private helpers
+    // -----------------------------------------------------------------------
+
+    private add(platform: Platform, entity: GameEntity): void {
+        const set = this.getOrCreate(platform);
+        set.add(entity);
+        if (set.size === 1) {
+            // Disable dragging while something stands on the platform.
+            platform.displayObject.scene.input.setDraggable(platform.displayObject, false);
+        }
+    }
+
+    private remove(platform: Platform, entity: GameEntity): void {
+        const set = this.platformObjects.get(platform.id);
+        if (!set) return;
+        set.delete(entity);
+        if (set.size === 0) {
+            this.platformObjects.delete(platform.id);
+            // Re-enable dragging when the platform is empty.
+            platform.displayObject.scene.input.setDraggable(platform.displayObject, true);
+        }
+    }
+
+    private getOrCreate(platform: Platform): Set<GameEntity> {
+        let set = this.platformObjects.get(platform.id);
+        if (!set) {
+            set = new Set();
+            this.platformObjects.set(platform.id, set);
+        }
+        return set;
     }
 }

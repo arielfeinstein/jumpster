@@ -12,13 +12,8 @@
  * Physics bodies are attached to each TileSprite individually so the game
  * scene can add colliders against `topLayer` and `fillLayer` independently.
  *
- * Interactivity for the editor is set up here for now (draggable Container)
- * — this will move out to the editor in a later phase so that the game scene
- * is not burdened with editor-only setup.
- *
- * Note: objectsOnIt tracking lives here temporarily for backward compatibility
- * with the old controllers.  It will migrate to PlatformRelationshipManager
- * in Phase 4.
+ * Relationship state (which entities stand on this platform) is owned by
+ * PlatformRelationshipManager, not here.
  */
 
 import Phaser from 'phaser';
@@ -40,10 +35,6 @@ export default class Platform extends GameEntity {
 
     /** Dirt fill — hidden when height === TILE_SIZE, otherwise height - TILE_SIZE tall. */
     fillLayer: Phaser.GameObjects.TileSprite;
-
-    /** @deprecated  Will move to PlatformRelationshipManager in Phase 4. */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private objectsOnIt: Set<any> = new Set();
 
     // Current logical size (the Container's built-in width/height lags by one frame).
     private _width: number;
@@ -174,80 +165,4 @@ export default class Platform extends GameEntity {
         return ghost;
     }
 
-    // -----------------------------------------------------------------------
-    // objectsOnIt tracking
-    // @deprecated — will move to PlatformRelationshipManager in Phase 4
-    // -----------------------------------------------------------------------
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    addObjectOnIt(object: any): void {
-        this.objectsOnIt.add(object);
-        if (this.objectsOnIt.size === 1) {
-            this.displayObject.scene.input.setDraggable(this.displayObject, false);
-        }
-    }
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    removeObjectOnIt(object: any): void {
-        this.objectsOnIt.delete(object);
-        if (this.objectsOnIt.size === 0) {
-            this.displayObject.scene.input.setDraggable(this.displayObject, true);
-        }
-    }
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getObjectsOnIt(): Set<any> {
-        return this.objectsOnIt;
-    }
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setObjectsOnIt(objectsOnIt: Set<any>): void {
-        this.objectsOnIt = objectsOnIt;
-    }
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    hasObjectOnIt(object: any): boolean {
-        return this.objectsOnIt.has(object);
-    }
-
-    // -----------------------------------------------------------------------
-    // Transition shims — old controllers call these on the entity directly.
-    // Removed when those controllers are rewritten in Phase 5.
-    // -----------------------------------------------------------------------
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    on(event: string, fn: (...args: any[]) => void, context?: any): this {
-        this.displayObject.on(event, fn, context);
-        return this;
-    }
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    off(event: string, fn?: (...args: any[]) => void, context?: any): this {
-        this.displayObject.off(event, fn, context);
-        return this;
-    }
-
-    /** @deprecated */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setInteractive(config?: any): this {
-        this.displayObject.setInteractive(config);
-        return this;
-    }
-
-    /** @deprecated — tint is a getter only; use setTint() for writes. */
-    get tint(): number {
-        return this.topLayer.tintTopLeft;
-    }
-
-    /** @deprecated */
-    get visible(): boolean {
-        return this.displayObject.visible;
-    }
 }
