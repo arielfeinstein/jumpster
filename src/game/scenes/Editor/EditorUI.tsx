@@ -1,221 +1,248 @@
+/**
+ * EditorUI.tsx
+ *
+ * React UI overlay for the level editor.
+ *
+ * Rendered as a fixed full-screen transparent overlay (pointer-events:none)
+ * with a single dockable palette (pointer-events:auto).  Because only the dock
+ * captures mouse events, hovering it freezes the Phaser placement ghost (Phaser
+ * stops receiving pointermove) and dock clicks never accidentally reach the
+ * canvas — no coordinate conversion or hidden overlay needed.
+ *
+ * Communication with Phaser goes entirely through EventBus:
+ *   React → Phaser:  'editor-start-placement', 'editor-cancel-placement',
+ *                    'editor-change-dimensions'
+ *   Phaser → React:  'editor-placement-active'
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { DropdownMenu, Popover } from 'radix-ui';
+import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
+import { EventBus } from '../../EventBus';
+import {
+    DOCK_SLOTS,
+    DockPosition,
+    DockSlotConfig,
+    DropdownOption,
+    PlacementActivePayload,
+    StartPlacementPayload,
+} from './types/DockTypes';
 import styles from './EditorUI.module.css';
-import { useDrag } from 'react-dnd';
-import { useDrop, DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import { pageToPhaser } from '../../utilities/Convertors';
-import { EventBus } from '../../EventBus'
-import { Popover } from 'radix-ui';
-import { Component2Icon } from '@radix-ui/react-icons'
-import { Cross1Icon } from '@radix-ui/react-icons'
-import { useRef, useEffect, useState } from 'react';
 
-export type EntityType = 'platform' | 'enemy' | 'coin' | 'checkpoint' | 'start-flag' | 'end-flag';
+// ---------------------------------------------------------------------------
+// Root component
+// ---------------------------------------------------------------------------
 
-// Editor palette of placeable entities
-// todo: add a prop for the current scene (editor)
-export default function EditorUI({ game }: { game: Phaser.Game }) {
-    return (
-        <DndProvider backend={HTML5Backend}>
-            <>
-                <div className={styles.controlsRow}>
-                    <div className={styles.palette}>
-                        <PaletteItem entityType="platform" imgSrc="/assets/react/platform.png" />
-                        <PaletteItem entityType="enemy" imgSrc="/assets/react/enemy.png" />
-                        <PaletteItem entityType="coin" imgSrc="/assets/phaser/coin.png" />
-                        <PaletteItem entityType="checkpoint" imgSrc="/assets/react/checkpoint-flag.png" />
-                        <PaletteItem entityType="start-flag" imgSrc="/assets/phaser/start-flag.png" /> 
-                        <PaletteItem entityType="end-flag" imgSrc="/assets/phaser/end-flag.png" />
+export default function EditorUI() {
+    const [dockPosition, setDockPosition] = useState<DockPosition>('bottom');
+    const [placementActive, setPlacementActive] = useState(false);
 
-                    </div>
-                    <ChangeDimensionPopover />
-                </div>
-                <HiddenCanvasWrapper game={game} />
-            </>
-        </DndProvider>
-    );
-}
-
-function PaletteItem({ entityType, imgSrc }: { entityType: EntityType; imgSrc: string }) {
-    const [{ isDragging }, dragRef] = useDrag({
-        type: 'game-object',
-        item: { entityType },
-        end: (item, monitor) => {
-            if (!monitor.didDrop()) {
-                EventBus.emit('ui-drag-cancelled');
-            }
-        },
-        collect: (monitor) => ({
-            isDragging: monitor.isDragging()
-        })
-    });
-
-    return (
-        <button
-            ref={el => { dragRef(el) }}
-            data-entity={entityType}
-            className={styles.tileButton}
-        >
-            <img src={imgSrc} className={styles.tileIcon} />
-        </button>
-    );
-}
-
-type Bounds = { left: number; top: number; width: number; height: number };
-
-/**
- * useScaleBounds
- * Computes the visible game rectangle inside `#game-container` using Phaser's ScaleManager.
- * - Positions are relative to the container (not the viewport).
- * - Uses `displaySize` for width/height and container centering math for top/left.
- * - Subscribes to `scale.resize` and updates state when the game resizes.
- * Returns `null` until the first measurement completes.
- */
-function useScaleBounds(game: Phaser.Game) {
-    const [bounds, setBounds] = useState<Bounds | null>(null);
-
+    // Listen for placement state changes emitted by PlacementController.
     useEffect(() => {
-        if (!game) return;
-        const scale = game.scale;
-
-        const update = () => {
-            const parentW = scale.parentSize.width;
-            const parentH = scale.parentSize.height;
-            const dispW = scale.displaySize.width;
-            const dispH = scale.displaySize.height;
-
-            const left = Math.floor((parentW - dispW) / 2);
-            const top = Math.floor((parentH - dispH) / 2);
-
-            setBounds({
-                left,
-                top,
-                width: Math.floor(dispW),
-                height: Math.floor(dispH),
-            });
+        const handler = ({ active }: PlacementActivePayload) => {
+            setPlacementActive(active);
         };
+        EventBus.on('editor-placement-active', handler);
+        return () => { EventBus.off('editor-placement-active', handler); };
+    }, []);
 
-        update();
-        const onResize = () => update();
-        scale.on('resize', onResize);
-        return () => {
-            scale.off('resize', onResize);
-        };
-    }, [game]);
+    const handleEntitySelect = useCallback(({ entityType, variant }: StartPlacementPayload) => {
+        EventBus.emit('editor-start-placement', { entityType, variant });
+    }, []);
 
-    return bounds;
-}
+    const handleCancelPlacement = useCallback(() => {
+        EventBus.emit('editor-cancel-placement');
+    }, []);
 
-/**
- * useEditorDrop
- * Sets up the react-dnd drop target for game entities.
- * - Accepts items of type `game-object` with `{ entityType }`.
- * - Converts the drop point (client coords) to world coords via `pageToPhaser`.
- * - Emits `editor-place-entity` with `{ entityType, x, y }`.
- * Returns the standard `useDrop` tuple (collecting `{ isOver }`).
- */
-function useEditorDrop(game: Phaser.Game) {
-    return useDrop({
-        accept: 'game-object',
-        drop: (item: { entityType: EntityType }, monitor) => {
-            const clientOffset = monitor.getClientOffset();
-            if (!clientOffset) return;
-            const { world } = pageToPhaser(
-                clientOffset,
-                game,
-                game.scene.getScene('Editor').cameras.main
-            );
-            EventBus.emit('editor-place-entity', {
-                entityType: item.entityType,
-                x: world.x,
-                y: world.y
-            });
-        },
-        collect: (monitor) => ({
-            isOver: monitor.isOver(),
-            isDragging: monitor.canDrop(), 
-        })
-    });
-}
+    const cycleDockPosition = useCallback(() => {
+        const order: DockPosition[] = ['bottom', 'right', 'top', 'left'];
+        setDockPosition(prev => order[(order.indexOf(prev) + 1) % order.length]);
+    }, []);
 
-/**
- * HiddenCanvasWrapper
- * Absolutely positioned overlay that matches the scaled game area (excludes pillarboxing),
- * used to capture drag/drop and pointer interactions aligned with the canvas.
- * Relies on `useScaleBounds` for size/position and `useEditorDrop` for DnD behavior.
- */
-function HiddenCanvasWrapper({ game }: { game: Phaser.Game }) {
-    const [{ isOver, isDragging }, dropRef] = useEditorDrop(game);
-    const bounds = useScaleBounds(game);
-
-    if (!bounds) return null;
+    const dockClass = {
+        bottom: styles.dockBottom,
+        top:    styles.dockTop,
+        left:   styles.dockLeft,
+        right:  styles.dockRight,
+    }[dockPosition];
 
     return (
-        <div
-            ref={el => { dropRef(el) }}
-            className={styles.hiddenCanvas}
-            style={{
-                backgroundColor: isDragging && isOver ? 'rgba(217, 15, 15, 0.2)' : 'transparent',
-                top: bounds.top,
-                left: bounds.left,
-                width: bounds.width,
-                height: bounds.height,
-                pointerEvents: isDragging ? 'auto' : 'none'
-            }}
-        >
-            {isDragging && isOver && <div className={styles.dropIndicator}>Release to drop</div>}
+        <div className={styles.overlay}>
+            <div className={`${styles.dock} ${dockClass}`}>
+                {DOCK_SLOTS.map((slot, i) => (
+                    <DockSlot
+                        key={i}
+                        config={slot}
+                        placementActive={placementActive}
+                        onEntitySelect={handleEntitySelect}
+                        onCancelPlacement={handleCancelPlacement}
+                        onCycleDockPosition={cycleDockPosition}
+                    />
+                ))}
+            </div>
         </div>
     );
 }
 
-function ChangeDimensionPopover() {
+// ---------------------------------------------------------------------------
+// DockSlot dispatcher
+// ---------------------------------------------------------------------------
 
-    const widthInputRef = useRef<HTMLInputElement>(null);
-    const heightInputRef = useRef<HTMLInputElement>(null);
+interface DockSlotProps {
+    config: DockSlotConfig;
+    placementActive: boolean;
+    onEntitySelect: (payload: StartPlacementPayload) => void;
+    onCancelPlacement: () => void;
+    onCycleDockPosition: () => void;
+}
 
-    const handleDimensionChange = () => {
-        const worldWidthUnit = parseInt(widthInputRef.current?.value || '0', 10);
-        const worldHeightUnit = parseInt(heightInputRef.current?.value || '0', 10);
-        EventBus.emit('editor-change-dimensions', { worldWidthUnit, worldHeightUnit });
+function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, onCycleDockPosition }: DockSlotProps) {
+    switch (config.kind) {
+        case 'entity-dropdown':
+            return (
+                <EntityDropdownSlot
+                    label={config.label}
+                    iconSrc={config.iconSrc}
+                    options={config.options}
+                    onSelect={onEntitySelect}
+                />
+            );
+        case 'action-button': {
+            // Respect visibility rules.
+            if (config.visibleDuringPlacement === 'only' && !placementActive) return null;
+
+            const isCancel = config.action === 'cancel-placement';
+            const onClick = config.action === 'cancel-placement'
+                ? onCancelPlacement
+                : onCycleDockPosition;
+
+            return (
+                <button
+                    className={`${styles.slotButton} ${isCancel ? styles.cancelButton : ''}`}
+                    title={config.label}
+                    onClick={onClick}
+                >
+                    {isCancel
+                        ? <Cross1Icon width={18} height={18} />
+                        : <DotFilledIcon width={18} height={18} />
+                    }
+                </button>
+            );
+        }
+        case 'popover':
+            return <LevelSizePopoverSlot />;
     }
-    
+}
+
+// ---------------------------------------------------------------------------
+// EntityDropdownSlot
+// ---------------------------------------------------------------------------
+
+interface EntityDropdownSlotProps {
+    label: string;
+    iconSrc: string;
+    options: DropdownOption[];
+    onSelect: (payload: StartPlacementPayload) => void;
+}
+
+/**
+ * Dock button that opens a Radix DropdownMenu listing entity variants.
+ * Selecting an option emits 'editor-start-placement' with the chosen type and
+ * optional variant.  Every entity always shows a dropdown — even with one
+ * option — for consistency and to support future texture variants.
+ */
+function EntityDropdownSlot({ label, iconSrc, options, onSelect }: EntityDropdownSlotProps) {
     return (
-        <div className={styles.popover}>
-            <Popover.Root>
-                <Popover.Trigger asChild>
-                    <button className={styles.popoverTrigger} aria-label="Update dimensions">
-                        <Component2Icon />
-                    </button>
-                </Popover.Trigger>
-                <Popover.Portal>
-                    <Popover.Content className={styles.popoverContent}>
-                        <p className={styles.popoverTitle}>Dimensions</p>
-                        <fieldset className={styles.fieldset}>
-                            <label className={styles.label} htmlFor="width">
-                                Width
-                            </label>
-                            <input className={styles.input} id="width" ref={widthInputRef} />
-                        </fieldset>
-                        <fieldset className={styles.fieldset}>
-                            <label className={styles.label} htmlFor="height">
-                                Height
-                            </label>
-                            <input className={styles.input} id="height" ref={heightInputRef} />
-                        </fieldset>
-                        <Popover.Close className={styles.popoverClose} aria-label="Close">
-                            <Cross1Icon />
-                        </Popover.Close>
-                        {
-                            /* todo: - add submitButton
-                                      - add click listener
-                                      - add focus (don't exit when clicked on game canvas) */
-                        }
-                        <Popover.Close className={styles.submitButton} aria-label="Apply changes" onClick={handleDimensionChange}>
+        <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+                <button className={styles.slotButton} title={label}>
+                    <img src={iconSrc} className={styles.slotIcon} alt={label} />
+                </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+                <DropdownMenu.Content className={styles.dropdownContent} sideOffset={6}>
+                    {options.map(option => (
+                        <DropdownMenu.Item
+                            key={`${option.entityType}-${option.variant ?? 'default'}`}
+                            className={styles.dropdownItem}
+                            onSelect={() => onSelect({ entityType: option.entityType, variant: option.variant })}
+                        >
+                            <img
+                                src={option.iconSrc}
+                                className={styles.dropdownItemIcon}
+                                alt={option.label}
+                            />
+                            {option.label}
+                        </DropdownMenu.Item>
+                    ))}
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// LevelSizePopoverSlot
+// ---------------------------------------------------------------------------
+
+/**
+ * Dock button that opens a Radix Popover for changing the level dimensions.
+ * Width and height are integer multipliers of the viewport size (e.g. 2 = 2×
+ * the canvas width).  Emits 'editor-change-dimensions' on Apply.
+ */
+function LevelSizePopoverSlot() {
+    const widthRef  = useRef<HTMLInputElement>(null);
+    const heightRef = useRef<HTMLInputElement>(null);
+
+    const handleApply = useCallback(() => {
+        const worldWidthUnit  = parseInt(widthRef.current?.value  ?? '0', 10);
+        const worldHeightUnit = parseInt(heightRef.current?.value ?? '0', 10);
+        EventBus.emit('editor-change-dimensions', { worldWidthUnit, worldHeightUnit });
+    }, []);
+
+    return (
+        <Popover.Root>
+            <Popover.Trigger asChild>
+                <button className={styles.slotButton} title="Level Size">
+                    <Component2Icon width={22} height={22} />
+                </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content className={styles.popoverContent} sideOffset={6}>
+                    <p className={styles.popoverTitle}>Level Size</p>
+                    <fieldset className={styles.fieldset}>
+                        <label className={styles.label} htmlFor="level-width">Width</label>
+                        <input
+                            id="level-width"
+                            className={styles.input}
+                            type="number"
+                            min={1}
+                            defaultValue={1}
+                            ref={widthRef}
+                        />
+                    </fieldset>
+                    <fieldset className={styles.fieldset}>
+                        <label className={styles.label} htmlFor="level-height">Height</label>
+                        <input
+                            id="level-height"
+                            className={styles.input}
+                            type="number"
+                            min={1}
+                            defaultValue={1}
+                            ref={heightRef}
+                        />
+                    </fieldset>
+                    <div className={styles.popoverActions}>
+                        <Popover.Close className={styles.applyButton} onClick={handleApply}>
                             Apply
                         </Popover.Close>
-                        <Popover.Arrow className={styles.popoverArrow} />
-                    </Popover.Content>
-                </Popover.Portal>
-            </Popover.Root>
-        </div>
+                    </div>
+                    <Popover.Close className={styles.popoverClose} aria-label="Close">
+                        <Cross1Icon />
+                    </Popover.Close>
+                    <Popover.Arrow className={styles.popoverArrow} />
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
     );
 }

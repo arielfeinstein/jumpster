@@ -14,9 +14,7 @@ function App() {
     return (
         <PhaserGame ref={phaserRef} currentActiveScene={scene => setCurrentScene(scene.scene.key)}>
             {currentScene === 'MainMenu' && <MainMenuUI /> }
-            {currentScene === 'Editor' && phaserRef.current?.game && (
-                <EditorUI game={phaserRef.current.game as Phaser.Game} />
-            )}
+            {currentScene === 'Editor' && <EditorUI />}
         </PhaserGame>
     );
 }
