@@ -128,7 +128,12 @@ export class Editor extends Scene {
 
         this.selectionController = new SelectionController(this, this.entityManager);
 
-        this.placementController = new PlacementController(this, this.dragController);
+        this.placementController = new PlacementController(
+            this,
+            this.entityManager,
+            this.relManager,
+            this.history,
+        );
 
         // ---- Views ----
         this.selectionView = new SelectionView(this);
@@ -177,12 +182,17 @@ export class Editor extends Scene {
         }
 
         obj.on('pointerdown', (_p: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+            // During placement mode let the click fall through to the scene so
+            // PlacementController can handle it.
+            if (this.placementController.isPlacing) return;
             this.selectionController.selectEntities(new Set([entity]));
             this.selectionController.disableSelectDrag = true;
             event.stopPropagation();
         });
 
         obj.on('dragstart', () => {
+            // Don't start a move-drag while the user is placing a new entity.
+            if (this.placementController.isPlacing) return;
             const selected = this.selectionController.getSelectedEntities();
             // If the entity is part of the selection, drag all selected; otherwise just this one.
             const toDrag = selected.has(entity)
@@ -198,11 +208,9 @@ export class Editor extends Scene {
 
     private wireEvents(): void {
         // React UI → Phaser.
-        EventBus.on('editor-place-entity', this.placementController.initPlacement, this.placementController);
+        EventBus.on('editor-start-placement', this.placementController.startPlacement, this.placementController);
+        EventBus.on('editor-cancel-placement', this.placementController.cancelPlacement, this.placementController);
         EventBus.on('editor-change-dimensions', this.changeDimensions, this);
-        EventBus.on('ui-drag-cancelled', () => {
-            this.input.activePointer.isDown = false;
-        });
 
         // Delete button.
         this.deleteButton.on('pointerdown', (_p: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
@@ -267,8 +275,14 @@ export class Editor extends Scene {
             this.selectionController.selectEntities(new Set([platform]));
         });
 
-        // Keyboard shortcuts: Ctrl+Z (undo), Ctrl+Y / Ctrl+Shift+Z (redo).
+        // Keyboard shortcuts.
         this.input.keyboard!.on('keydown', (event: KeyboardEvent) => {
+            // Escape cancels an active entity placement.
+            if (event.key === 'Escape') {
+                this.placementController.cancelPlacement();
+                return;
+            }
+
             if (!event.ctrlKey && !event.metaKey) return;
 
             if (event.key === 'z' || event.key === 'Z') {
@@ -284,9 +298,10 @@ export class Editor extends Scene {
 
         // Scene shutdown cleanup.
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            EventBus.off('editor-place-entity');
+            EventBus.off('editor-start-placement');
+            EventBus.off('editor-cancel-placement');
             EventBus.off('editor-change-dimensions');
-            EventBus.off('ui-drag-cancelled');
+            this.placementController.destroy();
             this.selectionController.destroy();
             this.dragController.destroy();
             this.resizeController.destroy();
