@@ -20,4 +20,4 @@ The gameplay scene doesn't exist yet — we're focused on the editor right now.
 
 - Commit changes with descriptive messages. Don't push to GitHub.
 - Keep files focused with SPR in mind; logic lives in controllers/managers/commands, not in Editor.ts.
-- The code you write should be well documanted so programmers can understand what's going on even after couple of months.
+- Document the code well so programmers can understand what's going on even after couple of months.
