@@ -157,10 +157,8 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
     private updateSelectRect(curX: number, curY: number): void {
         const x = Math.min(this.startX, curX);
         const y = Math.min(this.startY, curY);
-        let w = Math.abs(curX - this.startX);
-        let h = Math.abs(curY - this.startY);
-        if (curX >= this.startX) w += TILE_SIZE;
-        if (curY >= this.startY) h += TILE_SIZE;
+        let w = Math.abs(curX - this.startX) + TILE_SIZE;
+        let h = Math.abs(curY - this.startY) + TILE_SIZE;
         this.selectRect.setTo(x, y, w, h);
 
         // Emit current rect shape so SelectionView can draw the rubber band.
