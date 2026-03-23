@@ -37,8 +37,8 @@ export interface Rect {
 // Drag context
 // ---------------------------------------------------------------------------
 
-/** Whether a drag is finalising a new placement or repositioning existing entities. */
-export type DragMode = 'place' | 'move';
+/** Whether a drag is repositioning existing entities. */
+export type DragMode = 'move';
 
 // ---------------------------------------------------------------------------
 // Snapshots (used by Commands)
