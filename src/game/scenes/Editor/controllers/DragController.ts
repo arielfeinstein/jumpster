@@ -1,23 +1,15 @@
 /**
  * DragController.ts
  *
- * Unified drag handler for both placement and movement of entities.
+ * Handles drag-to-reposition for entities that already exist in the level.
  *
- * Two modes:
- *   'place' — a ghost entity was created by PlacementController; on valid drop
- *             it executes PlaceCommand (entity becomes opaque and is registered).
- *             On invalid drop or cancel: the ghost is destroyed.
+ * When the user presses and drags a placed entity the editor temporarily
+ * removes it from the spatial grid, lets the user reposition it with live
+ * red-tint feedback, and on release either commits the new position via
+ * MoveCommand or restores the original position if the drop is invalid.
  *
- *   'move'  — one or more existing entities are being dragged; on valid drop it
- *             executes MoveCommand.  On invalid drop: entities are restored to
- *             their original positions.
- *
- * Validation uses EntityManager.canPlace(entity, excludeIds) so:
- *   - Place mode: excludeIds is empty → duplicate singletons are rejected.
- *   - Move mode:  excludeIds contains each entity's own ID → no self-collision.
- *
- * The controller listens to Phaser pointer events on the scene (not on individual
- * entities) so multi-entity drags work uniformly.
+ * Placing brand-new entities is handled separately by PlacementController
+ * (click-to-select from the dock, then click-to-place on the canvas).
  */
 
 import Phaser from 'phaser';
@@ -25,9 +17,8 @@ import GameEntity from '../../../gameObjects/GameEntity';
 import EntityManager from '../managers/EntityManager';
 import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
 import CommandHistory from '../commands/CommandHistory';
-import PlaceCommand from '../commands/PlaceCommand';
 import MoveCommand, { MoveEntry } from '../commands/MoveCommand';
-import { DragMode, RED_TINT, DRAG_THRESHOLD } from '../types/EditorTypes';
+import { RED_TINT } from '../types/EditorTypes';
 import GridManager from '../managers/GridManager';
 
 export default class DragController {
@@ -38,19 +29,18 @@ export default class DragController {
     private readonly history: CommandHistory;
 
     // -----------------------------------------------------------------------
-    // Active drag state (null when no drag is in progress)
+    // Active drag state (null / empty when no drag is in progress)
     // -----------------------------------------------------------------------
 
-    private mode: DragMode | null = null;
     private dragEntities: GameEntity[] = [];
 
-    /** Original positions captured at drag-start (restore on invalid drop). */
+    /** Original positions captured at drag-start (restored on invalid drop). */
     private originalPositions: Array<{ x: number; y: number }> = [];
 
     /** Pointer position at drag-start (world coords). */
     private dragStartWorld = new Phaser.Math.Vector2();
 
-    /** Whether the active drag position is valid for placement. */
+    /** Whether the active drag position is valid for all dragged entities. */
     private isValid = false;
 
     /** Whether a drag is currently in progress. */
@@ -72,29 +62,25 @@ export default class DragController {
     }
 
     // -----------------------------------------------------------------------
-    // Public: start a drag
+    // Public: start a move drag
     // -----------------------------------------------------------------------
 
     /**
-     * Begin a 'place' drag for a single ghost entity.
-     * The ghost is already in the scene at alpha 0.5.
-     */
-    startPlaceDrag(ghost: GameEntity): void {
-        const ptr = this.scene.input.activePointer;
-        this.beginDrag([ghost], 'place', ptr.worldX, ptr.worldY);
-    }
-
-    /**
-     * Begin a 'move' drag for one or more selected entities.
-     * Entities are temporarily removed from the grid to allow free movement.
+     * Begin dragging one or more existing entities to a new position.
+     * Entities are temporarily removed from the spatial grid so they do not
+     * block their own placement validation.
      */
     startMoveDrag(entities: GameEntity[]): void {
         if (entities.length === 0) return;
 
         const ptr = this.scene.input.activePointer;
-        this.beginDrag(entities, 'move', ptr.worldX, ptr.worldY);
+        this.dragEntities = [...entities];
+        this.originalPositions = entities.map(e => ({ x: e.x, y: e.y }));
+        this.dragStartWorld.set(ptr.worldX, ptr.worldY);
+        this.active = true;
+        this.isValid = false;
 
-        // Remove from grid so they don't block themselves.
+        // Remove from grid so they don't block themselves during the drag.
         for (const e of this.dragEntities) {
             this.entityManager.removeEntity(e);
             e.setAlpha(0.5);
@@ -105,36 +91,27 @@ export default class DragController {
     // Private: drag lifecycle
     // -----------------------------------------------------------------------
 
-    private beginDrag(entities: GameEntity[], mode: DragMode, worldX: number, worldY: number): void {
-        this.mode = mode;
-        this.dragEntities = [...entities];
-        this.originalPositions = entities.map(e => ({ x: e.x, y: e.y }));
-        this.dragStartWorld.set(worldX, worldY);
-        this.active = true;
-        this.isValid = false;
-    }
-
     private onPointerMove(pointer: Phaser.Input.Pointer): void {
         if (!this.active || !pointer.isDown) return;
 
         const snapped = GridManager.snapXY(pointer.worldX, pointer.worldY);
 
-        // Compute delta from start (in snapped steps).
+        // Compute delta from drag-start (both snapped to the same grid).
         const startSnapped = GridManager.snapXY(this.dragStartWorld.x, this.dragStartWorld.y);
         const dx = snapped.x - startSnapped.x;
         const dy = snapped.y - startSnapped.y;
 
-        // Move all entities by the delta.
+        // Apply delta to all dragged entities relative to their original positions.
         for (let i = 0; i < this.dragEntities.length; i++) {
             const e = this.dragEntities[i];
             e.x = this.originalPositions[i].x + dx;
             e.y = this.originalPositions[i].y + dy;
         }
 
-        // Validate all entities.
+        // Validate all entities — each one must pass canPlace() independently.
         this.isValid = this.validatePositions();
 
-        // Tint feedback.
+        // Red tint while any position is invalid; clear once all are valid.
         if (this.isValid) {
             for (const e of this.dragEntities) e.clearTint();
         } else {
@@ -152,59 +129,46 @@ export default class DragController {
             this.cancel();
         }
 
-        // Reset.
+        // Always clean tint and reset state.
         for (const e of this.dragEntities) e.clearTint();
         this.dragEntities = [];
         this.originalPositions = [];
-        this.mode = null;
     }
 
     private commit(): void {
-        if (this.mode === 'place') {
-            const cmd = new PlaceCommand(
-                this.scene,
-                this.dragEntities,
-                this.entityManager,
-                this.relManager,
-            );
-            this.history.executeCommand(cmd);
-        } else {
-            // Build MoveEntry[] — entities are currently at the new positions.
-            const entries: MoveEntry[] = this.dragEntities.map((e, i) => ({
-                entity: e,
-                fromX: this.originalPositions[i].x,
-                fromY: this.originalPositions[i].y,
-                toX: e.x,
-                toY: e.y,
-            }));
+        // Build MoveEntry[] — entities are currently at the new (valid) positions.
+        const entries: MoveEntry[] = this.dragEntities.map((e, i) => ({
+            entity: e,
+            fromX: this.originalPositions[i].x,
+            fromY: this.originalPositions[i].y,
+            toX: e.x,
+            toY: e.y,
+        }));
 
-            // Re-add to grid first (MoveCommand will re-remove + re-add via execute).
-            for (const e of this.dragEntities) {
-                e.x = this.originalPositions[this.dragEntities.indexOf(e)].x;
-                e.y = this.originalPositions[this.dragEntities.indexOf(e)].y;
-                this.entityManager.addEntity(e);
-            }
-
-            const cmd = new MoveCommand(entries, this.entityManager, this.relManager);
-            this.history.executeCommand(cmd);
-
-            for (const e of this.dragEntities) e.setAlpha(1);
+        // Re-add to grid at original positions first; MoveCommand.execute() will
+        // remove and re-add them at the new positions.
+        for (let i = 0; i < this.dragEntities.length; i++) {
+            const e = this.dragEntities[i];
+            e.x = this.originalPositions[i].x;
+            e.y = this.originalPositions[i].y;
+            this.entityManager.addEntity(e);
         }
+
+        const cmd = new MoveCommand(entries, this.entityManager, this.relManager);
+        this.history.executeCommand(cmd);
+
+        for (const e of this.dragEntities) e.setAlpha(1);
     }
 
     private cancel(): void {
-        if (this.mode === 'place') {
-            for (const e of this.dragEntities) e.destroy();
-        } else {
-            // Restore original positions and re-register.
-            for (let i = 0; i < this.dragEntities.length; i++) {
-                const e = this.dragEntities[i];
-                e.x = this.originalPositions[i].x;
-                e.y = this.originalPositions[i].y;
-                e.setAlpha(1);
-                this.entityManager.addEntity(e);
-                this.relManager.onEntityPlaced(e);
-            }
+        // Restore original positions and re-register in the spatial grid.
+        for (let i = 0; i < this.dragEntities.length; i++) {
+            const e = this.dragEntities[i];
+            e.x = this.originalPositions[i].x;
+            e.y = this.originalPositions[i].y;
+            e.setAlpha(1);
+            this.entityManager.addEntity(e);
+            this.relManager.onEntityPlaced(e);
         }
     }
 
@@ -212,11 +176,13 @@ export default class DragController {
     // Validation
     // -----------------------------------------------------------------------
 
+    /**
+     * Returns true only if every dragged entity can be placed at its current
+     * position.  Each entity's own ID is excluded from the overlap check so
+     * an entity does not collide with the grid tiles it originally occupied.
+     */
     private validatePositions(): boolean {
-        const excludeIds = this.mode === 'move'
-            ? new Set(this.dragEntities.map(e => e.id))
-            : new Set<string>();
-
+        const excludeIds = new Set(this.dragEntities.map(e => e.id));
         for (const entity of this.dragEntities) {
             if (!this.entityManager.canPlace(entity, excludeIds)) return false;
         }
