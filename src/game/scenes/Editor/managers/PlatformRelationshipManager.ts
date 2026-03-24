@@ -22,9 +22,9 @@ import EntityManager from './EntityManager';
 export default class PlatformRelationshipManager implements IPlatformRelManager {
 
     /** platform.id → set of entities standing on that platform. */
-    private readonly platformObjects = new Map<string, Set<GameEntity>>();
+    private readonly objectsOnPlatform = new Map<string, Set<GameEntity>>();
 
-    constructor(private readonly entityManager: EntityManager) {}
+    constructor(private readonly entityManager: EntityManager) { }
 
     // -----------------------------------------------------------------------
     // IPlatformRelManager implementation
@@ -52,13 +52,13 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
      * Called before an entity is removed (deleted or undone place).
      *
      * - Non-platform removed: deregister it from any platforms below it.
-     * - Platform removed: its entry in platformObjects is discarded with it;
+     * - Platform removed: its entry in objectsOnPlatform is discarded with it;
      *   no further action needed because removing a platform while entities
      *   stand on it is already blocked by canDeleteEntities().
      */
     onEntityRemoved(entity: GameEntity): void {
         if (entity instanceof Platform) {
-            this.platformObjects.delete(entity.id);
+            this.objectsOnPlatform.delete(entity.id);
         } else {
             const below = this.entityManager.getPlatformsBelow(entity);
             below.forEach(p => this.remove(p, entity));
@@ -85,6 +85,13 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
 
         oldBelow.forEach(p => { if (!newBelow.has(p)) this.remove(p, entity); });
         newBelow.forEach(p => { if (!oldBelow.has(p)) this.add(p, entity); });
+
+        if (entity instanceof Platform) {
+            const above = this.entityManager.getEntitiesAbove(entity as Platform);
+            above.forEach(e => {
+                this.add(entity, e);
+            });
+        }
     }
 
     /**
@@ -92,11 +99,11 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
      * Clears its set and rebuilds from the spatial map.
      */
     onPlatformResized(platform: Platform): void {
-        this.platformObjects.delete(platform.id);
+        this.objectsOnPlatform.delete(platform.id);
 
         const above = this.entityManager.getEntitiesAbove(platform);
         above.forEach(e => {
-            if (!(e instanceof Platform)) this.add(platform, e);
+            this.add(platform, e);
         });
     }
 
@@ -128,7 +135,7 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
 
     /** Returns the set of entities currently standing on `platform`. */
     getObjectsOnPlatform(platform: Platform): Set<GameEntity> {
-        return this.platformObjects.get(platform.id) ?? new Set();
+        return this.objectsOnPlatform.get(platform.id) ?? new Set();
     }
 
     // -----------------------------------------------------------------------
@@ -145,21 +152,21 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
     }
 
     private remove(platform: Platform, entity: GameEntity): void {
-        const set = this.platformObjects.get(platform.id);
+        const set = this.objectsOnPlatform.get(platform.id);
         if (!set) return;
         set.delete(entity);
         if (set.size === 0) {
-            this.platformObjects.delete(platform.id);
+            this.objectsOnPlatform.delete(platform.id);
             // Re-enable dragging when the platform is empty.
             platform.displayObject.scene.input.setDraggable(platform.displayObject, true);
         }
     }
 
     private getOrCreate(platform: Platform): Set<GameEntity> {
-        let set = this.platformObjects.get(platform.id);
+        let set = this.objectsOnPlatform.get(platform.id);
         if (!set) {
             set = new Set();
-            this.platformObjects.set(platform.id, set);
+            this.objectsOnPlatform.set(platform.id, set);
         }
         return set;
     }
