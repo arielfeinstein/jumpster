@@ -20,8 +20,9 @@ import CommandHistory from '../commands/CommandHistory';
 import MoveCommand, { MoveEntry } from '../commands/MoveCommand';
 import { RED_TINT } from '../types/EditorTypes';
 import GridManager from '../managers/GridManager';
+import ControllerEvents from '../utils/ControllerEvents';
 
-export default class DragController {
+export default class DragController extends Phaser.Events.EventEmitter {
 
     private readonly scene: Phaser.Scene;
     private readonly entityManager: EntityManager;
@@ -52,6 +53,7 @@ export default class DragController {
         relManager: PlatformRelationshipManager,
         history: CommandHistory,
     ) {
+        super();
         this.scene = scene;
         this.entityManager = entityManager;
         this.relManager = relManager;
@@ -79,6 +81,8 @@ export default class DragController {
         this.dragStartWorld.set(ptr.worldX, ptr.worldY);
         this.active = true;
         this.isValid = false;
+
+        this.emit(ControllerEvents.DRAG_STARTED);
 
         // Remove from grid so they don't block themselves during the drag.
         for (const e of this.dragEntities) {
@@ -133,6 +137,8 @@ export default class DragController {
         for (const e of this.dragEntities) e.clearTint();
         this.dragEntities = [];
         this.originalPositions = [];
+
+        this.emit(ControllerEvents.DRAG_ENDED);
     }
 
     private commit(): void {

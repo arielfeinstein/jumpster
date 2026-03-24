@@ -112,6 +112,7 @@ export default class SelectionView {
 
         for (const [dir, handle] of sizingHandles) {
             const pos = positions[dir];
+            handle.clear();
             handle.x = pos.x - o;
             handle.y = pos.y - o;
             handle

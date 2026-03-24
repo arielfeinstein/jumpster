@@ -127,10 +127,13 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         this.deselectAll();
         this.selectedEntities = new Set(entities);
 
-        const first = entities.values().next().value!;
-        const resizeHandlesNeeded = entities.size === 1 && first instanceof Platform;
+        this.emit(ControllerEvents.SELECTED_OBJECTS, this.selectedEntities, this.isResizable());
+    }
 
-        this.emit(ControllerEvents.SELECTED_OBJECTS, this.selectedEntities, resizeHandlesNeeded);
+    /** Returns true when exactly one platform is selected (resize handles should be shown). */
+    isResizable(): boolean {
+        if (this.selectedEntities.size !== 1) return false;
+        return this.selectedEntities.values().next().value! instanceof Platform;
     }
 
     deselectAll(): void {

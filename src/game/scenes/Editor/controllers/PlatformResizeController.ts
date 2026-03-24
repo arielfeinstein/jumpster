@@ -170,7 +170,6 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
         this.relManager.onEntityRemoved(this.platform);
 
         this.platform.setAlpha(0.5);
-        this.emit(ControllerEvents.PLATFORM_RESIZE_CLICKED);
         this.emit(ControllerEvents.PLATFORM_RESIZE_STARTED, this.platform);
     }
 

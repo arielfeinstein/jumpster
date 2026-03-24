@@ -34,7 +34,7 @@ const ControllerEvents = {
     // Drag (place + move unified — new DragController)
     // -----------------------------------------------------------------------
 
-    /** [NEW] Emitted when a drag begins (place or move mode). Payload: DragMode */
+    /** [NEW] Emitted when a drag begins. */
     DRAG_STARTED: 'drag-started',
 
     /** [NEW] Emitted each frame during a drag with the latest snapped position. */
@@ -53,12 +53,14 @@ const ControllerEvents = {
      */
     DRAG_CANCELLED: 'drag-cancelled',
 
+    /**
+     * [NEW] Emitted when a drag ends, regardless of validity. Used to refresh UI state
+     */
+    DRAG_ENDED: 'drag-ended',
+
     // -----------------------------------------------------------------------
     // Platform resize
     // -----------------------------------------------------------------------
-
-    /** Emitted when a resize handle is clicked, so SelectionController can suppress box-select. */
-    PLATFORM_RESIZE_CLICKED: 'platform-resize-clicked',
 
     /** Emitted when a resize drag begins. Payload: Platform — entity is temporarily removed from the grid. */
     PLATFORM_RESIZE_STARTED: 'platform-resize-started',

@@ -222,31 +222,16 @@ export class Editor extends Scene {
         this.selectionController.on(
             ControllerEvents.SELECTED_OBJECTS,
             (entities: Set<GameEntity>, resizeHandlesNeeded: boolean) => {
-                this.selectionView.clearSelectionBox();
-                this.selectionView.clearSelectionOutlines();
-
-                const entityArray = [...entities];
-                const bbox = calcBoundingBox(entityArray.map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height })));
-
-                this.selectionView.drawSelectionOutline(bbox);
-                this.deleteButtonView.show(bbox, this.cameras.main, this.deleteButton);
-
+                this.showSelectionDecorations(entities);
                 if (resizeHandlesNeeded) {
-                    const platform = entityArray[0] as Platform;
-                    this.selectionView.drawSizingHandles(bbox, this.resizeController.sizingHandles);
-                    this.resizeController.setPlatform(platform);
-                    this.enableResizeHandles(true);
+                    this.setupResizeHandles([...entities][0] as Platform);
                 }
             },
         );
 
         this.selectionController.on(ControllerEvents.DESELECTED_ALL, () => {
-            this.selectionView.clearSelectionBox();
-            this.selectionView.clearSelectionOutlines();
-            this.deleteButtonView.hide(this.deleteButton);
-            this.selectionView.clearSizingHandles(this.resizeController.sizingHandles);
-            this.enableResizeHandles(false);
-            this.resizeController.removeDragListeners();
+            this.clearSelectionDecorations();
+            this.teardownResizeHandles();
         });
 
         this.selectionController.on(
@@ -266,13 +251,24 @@ export class Editor extends Scene {
         });
 
         // Resize controller events.
-        this.resizeController.on(ControllerEvents.PLATFORM_RESIZE_CLICKED, () => {
+        this.resizeController.on(ControllerEvents.PLATFORM_RESIZE_STARTED, () => {
             this.selectionController.disableSelectDrag = true;
+            this.clearSelectionDecorations();
         });
 
-        this.resizeController.on(ControllerEvents.PLATFORM_RESIZE_ENDED, (platform: Platform) => {
-            this.selectionController.deselectAll();
-            this.selectionController.selectEntities(new Set([platform]));
+        this.resizeController.on(ControllerEvents.PLATFORM_RESIZE_ENDED, () => {
+            this.selectionController.disableSelectDrag = false;
+            this.refreshSelectionDisplay();
+        });
+
+        // Drag controller events.
+        this.dragController.on(ControllerEvents.DRAG_STARTED, () => {
+            this.clearSelectionDecorations();
+            this.teardownResizeHandles();
+        });
+
+        this.dragController.on(ControllerEvents.DRAG_ENDED, () => {
+            this.refreshSelectionDisplay();
         });
 
         // Keyboard shortcuts.
@@ -323,7 +319,6 @@ export class Editor extends Scene {
         this.history.executeCommand(cmd);
 
         this.selectionController.deselectAll();
-        this.deleteButtonView.hide(this.deleteButton);
     }
 
     // -----------------------------------------------------------------------
@@ -333,7 +328,7 @@ export class Editor extends Scene {
     private changeDimensions({ worldWidthUnit, worldHeightUnit }: { worldWidthUnit: number; worldHeightUnit: number }): void {
         if (worldWidthUnit <= 0 || worldHeightUnit <= 0) return;
 
-        this.worldWidthUnit  = worldWidthUnit;
+        this.worldWidthUnit = worldWidthUnit;
         this.worldHeightUnit = worldHeightUnit;
 
         const width = this.canvasWidth() * worldWidthUnit;
@@ -352,10 +347,57 @@ export class Editor extends Scene {
     private canvasWidth(): number { return this.scale.width; }
     private canvasHeight(): number { return this.scale.height; }
 
-    private enableResizeHandles(enable: boolean): void {
+    // -----------------------------------------------------------------------
+    // Selection controls — granular show / clear
+    // -----------------------------------------------------------------------
+
+    /** Draws the selection outline around the given entities and shows the delete button. */
+    private showSelectionDecorations(entities: Set<GameEntity>): void {
+        this.selectionView.clearSelectionBox();
+        this.selectionView.clearSelectionOutlines();
+
+        const bbox = calcBoundingBox([...entities].map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height })));
+        this.selectionView.drawSelectionOutline(bbox);
+        this.deleteButtonView.show(bbox, this.cameras.main, this.deleteButton);
+    }
+
+    /** Hides the selection outline and delete button. */
+    private clearSelectionDecorations(): void {
+        this.selectionView.clearSelectionBox();
+        this.selectionView.clearSelectionOutlines();
+        this.deleteButtonView.hide(this.deleteButton);
+    }
+
+    /** Draws resize handles for a platform, registers drag listeners, and enables interactivity. */
+    private setupResizeHandles(platform: Platform): void {
+        const bbox = { x: platform.x, y: platform.y, width: platform.width, height: platform.height };
+        this.selectionView.drawSizingHandles(bbox, this.resizeController.sizingHandles);
+        this.resizeController.setPlatform(platform);
         for (const handle of this.resizeController.sizingHandles.values()) {
-            if (enable) handle.setInteractive();
-            else handle.disableInteractive();
+            handle.setInteractive();
+        }
+    }
+
+    /** Hides resize handles, disables interactivity, and removes drag listeners. */
+    private teardownResizeHandles(): void {
+        this.selectionView.clearSizingHandles(this.resizeController.sizingHandles);
+        for (const handle of this.resizeController.sizingHandles.values()) {
+            handle.disableInteractive();
+        }
+        this.resizeController.removeDragListeners();
+    }
+
+    /**
+     * Re-displays selection controls for whatever is currently selected.
+     * Used after drag/resize ends to restore the display from the current selection state.
+     */
+    private refreshSelectionDisplay(): void {
+        const entities = this.selectionController.getSelectedEntities();
+        if (entities.size === 0) return;
+
+        this.showSelectionDecorations(entities);
+        if (this.selectionController.isResizable()) {
+            this.setupResizeHandles([...entities][0] as Platform);
         }
     }
 }
