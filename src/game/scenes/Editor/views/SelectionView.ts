@@ -11,7 +11,7 @@
  */
 
 import Phaser from 'phaser';
-import { CardinalDir, Rect } from '../types/EditorTypes';
+import { CardinalDir, Rect, depthConfig } from '../types/EditorTypes';
 import { TILE_SIZE } from '../../../config';
 
 // ---------------------------------------------------------------------------
@@ -42,12 +42,26 @@ export const handleResizeConfig = {
 
 export default class SelectionView {
 
+    private readonly scene: Phaser.Scene;
     private readonly outlineGraphics: Phaser.GameObjects.Graphics;
     private readonly selectionBoxGraphics: Phaser.GameObjects.Graphics;
 
+    /**
+     * Transparent interactive zone that sits over the selection outline.
+     * Activated by enableZone() so it can intercept pointer events within the
+     * bounding box, preventing accidental deselection or box-select from
+     * starting on empty space inside the selection.
+     * Editor.ts wires its pointerdown / dragstart handlers once at scene creation.
+     */
+    readonly selectionZone: Phaser.GameObjects.Zone;
+
     constructor(scene: Phaser.Scene) {
+        this.scene = scene;
         this.outlineGraphics = scene.add.graphics();
         this.selectionBoxGraphics = scene.add.graphics();
+        this.selectionZone = scene.add
+            .zone(0, 0, 1, 1)
+            .setDepth(depthConfig.SELECTION_ZONE);
     }
 
     // -----------------------------------------------------------------------
@@ -126,5 +140,29 @@ export default class SelectionView {
         for (const handle of sizingHandles.values()) {
             handle.setVisible(false);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Selection zone
+    // -----------------------------------------------------------------------
+
+    /**
+     * Positions the zone over `bbox` and enables it as a draggable interactive
+     * area. Must be called after every selection change so the zone tracks the
+     * current bounding box.
+     */
+    enableZone(bbox: Rect): void {
+        this.selectionZone
+            .setPosition(bbox.x + bbox.width / 2, bbox.y + bbox.height / 2)
+            .setSize(bbox.width, bbox.height);
+        // setInteractive must be called after setSize so the hit-area matches
+        // the updated dimensions.
+        this.selectionZone.setInteractive();
+        this.scene.input.setDraggable(this.selectionZone);
+    }
+
+    /** Deactivates the zone so pointer events fall through to the scene. */
+    disableZone(): void {
+        this.selectionZone.disableInteractive();
     }
 }

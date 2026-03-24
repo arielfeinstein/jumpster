@@ -73,6 +73,8 @@ export const DRAG_THRESHOLD = 16;
 
 /** Z-depth values for editor overlay objects. */
 export const depthConfig = {
+    /** Transparent interactive zone that sits over the selection outline to intercept pointer events. */
+    SELECTION_ZONE: 50,
     DELETE_BUTTON: 100,
     SIZING_HANDLES: 150,
 } as const;

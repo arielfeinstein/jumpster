@@ -154,6 +154,7 @@ export class Editor extends Scene {
         );
 
         // ---- Wire events ----
+        this.wireSelectionZoneEvents();
         this.wireEvents();
 
         EventBus.emit('current-scene-ready', this);
@@ -205,6 +206,35 @@ export class Editor extends Scene {
     // -----------------------------------------------------------------------
     // Event wiring
     // -----------------------------------------------------------------------
+
+    /**
+     * Wires the selection zone's pointer events once at scene creation.
+     * The zone is a transparent interactive rectangle that sits over the
+     * selection outline. It prevents two multi-drag bugs:
+     *   1. Clicking empty space inside the outline accidentally starts a box-select.
+     *   2. Clicking a selected entity overwrites the multi-selection with just that entity.
+     * Both are solved because the zone (higher depth than entities) intercepts
+     * all pointer events within the bounding box while a selection is active.
+     */
+    private wireSelectionZoneEvents(): void {
+        const zone = this.selectionView.selectionZone;
+
+        zone.on('pointerdown', (
+            _p: Phaser.Input.Pointer,
+            _lx: number,
+            _ly: number,
+            event: Phaser.Types.Input.EventData,
+        ) => {
+            if (this.placementController.isPlacing) return;
+            this.selectionController.disableSelectDrag = true;
+            event.stopPropagation();
+        });
+
+        zone.on('dragstart', () => {
+            if (this.placementController.isPlacing) return;
+            this.dragController.startMoveDrag([...this.selectionController.getSelectedEntities()]);
+        });
+    }
 
     private wireEvents(): void {
         // React UI → Phaser.
@@ -358,6 +388,7 @@ export class Editor extends Scene {
 
         const bbox = calcBoundingBox([...entities].map(e => ({ x: e.x, y: e.y, width: e.width, height: e.height })));
         this.selectionView.drawSelectionOutline(bbox);
+        this.selectionView.enableZone(bbox);
         this.deleteButtonView.show(bbox, this.cameras.main, this.deleteButton);
     }
 
@@ -365,6 +396,7 @@ export class Editor extends Scene {
     private clearSelectionDecorations(): void {
         this.selectionView.clearSelectionBox();
         this.selectionView.clearSelectionOutlines();
+        this.selectionView.disableZone();
         this.deleteButtonView.hide(this.deleteButton);
     }
 
