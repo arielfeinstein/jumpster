@@ -339,16 +339,22 @@ export class Editor extends Scene {
     // Delete
     // -----------------------------------------------------------------------
 
-    private handleDelete(): void {
+    private async handleDelete(): Promise<void> {
         const selected = [...this.selectionController.getSelectedEntities()];
         if (selected.length === 0) return;
 
         const stranded = this.relManager.getStrandedEntities(selected);
 
         if (stranded.length > 0) {
-            // PLACEHOLDER: emit event to React for a confirmation dialog.
-            // React will display a message listing the stranded entities and
-            // emit back a cancel/confirm response. For now, auto-accept.
+            const confirmed = await new Promise<boolean>((resolve) => {
+                EventBus.emit('editor-confirm-dialog', {
+                    message: 'Deleting will also remove entities that require platform support. Are you sure you want to continue?',
+                    onConfirm: () => resolve(true),
+                    onCancel: () => resolve(false),
+                });
+            });
+
+            if (!confirmed) return;
             selected.push(...stranded);
         }
 

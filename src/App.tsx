@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback } from 'react';
 import { IRefPhaserGame, PhaserGame } from './PhaserGame';
 import MainMenuUI from './game/scenes/MainMenu/MainMenuUI'
-import EditorUI from './game/scenes/Editor/EditorUI';
+import EditorUI from './game/scenes/Editor/ui/EditorUI';
 
 
 function App() {

@@ -12,13 +12,13 @@
  * Communication with Phaser goes entirely through EventBus:
  *   React → Phaser:  'editor-start-placement', 'editor-cancel-placement',
  *                    'editor-change-dimensions'
- *   Phaser → React:  'editor-placement-active'
+ *   Phaser → React:  'editor-placement-active', 'editor-confirm-dialog'
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { DropdownMenu, Popover } from 'radix-ui';
 import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
-import { EventBus } from '../../EventBus';
+import { EventBus } from '../../../EventBus';
 import {
     DOCK_SLOTS,
     DockPosition,
@@ -26,7 +26,8 @@ import {
     DropdownOption,
     PlacementActivePayload,
     StartPlacementPayload,
-} from './types/DockTypes';
+} from '../types/DockTypes';
+import ConfirmationDialog from './ConfirmationDialog';
 import styles from './EditorUI.module.css';
 
 // ---------------------------------------------------------------------------
@@ -44,6 +45,27 @@ export default function EditorUI() {
         };
         EventBus.on('editor-placement-active', handler);
         return () => { EventBus.off('editor-placement-active', handler); };
+    }, []);
+
+    // Confirmation dialog state (driven by 'editor-confirm-dialog' events).
+    const [dialogState, setDialogState] = useState<{
+        open: boolean;
+        message: string;
+        onConfirm: () => void;
+        onCancel: () => void;
+    } | null>(null);
+
+    useEffect(() => {
+        const handler = (payload: { message: string; onConfirm: () => void; onCancel: () => void }) => {
+            setDialogState({
+                open: true,
+                message: payload.message,
+                onConfirm: () => { payload.onConfirm(); setDialogState(null); },
+                onCancel: () => { payload.onCancel(); setDialogState(null); },
+            });
+        };
+        EventBus.on('editor-confirm-dialog', handler);
+        return () => { EventBus.off('editor-confirm-dialog', handler); };
     }, []);
 
     const handleEntitySelect = useCallback(({ entityType, variant }: StartPlacementPayload) => {
@@ -80,6 +102,14 @@ export default function EditorUI() {
                     />
                 ))}
             </div>
+            {dialogState && (
+                <ConfirmationDialog
+                    open={dialogState.open}
+                    message={dialogState.message}
+                    onConfirm={dialogState.onConfirm}
+                    onCancel={dialogState.onCancel}
+                />
+            )}
         </div>
     );
 }
