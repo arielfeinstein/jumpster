@@ -4,9 +4,7 @@
  * Single source of truth for which entities are "on top of" a given platform.
  *
  * Owns a private Map<platformId, Set<GameEntity>> so Platform.ts carries no
- * relationship state of its own.  The draggability side-effect (a platform
- * with objects on it cannot be dragged) is managed here as well, by calling
- * Phaser's input manager directly through platform.displayObject.scene.
+ * relationship state of its own.
  *
  * Relationship semantics:
  *   An entity E is "on" platform P when E's bottom edge aligns with P's top
@@ -52,9 +50,9 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
      * Called before an entity is removed (deleted or undone place).
      *
      * - Non-platform removed: deregister it from any platforms below it.
-     * - Platform removed: its entry in objectsOnPlatform is discarded with it;
-     *   no further action needed because removing a platform while entities
-     *   stand on it is already blocked by canDeleteEntities().
+     * - Platform removed: its entry in objectsOnPlatform is discarded.
+     *   Stranded entities (those requiring a platform) are cascade-deleted
+     *   by the delete flow before this point.
      */
     onEntityRemoved(entity: GameEntity): void {
         if (entity instanceof Platform) {
@@ -108,25 +106,33 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
     }
 
     // -----------------------------------------------------------------------
-    // Deletion guard
+    // Deletion helpers
     // -----------------------------------------------------------------------
 
     /**
-     * Returns false if deleting `entities` would leave objects stranded on a
-     * platform that is also being deleted but has entities not in the delete set.
+     * Returns non-selected entities sitting on platforms being deleted that
+     * require platform support. These entities would be "stranded" without
+     * their platform and should be cascade-deleted (after user confirmation).
+     *
+     * Entities that do NOT require a platform (e.g. coins) are left alone —
+     * they simply float when their platform is removed.
      */
-    canDeleteEntities(entities: GameEntity[]): boolean {
-        const deleteIds = new Set(entities.map(e => e.id));
+    getStrandedEntities(entitiesToDelete: GameEntity[]): GameEntity[] {
+        const deleteIds = new Set(entitiesToDelete.map(e => e.id));
+        const stranded: GameEntity[] = [];
 
-        for (const entity of entities) {
+        for (const entity of entitiesToDelete) {
             if (entity instanceof Platform) {
                 for (const obj of this.getObjectsOnPlatform(entity)) {
-                    if (!deleteIds.has(obj.id)) return false;
+                    if (!deleteIds.has(obj.id) && obj.requiresPlatformBelow) {
+                        stranded.push(obj);
+                        deleteIds.add(obj.id); // prevent duplicates across platforms
+                    }
                 }
             }
         }
 
-        return true;
+        return stranded;
     }
 
     // -----------------------------------------------------------------------
@@ -145,10 +151,6 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
     private add(platform: Platform, entity: GameEntity): void {
         const set = this.getOrCreate(platform);
         set.add(entity);
-        if (set.size === 1) {
-            // Disable dragging while something stands on the platform.
-            platform.displayObject.scene.input.setDraggable(platform.displayObject, false);
-        }
     }
 
     private remove(platform: Platform, entity: GameEntity): void {
@@ -157,8 +159,6 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
         set.delete(entity);
         if (set.size === 0) {
             this.objectsOnPlatform.delete(platform.id);
-            // Re-enable dragging when the platform is empty.
-            platform.displayObject.scene.input.setDraggable(platform.displayObject, true);
         }
     }
 

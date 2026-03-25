@@ -18,7 +18,7 @@ export interface IEntityManager {
     addEntity(entity: GameEntity): void;
     removeEntity(entity: GameEntity): void;
     getById(id: string): GameEntity | undefined;
-    canPlace(entity: GameEntity, excludeIds?: Set<string>): boolean;
+    canPlace(entity: GameEntity): boolean;
 }
 
 // ---------------------------------------------------------------------------

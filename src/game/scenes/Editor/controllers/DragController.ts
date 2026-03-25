@@ -14,6 +14,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from '../../../gameObjects/GameEntity';
+import Platform from '../../../gameObjects/Platform';
 import EntityManager from '../managers/EntityManager';
 import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
 import CommandHistory from '../commands/CommandHistory';
@@ -21,6 +22,7 @@ import MoveCommand, { MoveEntry } from '../commands/MoveCommand';
 import { RED_TINT } from '../types/EditorTypes';
 import GridManager from '../managers/GridManager';
 import ControllerEvents from '../utils/ControllerEvents';
+import { TILE_SIZE } from '../../../config';
 
 export default class DragController extends Phaser.Events.EventEmitter {
 
@@ -37,6 +39,12 @@ export default class DragController extends Phaser.Events.EventEmitter {
 
     /** Original positions captured at drag-start (restored on invalid drop). */
     private originalPositions: Array<{ x: number; y: number }> = [];
+
+    /**
+     * Non-selected entities left behind on moved platforms that require
+     * platform support (set B). Computed at drag-start, validated each frame.
+     */
+    private strandedEntities: GameEntity[] = [];
 
     /** Pointer position at drag-start (world coords). */
     private dragStartWorld = new Phaser.Math.Vector2();
@@ -81,6 +89,11 @@ export default class DragController extends Phaser.Events.EventEmitter {
         this.dragStartWorld.set(ptr.worldX, ptr.worldY);
         this.active = true;
         this.isValid = false;
+
+        // Compute stranded entities BEFORE removing from grid — these are
+        // non-selected entities on selected platforms that require platform
+        // support. The relationship data is still valid at this point.
+        this.strandedEntities = this.computeStrandedEntities();
 
         this.emit(ControllerEvents.DRAG_STARTED);
 
@@ -137,6 +150,7 @@ export default class DragController extends Phaser.Events.EventEmitter {
         for (const e of this.dragEntities) e.clearTint();
         this.dragEntities = [];
         this.originalPositions = [];
+        this.strandedEntities = [];
 
         this.emit(ControllerEvents.DRAG_ENDED);
     }
@@ -183,15 +197,95 @@ export default class DragController extends Phaser.Events.EventEmitter {
     // -----------------------------------------------------------------------
 
     /**
-     * Returns true only if every dragged entity can be placed at its current
-     * position.  Each entity's own ID is excluded from the overlap check so
-     * an entity does not collide with the grid tiles it originally occupied.
+     * Returns true only if:
+     *   1. No dragged entity overlaps a fixed entity in the grid.
+     *   2. Singleton constraints are satisfied.
+     *   3. Every dragged entity requiring a platform has full support
+     *      (from fixed OR virtual platforms).  (Set A)
+     *   4. Every stranded entity (left behind on moved platforms) still
+     *      has full platform support.  (Set B)
      */
     private validatePositions(): boolean {
-        const excludeIds = new Set(this.dragEntities.map(e => e.id));
+        // Set A: each selected entity at its proposed position.
         for (const entity of this.dragEntities) {
-            if (!this.entityManager.canPlace(entity, excludeIds)) return false;
+            if (this.entityManager.isOverlapping(entity)) return false;
+
+            if (entity.isSingleton) {
+                const existing = this.entityManager.getSingleton(entity.entityType);
+                if (existing) return false;
+            }
+
+            if (entity.requiresPlatformBelow) {
+                if (!this.hasFullPlatformSupport(entity)) return false;
+            }
         }
+
+        // Set B: stranded entities at their original positions.
+        // Dragged platforms are removed from the grid, so getPlatformsBelow
+        // only finds fixed platforms. Virtual platforms at their new positions
+        // might still cover stranded entities (e.g. platform nudged slightly).
+        for (const entity of this.strandedEntities) {
+            if (!this.hasFullPlatformSupport(entity)) return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns non-selected entities sitting on selected platforms that
+     * require platform support. Must be called BEFORE entities are removed
+     * from the grid so PlatformRelationshipManager data is still valid.
+     */
+    private computeStrandedEntities(): GameEntity[] {
+        const dragIds = new Set(this.dragEntities.map(e => e.id));
+        const stranded: GameEntity[] = [];
+        const seen = new Set<string>();
+
+        for (const entity of this.dragEntities) {
+            if (entity instanceof Platform) {
+                for (const obj of this.relManager.getObjectsOnPlatform(entity as Platform)) {
+                    if (!dragIds.has(obj.id) && obj.requiresPlatformBelow && !seen.has(obj.id)) {
+                        stranded.push(obj);
+                        seen.add(obj.id);
+                    }
+                }
+            }
+        }
+
+        return stranded;
+    }
+
+    /**
+     * Returns true if every tile-column directly below `entity` is covered
+     * by a platform — either a fixed platform still in the grid, or a
+     * virtual platform (a dragged platform at its current drag position).
+     */
+    private hasFullPlatformSupport(entity: GameEntity): boolean {
+        const belowY = entity.y + entity.height;
+
+        for (let x = entity.x; x < entity.x + entity.width; x += TILE_SIZE) {
+            // Check fixed platforms in the grid.
+            const fixed = this.entityManager.getEntityAt(x, belowY);
+            if (fixed instanceof Platform) continue;
+
+            // Check virtual platforms (dragged platforms at current positions).
+            let foundVirtual = false;
+            for (const dragged of this.dragEntities) {
+                if (!(dragged instanceof Platform)) continue;
+                if (
+                    x >= dragged.x &&
+                    x < dragged.x + dragged.width &&
+                    belowY >= dragged.y &&
+                    belowY < dragged.y + dragged.height
+                ) {
+                    foundVirtual = true;
+                    break;
+                }
+            }
+
+            if (!foundVirtual) return false;
+        }
+
         return true;
     }
 

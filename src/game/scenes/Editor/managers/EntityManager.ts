@@ -7,8 +7,6 @@
  * Key improvements over the old version:
  *   - Queries entity properties directly (requiresPlatformBelow, isSingleton)
  *     rather than using if-chains on EntityType strings.
- *   - canPlace() accepts an `excludeIds` set so moving an entity does not
- *     collide with itself — eliminating the flag-nulling hack.
  *   - getById() enables commands to look up entities by stable UUID.
  */
 
@@ -89,22 +87,21 @@ export default class EntityManager implements IEntityManager {
      * Returns true if `entity` can be placed at its current position.
      *
      * Checks:
-     *   1. No tile overlap with other entities (excluding `excludeIds`).
+     *   1. No tile overlap with other entities.
      *   2. Singleton constraint — only one entity of this type.
      *   3. requiresPlatformBelow — at least one platform tile directly below.
      *
-     * @param entity      The entity to validate (uses entity.x/y/width/height).
-     * @param excludeIds  IDs to ignore in overlap and singleton checks.
-     *                    Pass the moving entity's own ID to avoid self-collision.
+     * Callers must remove the entity from the grid before calling this
+     * method to avoid self-collision.
      */
-    canPlace(entity: GameEntity, excludeIds: Set<string> = new Set()): boolean {
+    canPlace(entity: GameEntity): boolean {
         // 1. Overlap check.
-        if (this.isOverlapping(entity, excludeIds)) return false;
+        if (this.isOverlapping(entity)) return false;
 
-        // 2. Singleton check — skip if the only existing singleton is this entity.
+        // 2. Singleton check.
         if (entity.isSingleton) {
             const existing = this.singletons.get(entity.entityType);
-            if (existing && !excludeIds.has(existing.id)) return false;
+            if (existing) return false;
         }
 
         // 3. Platform-below check.
@@ -139,8 +136,14 @@ export default class EntityManager implements IEntityManager {
     /**
      * Returns all entities whose tile row is directly above the given rectangle.
      * Used when placing a platform to collect entities that now sit on it.
+     *
+     * @param requiredOnly  When true, only returns entities with
+     *                      `requiresPlatformBelow === true`.
      */
-    getEntitiesAbove(rect: { x: number; y: number; width: number; height: number }): Set<GameEntity> {
+    getEntitiesAbove(
+        rect: { x: number; y: number; width: number; height: number },
+        requiredOnly = false,
+    ): Set<GameEntity> {
         const result = new Set<GameEntity>();
         if (rect.y === 0) return result;
 
@@ -148,10 +151,20 @@ export default class EntityManager implements IEntityManager {
         for (let x = rect.x; x < rect.x + rect.width; x += TILE_SIZE) {
             const key = GridManager.getPositionKeyXY(x, y);
             const entity = this.tileMap.get(key);
-            if (entity) result.add(entity);
+            if (entity && (!requiredOnly || entity.requiresPlatformBelow)) {
+                result.add(entity);
+            }
         }
 
         return result;
+    }
+
+    /**
+     * Returns the entity occupying the tile at world position (x, y),
+     * or undefined if the tile is empty.
+     */
+    getEntityAt(x: number, y: number): GameEntity | undefined {
+        return this.tileMap.get(GridManager.getPositionKeyXY(x, y));
     }
 
     /**
@@ -170,15 +183,15 @@ export default class EntityManager implements IEntityManager {
     // Private helpers
     // -----------------------------------------------------------------------
 
-    private isOverlapping(
-        entity: GameEntity,
-        excludeIds: Set<string>,
-    ): boolean {
+    /**
+     * Returns true if any tile in `entity`'s bounding box is already
+     * occupied by another entity in the grid.
+     */
+    isOverlapping(entity: GameEntity): boolean {
         for (let x = entity.x; x < entity.x + entity.width; x += TILE_SIZE) {
             for (let y = entity.y; y < entity.y + entity.height; y += TILE_SIZE) {
                 const key = GridManager.getPositionKeyXY(x, y);
-                const occupant = this.tileMap.get(key);
-                if (occupant && !excludeIds.has(occupant.id)) return true;
+                if (this.tileMap.has(key)) return true;
             }
         }
         return false;

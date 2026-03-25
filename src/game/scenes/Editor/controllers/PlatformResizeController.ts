@@ -192,11 +192,10 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
         this.platform.resize(newRect.width, newRect.height);
         this.platform.setVisible(true);
 
-        // Validate: no overlap AND objects above are not lost.
-        const tempEntity = { ...newRect, id: this.platform.id, entityType: 'platform' as const, isSingleton: false, requiresPlatformBelow: false, isResizable: true, width: newRect.width, height: newRect.height } as never;
+        // Validate: no overlap AND entities requiring platform support are not lost.
         const canPlace = this.entityManager.canPlace(this.platform);
-        const aboveCount = this.entityManager.getEntitiesAbove(this.platform).size;
-        const prevAboveCount = this.entityManager.getEntitiesAbove({ ...this.fromRect }).size;
+        const aboveCount = this.entityManager.getEntitiesAbove(this.platform, true).size;
+        const prevAboveCount = this.entityManager.getEntitiesAbove({ ...this.fromRect }, true).size;
 
         if (!canPlace || aboveCount < prevAboveCount) {
             this.platform.setTint(RED_TINT);

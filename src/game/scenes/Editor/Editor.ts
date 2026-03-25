@@ -343,7 +343,14 @@ export class Editor extends Scene {
         const selected = [...this.selectionController.getSelectedEntities()];
         if (selected.length === 0) return;
 
-        if (!this.relManager.canDeleteEntities(selected)) return;
+        const stranded = this.relManager.getStrandedEntities(selected);
+
+        if (stranded.length > 0) {
+            // PLACEHOLDER: emit event to React for a confirmation dialog.
+            // React will display a message listing the stranded entities and
+            // emit back a cancel/confirm response. For now, auto-accept.
+            selected.push(...stranded);
+        }
 
         const cmd = new DeleteCommand(this, selected, this.entityManager, this.relManager);
         this.history.executeCommand(cmd);
