@@ -16,7 +16,8 @@ export type EntityType =
     | 'coin'
     | 'checkpoint'
     | 'start-flag'
-    | 'end-flag';
+    | 'end-flag'
+    | 'spikes';
 
 // ---------------------------------------------------------------------------
 // Geometry / direction types

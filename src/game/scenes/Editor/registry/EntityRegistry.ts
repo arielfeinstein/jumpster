@@ -21,6 +21,7 @@ import Coin from '../../../gameObjects/Coin';
 import Checkpoint from '../../../gameObjects/Checkpoint';
 import Flag, { FlagKind } from '../../../gameObjects/Flag';
 import { TILE_SIZE } from '../../../config';
+import Spikes from '@/game/gameObjects/Spikes';
 
 /** Signature shared by all factory functions. */
 type FactoryFn = (
@@ -53,6 +54,8 @@ export default class EntityRegistry {
 
         'end-flag':   (scene, x, y, _w, _h, id) =>
                           new Flag(scene, x, y, 'end-flag', id),
+        'spikes':   (scene, x, y, _w, _h, id) =>
+                          new Spikes(scene, x, y, id),
     };
 
     /**
