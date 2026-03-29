@@ -23,12 +23,29 @@ export type DockPosition = 'top' | 'bottom' | 'left' | 'right';
 // ---------------------------------------------------------------------------
 
 /**
+ * Describes which frame to crop from a spritesheet when no standalone icon exists.
+ * The `assetSrc` field on `DropdownOption` provides the spritesheet path.
+ */
+export interface SpriteFrame {
+    /** Pixel x-offset of the frame's top-left corner in the spritesheet. */
+    frameX: number;
+    /** Pixel y-offset of the frame's top-left corner in the spritesheet. */
+    frameY: number;
+    /** Width (and height) of one square frame in pixels. */
+    frameSize: number;
+}
+
+/**
  * A single selectable option inside an entity dropdown.
  *
  * For most entity types this represents a texture variant (e.g. a grass
  * platform vs an ice platform). For the Flags group, each option maps to a
  * different EntityType because the three flag entities are grouped under one
  * dock button for a cleaner UI.
+ *
+ * `assetSrc` always points to an image file. When `spriteFrame` is also
+ * provided, `assetSrc` is treated as a spritesheet and the specified frame
+ * is cropped out for display; otherwise it is rendered directly as an icon.
  */
 export interface DropdownOption {
     /** Label shown in the dropdown list. */
@@ -40,8 +57,10 @@ export interface DropdownOption {
      * Sent as-is in the StartPlacementPayload so Phaser can choose the right asset.
      */
     variant?: string;
-    /** Path to the icon image shown next to the label. */
-    iconSrc: string;
+    /** Path to the icon image (standalone) or spritesheet (when spriteFrame is set). */
+    assetSrc: string;
+    /** When present, assetSrc is treated as a spritesheet and this frame is shown. */
+    spriteFrame?: SpriteFrame;
 }
 
 // ---------------------------------------------------------------------------
@@ -133,7 +152,7 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
             {
                 label: 'Grass',
                 entityType: 'platform',
-                iconSrc: '/assets/react/platform.png',
+                assetSrc: '/assets/react/platform.png',
             },
         ],
     },
@@ -145,7 +164,13 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
             {
                 label: 'Slime',
                 entityType: 'enemy',
-                iconSrc: '/assets/react/enemy.png',
+                assetSrc: '/assets/react/enemy.png',
+            },
+            {
+                label: 'Spikes',
+                entityType: 'spikes',
+                assetSrc: '/assets/phaser/spikes.png',
+                spriteFrame: { frameX: 192, frameY: 0, frameSize: 32 },
             },
         ],
     },
@@ -157,7 +182,7 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
             {
                 label: 'Gold',
                 entityType: 'coin',
-                iconSrc: '/assets/phaser/coin.png',
+                assetSrc: '/assets/phaser/coin.png',
             },
         ],
     },
@@ -169,17 +194,17 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
             {
                 label: 'Checkpoint',
                 entityType: 'checkpoint',
-                iconSrc: '/assets/react/checkpoint-flag.png',
+                assetSrc: '/assets/react/checkpoint-flag.png',
             },
             {
                 label: 'Start Flag',
                 entityType: 'start-flag',
-                iconSrc: '/assets/phaser/start-flag.png',
+                assetSrc: '/assets/phaser/start-flag.png',
             },
             {
                 label: 'End Flag',
                 entityType: 'end-flag',
-                iconSrc: '/assets/phaser/end-flag.png',
+                assetSrc: '/assets/phaser/end-flag.png',
             },
         ],
     },

@@ -165,6 +165,37 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
 }
 
 // ---------------------------------------------------------------------------
+// DropdownItemIcon
+// ---------------------------------------------------------------------------
+
+const DROPDOWN_ICON_PX = 22; // must match .dropdownItemIcon height in CSS module
+
+/**
+ * Renders the icon for a single dropdown option.
+ * - If the option has a spriteFrame, crops the correct frame from the spritesheet
+ *   using CSS custom properties (background-image / background-position).
+ * - Otherwise renders the asset as a plain <img>.
+ */
+function DropdownItemIcon({ option, alt }: { option: DropdownOption; alt: string }) {
+    if (option.spriteFrame) {
+        const { frameX, frameY, frameSize } = option.spriteFrame;
+        const scale = DROPDOWN_ICON_PX / frameSize;
+        return (
+            <div
+                className={`${styles.dropdownItemIcon} ${styles.spriteIcon}`}
+                role="img"
+                aria-label={alt}
+                style={{
+                    '--sprite-src': `url('${option.assetSrc}')`,
+                    '--sprite-pos': `-${frameX * scale}px -${frameY * scale}px`,
+                } as React.CSSProperties}
+            />
+        );
+    }
+    return <img src={option.assetSrc} className={styles.dropdownItemIcon} alt={alt} />;
+}
+
+// ---------------------------------------------------------------------------
 // EntityDropdownSlot
 // ---------------------------------------------------------------------------
 
@@ -197,11 +228,7 @@ function EntityDropdownSlot({ label, iconSrc, options, onSelect }: EntityDropdow
                             className={styles.dropdownItem}
                             onSelect={() => onSelect({ entityType: option.entityType, variant: option.variant })}
                         >
-                            <img
-                                src={option.iconSrc}
-                                className={styles.dropdownItemIcon}
-                                alt={option.label}
-                            />
+                            <DropdownItemIcon option={option} alt={option.label} />
                             {option.label}
                         </DropdownMenu.Item>
                     ))}

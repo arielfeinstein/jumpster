@@ -150,6 +150,14 @@
     flex-shrink: 0;
 }
 
+/* Used alongside .dropdownItemIcon when the icon comes from a spritesheet frame. */
+.spriteIcon {
+    background-image: var(--sprite-src);
+    background-position: var(--sprite-pos);
+    background-size: auto 22px;
+    background-repeat: no-repeat;
+}
+
 /* ---- Popover (level size) ----------------------------------------------- */
 
 .popoverContent {
