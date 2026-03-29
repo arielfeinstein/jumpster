@@ -93,16 +93,23 @@ export default class PlatformRelationshipManager implements IPlatformRelManager 
     }
 
     /**
-     * Called after a platform is resized.
-     * Clears its set and rebuilds from the spatial map.
+     * Called after any entity is resized.
+     * - Platform: clears its "objects on top" set and rebuilds from the spatial map.
+     * - Non-platform: re-registers with whatever platforms are now below it.
      */
-    onPlatformResized(platform: Platform): void {
-        this.objectsOnPlatform.delete(platform.id);
-
-        const above = this.entityManager.getEntitiesAbove(platform);
-        above.forEach(e => {
-            this.add(platform, e);
-        });
+    onEntityResized(entity: GameEntity): void {
+        if (entity instanceof Platform) {
+            this.objectsOnPlatform.delete(entity.id);
+            const above = this.entityManager.getEntitiesAbove(entity);
+            above.forEach(e => {
+                this.add(entity, e);
+            });
+        } else {
+            // Non-platform resized (e.g. spikes stretched wider):
+            // remove old relationships, then re-register with platforms below.
+            this.onEntityRemoved(entity);
+            this.onEntityPlaced(entity);
+        }
     }
 
     // -----------------------------------------------------------------------

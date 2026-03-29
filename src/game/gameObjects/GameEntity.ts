@@ -60,7 +60,7 @@ export default abstract class GameEntity {
      * The underlying Phaser object.  Callers use this for scene-specific setup
      * (physics, interactivity) rather than reaching into GameEntity internals.
      */
-    abstract readonly displayObject: Phaser.GameObjects.Image | Phaser.GameObjects.Container;
+    abstract readonly displayObject: Phaser.GameObjects.Image | Phaser.GameObjects.TileSprite | Phaser.GameObjects.Container;
 
     // -----------------------------------------------------------------------
     // Position (delegates to displayObject)
@@ -83,6 +83,17 @@ export default abstract class GameEntity {
     abstract createGhost(scene: Phaser.Scene): GameEntity;
 
     // -----------------------------------------------------------------------
+    // Resize (no-op default — resizable subclasses override)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Resizes the entity to the given pixel dimensions.
+     * Non-resizable entities inherit this no-op; the resize system guards
+     * against calling it via the ResizeConfig lookup in EntityRegistry.
+     */
+    resize(_width: number, _height: number): void { }
+
+    // -----------------------------------------------------------------------
     // Visual helpers (shared implementations; Platform overrides setTint)
     // -----------------------------------------------------------------------
 
@@ -97,14 +108,16 @@ export default abstract class GameEntity {
     }
 
     setTint(color: number): this {
-        if (this.displayObject instanceof Phaser.GameObjects.Image) {
+        if (this.displayObject instanceof Phaser.GameObjects.Image ||
+            this.displayObject instanceof Phaser.GameObjects.TileSprite) {
             this.displayObject.setTint(color);
         }
         return this;
     }
 
     clearTint(): this {
-        if (this.displayObject instanceof Phaser.GameObjects.Image) {
+        if (this.displayObject instanceof Phaser.GameObjects.Image ||
+            this.displayObject instanceof Phaser.GameObjects.TileSprite) {
             this.displayObject.clearTint();
         }
         return this;

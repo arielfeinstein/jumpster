@@ -8,7 +8,6 @@
  */
 
 import GameEntity from '../../../gameObjects/GameEntity';
-import Platform from '../../../gameObjects/Platform';
 
 // ---------------------------------------------------------------------------
 // Entity manager
@@ -19,6 +18,10 @@ export interface IEntityManager {
     removeEntity(entity: GameEntity): void;
     getById(id: string): GameEntity | undefined;
     canPlace(entity: GameEntity): boolean;
+    getEntitiesAbove(
+        rect: { x: number; y: number; width: number; height: number },
+        requiredOnly?: boolean,
+    ): Set<GameEntity>;
 }
 
 // ---------------------------------------------------------------------------
@@ -39,8 +42,9 @@ export interface IPlatformRelManager {
     onEntityMoved(entity: GameEntity, oldPos: { x: number; y: number }): void;
 
     /**
-     * Called after a platform is resized.
-     * Recalculates which entities now sit on top of it.
+     * Called after any entity is resized.
+     * For platforms: recalculates which entities sit on top.
+     * For non-platforms: re-registers with the platforms below.
      */
-    onPlatformResized(platform: Platform): void;
+    onEntityResized(entity: GameEntity): void;
 }

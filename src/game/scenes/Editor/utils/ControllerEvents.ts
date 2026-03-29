@@ -59,14 +59,14 @@ const ControllerEvents = {
     DRAG_ENDED: 'drag-ended',
 
     // -----------------------------------------------------------------------
-    // Platform resize
+    // Resize
     // -----------------------------------------------------------------------
 
-    /** Emitted when a resize drag begins. Payload: Platform — entity is temporarily removed from the grid. */
-    PLATFORM_RESIZE_STARTED: 'platform-resize-started',
+    /** Emitted when a resize drag begins. Payload: GameEntity — entity is temporarily removed from the grid. */
+    RESIZE_STARTED: 'resize-started',
 
-    /** Emitted when a resize drag ends and a ResizeCommand has been committed. Payload: Platform */
-    PLATFORM_RESIZE_ENDED: 'platform-resize-ended',
+    /** Emitted when a resize drag ends and a ResizeCommand has been committed. Payload: GameEntity */
+    RESIZE_ENDED: 'resize-ended',
 
     // -----------------------------------------------------------------------
     // Command history  [NEW]

@@ -111,6 +111,7 @@ export default class SelectionView {
     drawSizingHandles(
         rect: Rect,
         sizingHandles: Map<CardinalDir, Phaser.GameObjects.Graphics>,
+        activeDirections?: Set<CardinalDir>,
     ): void {
         const o = handleResizeConfig.OFFSET;
         const positions: Record<CardinalDir, { x: number; y: number }> = {
@@ -125,6 +126,11 @@ export default class SelectionView {
         };
 
         for (const [dir, handle] of sizingHandles) {
+            // If an active set is provided, only show handles for those directions.
+            if (activeDirections && !activeDirections.has(dir)) {
+                handle.setVisible(false);
+                continue;
+            }
             const pos = positions[dir];
             handle.clear();
             handle.x = pos.x - o;

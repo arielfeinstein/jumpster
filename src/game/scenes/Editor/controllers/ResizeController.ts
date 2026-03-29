@@ -1,22 +1,23 @@
 /**
- * PlatformResizeController.ts
+ * ResizeController.ts
  *
- * Manages the eight resize handles for a selected platform and issues a
- * ResizeCommand when a valid resize drag completes.
+ * Generic resize controller that works with any resizable entity.
+ * Which handles to show and how to validate are driven by a ResizeConfig
+ * looked up from EntityRegistry — the controller itself is entity-agnostic.
  *
- * Key improvement: the 8-case `switch` for directional geometry is replaced
- * with a `Record<CardinalDir, ResizeStrategy>` where each strategy is a pure
- * function.  TypeScript enforces all eight keys exist at compile time.
+ * Handles are created for all eight directions at construction time, but
+ * only the subset specified by the active config are shown and enabled.
  */
 
 import Phaser from 'phaser';
-import Platform from '../../../gameObjects/Platform';
+import GameEntity from '../../../gameObjects/GameEntity';
 import EntityManager from '../managers/EntityManager';
 import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
 import CommandHistory from '../commands/CommandHistory';
 import ResizeCommand from '../commands/ResizeCommand';
+import EntityRegistry from '../registry/EntityRegistry';
 import ControllerEvents from '../utils/ControllerEvents';
-import { CardinalDir, RED_TINT, Rect, depthConfig } from '../types/EditorTypes';
+import { CardinalDir, RED_TINT, Rect, ResizeConfig, depthConfig } from '../types/EditorTypes';
 import { handleResizeConfig } from '../views/SelectionView';
 import GridManager from '../managers/GridManager';
 import { TILE_SIZE } from '../../../config';
@@ -26,9 +27,9 @@ import { TILE_SIZE } from '../../../config';
 // ---------------------------------------------------------------------------
 
 /**
- * Given the snapped pointer position and the platform's rect at drag-start,
- * returns the new platform Rect, or `null` when the geometry is invalid
- * (e.g. pointer has crossed to the wrong side — the ghost should hide).
+ * Given the snapped pointer position and the entity's rect at drag-start,
+ * returns the new Rect, or `null` when the geometry is invalid
+ * (e.g. pointer has crossed to the wrong side — the entity should hide).
  */
 type ResizeStrategy = (snapped: Phaser.Math.Vector2, orig: Rect) => Rect | null;
 
@@ -82,11 +83,12 @@ const resizeStrategies: Record<CardinalDir, ResizeStrategy> = {
 // Controller
 // ---------------------------------------------------------------------------
 
-export default class PlatformResizeController extends Phaser.Events.EventEmitter {
+export default class ResizeController extends Phaser.Events.EventEmitter {
 
     readonly sizingHandles: Map<CardinalDir, Phaser.GameObjects.Graphics>;
 
-    private platform: Platform | null = null;
+    private entity: GameEntity | null = null;
+    private config: ResizeConfig | null = null;
     private currentDir: CardinalDir | null = null;
 
     /** Rect at the moment the drag started (before any resize). */
@@ -117,16 +119,31 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
     // Public API
     // -----------------------------------------------------------------------
 
-    /** Called by the editor when a single platform is selected. */
-    setPlatform(platform: Platform): void {
+    /**
+     * Called by the editor when a single resizable entity is selected.
+     * Looks up the entity's ResizeConfig to determine which handles to use.
+     */
+    setEntity(entity: GameEntity): void {
         this.removeDragListeners();
-        this.platform = platform;
+        this.entity = entity;
+        this.config = EntityRegistry.getResizeConfig(entity.entityType) ?? null;
         this.addDragListeners();
     }
 
+    /**
+     * Returns the set of cardinal directions that should be shown for
+     * the currently active entity, or all 8 if no config is loaded.
+     */
+    getActiveDirections(): CardinalDir[] {
+        return this.config?.directions ?? [];
+    }
+
     addDragListeners(): void {
-        if (!this.platform) return;
+        if (!this.entity || !this.config) return;
+        const activeSet = new Set(this.config.directions);
+
         for (const [dir, handle] of this.sizingHandles) {
+            if (!activeSet.has(dir)) continue;
             handle.on('dragstart', (_p: Phaser.Input.Pointer, _dx: number, _dy: number) => {
                 this.onDragStart(dir);
             });
@@ -153,28 +170,28 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
     // -----------------------------------------------------------------------
 
     private onDragStart(dir: CardinalDir): void {
-        if (!this.platform) return;
+        if (!this.entity) return;
         this.currentDir = dir;
         this.dragInvalid = false;
 
-        // Snapshot the platform's rect before any modification.
+        // Snapshot the entity's rect before any modification.
         this.fromRect = {
-            x: this.platform.x,
-            y: this.platform.y,
-            width: this.platform.width,
-            height: this.platform.height,
+            x: this.entity.x,
+            y: this.entity.y,
+            width: this.entity.width,
+            height: this.entity.height,
         };
 
         // Temporarily remove from grid so overlap checks don't self-block.
-        this.entityManager.removeEntity(this.platform);
-        this.relManager.onEntityRemoved(this.platform);
+        this.entityManager.removeEntity(this.entity);
+        this.relManager.onEntityRemoved(this.entity);
 
-        this.platform.setAlpha(0.5);
-        this.emit(ControllerEvents.PLATFORM_RESIZE_STARTED, this.platform);
+        this.entity.setAlpha(0.5);
+        this.emit(ControllerEvents.RESIZE_STARTED, this.entity);
     }
 
     private onDrag(pointer: Phaser.Input.Pointer): void {
-        if (!this.platform || !this.currentDir) return;
+        if (!this.entity || !this.currentDir || !this.config) return;
 
         this.snappedPointer.set(pointer.worldX, pointer.worldY);
         GridManager.updateToSnappedCoord(this.snappedPointer);
@@ -182,57 +199,53 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
         const newRect = resizeStrategies[this.currentDir](this.snappedPointer, this.fromRect);
 
         if (!newRect) {
-            this.platform.setVisible(false);
+            this.entity.setVisible(false);
             return;
         }
 
         // Apply tentative geometry.
-        this.platform.x = newRect.x;
-        this.platform.y = newRect.y;
-        this.platform.resize(newRect.width, newRect.height);
-        this.platform.setVisible(true);
+        this.entity.x = newRect.x;
+        this.entity.y = newRect.y;
+        this.entity.resize(newRect.width, newRect.height);
+        this.entity.setVisible(true);
 
-        // Validate: no overlap AND entities requiring platform support are not lost.
-        const canPlace = this.entityManager.canPlace(this.platform);
-        const aboveCount = this.entityManager.getEntitiesAbove(this.platform, true).size;
-        const prevAboveCount = this.entityManager.getEntitiesAbove({ ...this.fromRect }, true).size;
-
-        if (!canPlace || aboveCount < prevAboveCount) {
-            this.platform.setTint(RED_TINT);
+        // Validate using the entity-type-specific config callback.
+        if (!this.config.validate(this.entity, this.fromRect, this.entityManager)) {
+            this.entity.setTint(RED_TINT);
             this.dragInvalid = true;
         } else {
-            this.platform.clearTint();
+            this.entity.clearTint();
             this.dragInvalid = false;
         }
     }
 
     private onDragEnd(): void {
-        if (!this.platform) return;
+        if (!this.entity) return;
 
-        const invalid = !this.platform.displayObject.visible || this.dragInvalid;
+        const invalid = !this.entity.displayObject.visible || this.dragInvalid;
 
         // Always restore visibility and tint first.
-        this.platform.setVisible(true).setAlpha(1).clearTint();
+        this.entity.setVisible(true).setAlpha(1).clearTint();
 
         if (invalid) {
             // Restore original geometry.
-            this.platform.x = this.fromRect.x;
-            this.platform.y = this.fromRect.y;
-            this.platform.resize(this.fromRect.width, this.fromRect.height);
+            this.entity.x = this.fromRect.x;
+            this.entity.y = this.fromRect.y;
+            this.entity.resize(this.fromRect.width, this.fromRect.height);
         }
 
         // Capture to-rect now (after possible restore).
         const toRect: Rect = {
-            x: this.platform.x,
-            y: this.platform.y,
-            width: this.platform.width,
-            height: this.platform.height,
+            x: this.entity.x,
+            y: this.entity.y,
+            width: this.entity.width,
+            height: this.entity.height,
         };
 
         if (!invalid) {
             // Execute as a command (re-registers in grid + rebuilds relationships).
             const cmd = new ResizeCommand(
-                this.platform,
+                this.entity,
                 this.fromRect,
                 toRect,
                 this.entityManager,
@@ -241,12 +254,12 @@ export default class PlatformResizeController extends Phaser.Events.EventEmitter
             this.history.executeCommand(cmd);
         } else {
             // Cancelled — just re-register at original position.
-            this.entityManager.addEntity(this.platform);
-            this.relManager.onEntityPlaced(this.platform);
+            this.entityManager.addEntity(this.entity);
+            this.relManager.onEntityPlaced(this.entity);
         }
 
         this.currentDir = null;
-        this.emit(ControllerEvents.PLATFORM_RESIZE_ENDED, this.platform);
+        this.emit(ControllerEvents.RESIZE_ENDED, this.entity);
     }
 
     // -----------------------------------------------------------------------

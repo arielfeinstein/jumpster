@@ -10,7 +10,6 @@
  *   - getById() enables commands to look up entities by stable UUID.
  */
 
-import Phaser from 'phaser';
 import GameEntity from '../../../gameObjects/GameEntity';
 import Platform from '../../../gameObjects/Platform';
 import { IEntityManager } from '../types/ManagerInterfaces';
@@ -104,9 +103,9 @@ export default class EntityManager implements IEntityManager {
             if (existing) return false;
         }
 
-        // 3. Platform-below check.
+        // 3. Platform-below check — every tile column must be supported.
         if (entity.requiresPlatformBelow) {
-            if (this.getPlatformsBelow(entity).size === 0) return false;
+            if (!this.isFullySupportedBelow(entity)) return false;
         }
 
         return true;
@@ -182,6 +181,21 @@ export default class EntityManager implements IEntityManager {
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
+
+    /**
+     * Returns true when every tile column of `entity` has a platform tile
+     * directly below it.  Used by canPlace() so multi-tile entities that
+     * require platform support (e.g. resized spikes) are fully validated.
+     */
+    private isFullySupportedBelow(entity: GameEntity): boolean {
+        const y = entity.y + entity.height;
+        for (let x = entity.x; x < entity.x + entity.width; x += TILE_SIZE) {
+            const key = GridManager.getPositionKeyXY(x, y);
+            const below = this.tileMap.get(key);
+            if (!(below instanceof Platform)) return false;
+        }
+        return true;
+    }
 
     /**
      * Returns true if any tile in `entity`'s bounding box is already

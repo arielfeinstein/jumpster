@@ -32,7 +32,7 @@ import CameraController from './controllers/CameraController';
 import SelectionController from './controllers/SelectionController';
 import DragController from './controllers/DragController';
 import PlacementController from './controllers/PlacementController';
-import PlatformResizeController from './controllers/PlatformResizeController';
+import ResizeController from './controllers/ResizeController';
 
 // Views
 import SelectionView from './views/SelectionView';
@@ -59,7 +59,7 @@ export class Editor extends Scene {
     private selectionController!: SelectionController;
     private dragController!: DragController;
     private placementController!: PlacementController;
-    private resizeController!: PlatformResizeController;
+    private resizeController!: ResizeController;
 
     private selectionView!: SelectionView;
     private deleteButtonView!: DeleteButtonView;
@@ -146,7 +146,7 @@ export class Editor extends Scene {
             .setVisible(false);
 
         // ---- Resize controller (needs delete button depth ref) ----
-        this.resizeController = new PlatformResizeController(
+        this.resizeController = new ResizeController(
             this,
             this.entityManager,
             this.relManager,
@@ -254,7 +254,7 @@ export class Editor extends Scene {
             (entities: Set<GameEntity>, resizeHandlesNeeded: boolean) => {
                 this.showSelectionDecorations(entities);
                 if (resizeHandlesNeeded) {
-                    this.setupResizeHandles([...entities][0] as Platform);
+                    this.setupResizeHandles([...entities][0]);
                 }
             },
         );
@@ -281,12 +281,12 @@ export class Editor extends Scene {
         });
 
         // Resize controller events.
-        this.resizeController.on(ControllerEvents.PLATFORM_RESIZE_STARTED, () => {
+        this.resizeController.on(ControllerEvents.RESIZE_STARTED, () => {
             this.selectionController.disableSelectDrag = true;
             this.clearSelectionDecorations();
         });
 
-        this.resizeController.on(ControllerEvents.PLATFORM_RESIZE_ENDED, () => {
+        this.resizeController.on(ControllerEvents.RESIZE_ENDED, () => {
             this.selectionController.disableSelectDrag = false;
             this.refreshSelectionDisplay();
         });
@@ -413,13 +413,17 @@ export class Editor extends Scene {
         this.deleteButtonView.hide(this.deleteButton);
     }
 
-    /** Draws resize handles for a platform, registers drag listeners, and enables interactivity. */
-    private setupResizeHandles(platform: Platform): void {
-        const bbox = { x: platform.x, y: platform.y, width: platform.width, height: platform.height };
-        this.selectionView.drawSizingHandles(bbox, this.resizeController.sizingHandles);
-        this.resizeController.setPlatform(platform);
-        for (const handle of this.resizeController.sizingHandles.values()) {
-            handle.setInteractive();
+    /** Draws resize handles for the entity, registers drag listeners, and enables interactivity. */
+    private setupResizeHandles(entity: GameEntity): void {
+        const bbox = { x: entity.x, y: entity.y, width: entity.width, height: entity.height };
+        this.resizeController.setEntity(entity);
+        const activeDirections = new Set(this.resizeController.getActiveDirections());
+
+        this.selectionView.drawSizingHandles(bbox, this.resizeController.sizingHandles, activeDirections);
+        for (const [dir, handle] of this.resizeController.sizingHandles) {
+            if (activeDirections.has(dir)) {
+                handle.setInteractive();
+            }
         }
     }
 
@@ -442,7 +446,7 @@ export class Editor extends Scene {
 
         this.showSelectionDecorations(entities);
         if (this.selectionController.isResizable()) {
-            this.setupResizeHandles([...entities][0] as Platform);
+            this.setupResizeHandles([...entities][0]);
         }
     }
 }

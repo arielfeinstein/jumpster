@@ -15,7 +15,6 @@
 
 import Phaser from 'phaser';
 import GameEntity from '../../../gameObjects/GameEntity';
-import Platform from '../../../gameObjects/Platform';
 import EntityManager from '../managers/EntityManager';
 import GridManager from '../managers/GridManager';
 import ControllerEvents from '../utils/ControllerEvents';
@@ -130,10 +129,10 @@ export default class SelectionController extends Phaser.Events.EventEmitter {
         this.emit(ControllerEvents.SELECTED_OBJECTS, this.selectedEntities, this.isResizable());
     }
 
-    /** Returns true when exactly one platform is selected (resize handles should be shown). */
+    /** Returns true when exactly one resizable entity is selected (resize handles should be shown). */
     isResizable(): boolean {
         if (this.selectedEntities.size !== 1) return false;
-        return this.selectedEntities.values().next().value! instanceof Platform;
+        return this.selectedEntities.values().next().value!.isResizable;
     }
 
     deselectAll(): void {

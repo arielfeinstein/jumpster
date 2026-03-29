@@ -5,6 +5,9 @@
  * Centralises what was previously scattered across Editor.ts and EditorUI.tsx.
  */
 
+import type GameEntity from '../../../gameObjects/GameEntity';
+import type { IEntityManager } from './ManagerInterfaces';
+
 // ---------------------------------------------------------------------------
 // Entity types
 // ---------------------------------------------------------------------------
@@ -25,6 +28,21 @@ export type EntityType =
 
 /** Eight cardinal + ordinal directions used for resize handles and delete-button placement. */
 export type CardinalDir = 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
+
+/**
+ * Per-entity-type configuration for the generic resize system.
+ * Looked up from EntityRegistry when a resizable entity is selected.
+ */
+export interface ResizeConfig {
+    /** Which resize handles to show (e.g. all 8 for Platform, ['w','e'] for Spikes). */
+    directions: CardinalDir[];
+    /**
+     * Returns true when the entity's current geometry is valid during a resize drag.
+     * Called on every drag frame — the entity is already at its tentative position/size.
+     * `fromRect` is the geometry before the drag started (for comparison checks).
+     */
+    validate: (entity: GameEntity, fromRect: Rect, entityManager: IEntityManager) => boolean;
+}
 
 /** A plain rectangle used as a snapshot (no Phaser dependency). */
 export interface Rect {

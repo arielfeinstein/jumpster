@@ -13,7 +13,7 @@
  */
 
 import Phaser from 'phaser';
-import { EntityType } from '../types/EditorTypes';
+import { EntityType, ResizeConfig } from '../types/EditorTypes';
 import GameEntity from '../../../gameObjects/GameEntity';
 import Platform from '../../../gameObjects/Platform';
 import Enemy from '../../../gameObjects/Enemy';
@@ -54,9 +54,41 @@ export default class EntityRegistry {
 
         'end-flag':   (scene, x, y, _w, _h, id) =>
                           new Flag(scene, x, y, 'end-flag', id),
-        'spikes':   (scene, x, y, _w, _h, id) =>
-                          new Spikes(scene, x, y, id),
+        'spikes':   (scene, x, y, w = TILE_SIZE, _h, id) =>
+                          new Spikes(scene, x, y, w, id),
     };
+
+    // -----------------------------------------------------------------------
+    // Resize configuration — static per-entity-type config for the resize system.
+    // Only resizable entity types have an entry; absence means "not resizable".
+    // -----------------------------------------------------------------------
+
+    private static readonly resizeConfigs: Partial<Record<EntityType, ResizeConfig>> = {
+        'platform': {
+            directions: ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'],
+            validate: (entity, fromRect, entityManager) => {
+                if (!entityManager.canPlace(entity)) return false;
+                // Shrinking a platform must not strand entities that require support.
+                const aboveCount = entityManager.getEntitiesAbove(entity, true).size;
+                const prevAboveCount = entityManager.getEntitiesAbove(fromRect, true).size;
+                return aboveCount >= prevAboveCount;
+            },
+        },
+        'spikes': {
+            directions: ['w', 'e'],
+            validate: (entity, _fromRect, entityManager) => {
+                return entityManager.canPlace(entity);
+            },
+        },
+    };
+
+    /**
+     * Returns the resize configuration for the given entity type, or
+     * undefined if that type is not resizable.
+     */
+    static getResizeConfig(type: EntityType): ResizeConfig | undefined {
+        return EntityRegistry.resizeConfigs[type];
+    }
 
     /**
      * Creates a new entity of the given type and adds it to `scene`.

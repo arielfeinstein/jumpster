@@ -1,45 +1,44 @@
 /**
  * ResizeCommand.ts
  *
- * Records a platform resize operation.
+ * Records a resize operation for any resizable entity.
  *
  * Stores the from/to rectangles so the resize can be fully reversed.
- * Platform relationships (objectsOnIt) are also snapshotted and restored via
- * PlatformRelationshipManager.
+ * Relationships are updated via PlatformRelationshipManager.onEntityResized().
  *
  * execute() — applies the new rectangle and updates relationships.
  * undo()    — restores the original rectangle and relationships.
  */
 
 import Command from './Command';
-import Platform from '../../../gameObjects/Platform';
+import GameEntity from '../../../gameObjects/GameEntity';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
 import { Rect } from '../types/EditorTypes';
 
 export default class ResizeCommand extends Command {
 
-    private readonly platform: Platform;
+    private readonly entity: GameEntity;
     private readonly fromRect: Rect;
     private readonly toRect: Rect;
     private readonly entityManager: IEntityManager;
     private readonly relManager: IPlatformRelManager;
 
     /**
-     * @param platform    The platform being resized.
-     * @param fromRect    The rectangle before the resize (captured before drag starts).
-     * @param toRect      The rectangle after the resize (captured at drag end).
-     * @param entityManager  For re-registering the platform in the spatial grid.
-     * @param relManager  For recalculating objectsOnIt after resize.
+     * @param entity        The entity being resized.
+     * @param fromRect      The rectangle before the resize (captured before drag starts).
+     * @param toRect        The rectangle after the resize (captured at drag end).
+     * @param entityManager For re-registering the entity in the spatial grid.
+     * @param relManager    For recalculating relationships after resize.
      */
     constructor(
-        platform: Platform,
+        entity: GameEntity,
         fromRect: Rect,
         toRect: Rect,
         entityManager: IEntityManager,
         relManager: IPlatformRelManager,
     ) {
         super();
-        this.platform = platform;
+        this.entity = entity;
         this.fromRect = { ...fromRect };
         this.toRect = { ...toRect };
         this.entityManager = entityManager;
@@ -47,7 +46,7 @@ export default class ResizeCommand extends Command {
     }
 
     get label(): string {
-        return `Resize platform (${this.fromRect.width}×${this.fromRect.height} → ${this.toRect.width}×${this.toRect.height})`;
+        return `Resize ${this.entity.entityType} (${this.fromRect.width}×${this.fromRect.height} → ${this.toRect.width}×${this.toRect.height})`;
     }
 
     execute(): void {
@@ -60,14 +59,14 @@ export default class ResizeCommand extends Command {
 
     private applyRect(rect: Rect): void {
         // Remove from grid, apply new geometry, re-add.
-        this.entityManager.removeEntity(this.platform);
-        this.relManager.onEntityRemoved(this.platform);
+        this.entityManager.removeEntity(this.entity);
+        this.relManager.onEntityRemoved(this.entity);
 
-        this.platform.x = rect.x;
-        this.platform.y = rect.y;
-        this.platform.resize(rect.width, rect.height);
+        this.entity.x = rect.x;
+        this.entity.y = rect.y;
+        this.entity.resize(rect.width, rect.height);
 
-        this.entityManager.addEntity(this.platform);
-        this.relManager.onPlatformResized(this.platform);
+        this.entityManager.addEntity(this.entity);
+        this.relManager.onEntityResized(this.entity);
     }
 }
