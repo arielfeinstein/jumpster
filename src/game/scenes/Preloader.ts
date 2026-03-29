@@ -26,6 +26,14 @@ export class Preloader extends Scene
         this.load.spritesheet('dude', 'assets/phaser/dude.png', { frameWidth: 32, frameHeight: 48 });
         this.load.spritesheet('checkpoint-flag', 'assets/phaser/checkpoint-flag.png', { frameWidth: 32, frameHeight: 64 });
         this.load.spritesheet('platform', 'assets/phaser/platform-tiles.png', {frameWidth: 32, frameHeight: 32});
+        this.load.spritesheet('spikes', 'assets/phaser/spikes.png', 
+            {
+                frameWidth: 32, 
+                frameHeight: 32,
+                margin: 0,
+                spacing: 64
+            }
+        );
 
         
 
