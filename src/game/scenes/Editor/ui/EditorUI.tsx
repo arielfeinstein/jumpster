@@ -26,6 +26,7 @@ import {
     DropdownOption,
     PlacementActivePayload,
     StartPlacementPayload,
+    SpriteFrame,
 } from '../types/DockTypes';
 import ConfirmationDialog from './ConfirmationDialog';
 import styles from './EditorUI.module.css';
@@ -133,6 +134,7 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
                 <EntityDropdownSlot
                     label={config.label}
                     iconSrc={config.iconSrc}
+                    iconSpriteFrame={config.iconSpriteFrame}
                     options={config.options}
                     onSelect={onEntitySelect}
                 />
@@ -171,14 +173,17 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
 const DROPDOWN_ICON_PX = 22; // must match .dropdownItemIcon height in CSS module
 
 /**
- * Renders the icon for a single dropdown option.
- * - If the option has a spriteFrame, crops the correct frame from the spritesheet
- *   using CSS custom properties (background-image / background-position).
- * - Otherwise renders the asset as a plain <img>.
+ * Renders an icon from a standalone image or a specific frame within a spritesheet.
+ * - If `spriteFrame` is provided, crops the correct frame using CSS custom properties
+ *   (background-image / background-position) and the `.spriteIcon` CSS class.
+ * - Otherwise renders `assetSrc` as a plain <img>.
+ *
+ * Used both for dropdown option icons and for the dock button's representative icon
+ * when it points to a spritesheet.
  */
-function DropdownItemIcon({ option, alt }: { option: DropdownOption; alt: string }) {
-    if (option.spriteFrame) {
-        const { frameX, frameY, frameSize } = option.spriteFrame;
+function DropdownItemIcon({ assetSrc, spriteFrame, alt }: { assetSrc: string; spriteFrame?: SpriteFrame; alt: string }) {
+    if (spriteFrame) {
+        const { frameX, frameY, frameSize } = spriteFrame;
         const scale = DROPDOWN_ICON_PX / frameSize;
         return (
             <div
@@ -186,13 +191,13 @@ function DropdownItemIcon({ option, alt }: { option: DropdownOption; alt: string
                 role="img"
                 aria-label={alt}
                 style={{
-                    '--sprite-src': `url('${option.assetSrc}')`,
+                    '--sprite-src': `url('${assetSrc}')`,
                     '--sprite-pos': `-${frameX * scale}px -${frameY * scale}px`,
                 } as React.CSSProperties}
             />
         );
     }
-    return <img src={option.assetSrc} className={styles.dropdownItemIcon} alt={alt} />;
+    return <img src={assetSrc} className={styles.dropdownItemIcon} alt={alt} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,6 +207,7 @@ function DropdownItemIcon({ option, alt }: { option: DropdownOption; alt: string
 interface EntityDropdownSlotProps {
     label: string;
     iconSrc: string;
+    iconSpriteFrame?: SpriteFrame;
     options: DropdownOption[];
     onSelect: (payload: StartPlacementPayload) => void;
 }
@@ -212,12 +218,15 @@ interface EntityDropdownSlotProps {
  * optional variant.  Every entity always shows a dropdown — even with one
  * option — for consistency and to support future texture variants.
  */
-function EntityDropdownSlot({ label, iconSrc, options, onSelect }: EntityDropdownSlotProps) {
+function EntityDropdownSlot({ label, iconSrc, iconSpriteFrame, options, onSelect }: EntityDropdownSlotProps) {
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
                 <button className={styles.slotButton} title={label}>
-                    <img src={iconSrc} className={styles.slotIcon} alt={label} />
+                    {iconSpriteFrame
+                        ? <DropdownItemIcon assetSrc={iconSrc} spriteFrame={iconSpriteFrame} alt={label} />
+                        : <img src={iconSrc} className={styles.slotIcon} alt={label} />
+                    }
                 </button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
@@ -228,7 +237,7 @@ function EntityDropdownSlot({ label, iconSrc, options, onSelect }: EntityDropdow
                             className={styles.dropdownItem}
                             onSelect={() => onSelect({ entityType: option.entityType, variant: option.variant })}
                         >
-                            <DropdownItemIcon option={option} alt={option.label} />
+                            <DropdownItemIcon assetSrc={option.assetSrc} spriteFrame={option.spriteFrame} alt={option.label} />
                             {option.label}
                         </DropdownMenu.Item>
                     ))}

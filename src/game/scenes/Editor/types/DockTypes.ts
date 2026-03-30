@@ -83,6 +83,11 @@ export type DockSlotConfig =
           label: string;
           /** Icon shown on the dock button (default / representative image). */
           iconSrc: string;
+          /**
+           * When present, the dock button icon is cropped from `iconSrc` as a
+           * spritesheet frame rather than displayed as a plain image.
+           */
+          iconSpriteFrame?: SpriteFrame;
           options: DropdownOption[];
       }
     /**
@@ -147,12 +152,29 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
     {
         kind: 'entity-dropdown',
         label: 'Platform',
-        iconSrc: '/assets/react/platform.png',
+        iconSrc: '/assets/phaser/platform-tiles.png',
+        iconSpriteFrame: { frameX: 0, frameY: 0, frameSize: 32 },
         options: [
             {
-                label: 'Grass',
+                label: 'Grass 1',
                 entityType: 'platform',
-                assetSrc: '/assets/react/platform.png',
+                variant: 'grass-1',
+                assetSrc: '/assets/phaser/platform-tiles.png',
+                spriteFrame: { frameX: 0, frameY: 0, frameSize: 32 },
+            },
+            {
+                label: 'Grass 2',
+                entityType: 'platform',
+                variant: 'grass-2',
+                assetSrc: '/assets/phaser/platform-tiles.png',
+                spriteFrame: { frameX: 64, frameY: 0, frameSize: 32 },
+            },
+            {
+                label: 'Grass 3',
+                entityType: 'platform',
+                variant: 'grass-3',
+                assetSrc: '/assets/phaser/platform-tiles.png',
+                spriteFrame: { frameX: 128, frameY: 0, frameSize: 32 },
             },
         ],
     },
