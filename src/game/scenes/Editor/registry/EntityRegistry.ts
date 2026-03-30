@@ -15,7 +15,7 @@
 import Phaser from 'phaser';
 import { EntityType, ResizeConfig } from '../types/EditorTypes';
 import GameEntity from '../../../gameObjects/GameEntity';
-import Platform from '../../../gameObjects/Platform';
+import Platform, { PlatformVariant } from '../../../gameObjects/Platform';
 import Enemy from '../../../gameObjects/Enemy';
 import Coin from '../../../gameObjects/Coin';
 import Checkpoint from '../../../gameObjects/Checkpoint';
@@ -30,6 +30,7 @@ type FactoryFn = (
     y: number,
     width?: number,
     height?: number,
+    variant?: string,
     id?: string,
 ) => GameEntity;
 
@@ -40,21 +41,21 @@ export default class EntityRegistry {
      * TypeScript enforces that every key of the union is present at compile time.
      */
     private static readonly factories: Record<EntityType, FactoryFn> = {
-        'platform':   (scene, x, y, w = TILE_SIZE, h = TILE_SIZE, id) =>
-                          new Platform(scene, x, y, w, h, id),
+        'platform':   (scene, x, y, w = TILE_SIZE, h = TILE_SIZE, variant, id) =>
+                          new Platform(scene, x, y, w, h, variant as PlatformVariant, id),
 
-        'enemy':      (scene, x, y, _w, _h, id) => new Enemy(scene, x, y, id),
+        'enemy':      (scene, x, y, _w, _h, _variant, id) => new Enemy(scene, x, y, id),
 
-        'coin':       (scene, x, y, _w, _h, id) => new Coin(scene, x, y, id),
+        'coin':       (scene, x, y, _w, _h, _variant, id) => new Coin(scene, x, y, id),
 
-        'checkpoint': (scene, x, y, _w, _h, id) => new Checkpoint(scene, x, y, id),
+        'checkpoint': (scene, x, y, _w, _h, _variant, id) => new Checkpoint(scene, x, y, id),
 
-        'start-flag': (scene, x, y, _w, _h, id) =>
+        'start-flag': (scene, x, y, _w, _h, _variant, id) =>
                           new Flag(scene, x, y, 'start-flag', id),
 
-        'end-flag':   (scene, x, y, _w, _h, id) =>
+        'end-flag':   (scene, x, y, _w, _h, _variant, id) =>
                           new Flag(scene, x, y, 'end-flag', id),
-        'spikes':   (scene, x, y, w = TILE_SIZE, _h, id) =>
+        'spikes':     (scene, x, y, w = TILE_SIZE, _h, _variant, id) =>
                           new Spikes(scene, x, y, w, id),
     };
 
@@ -99,6 +100,7 @@ export default class EntityRegistry {
      * @param y       World-space top-left y (should be grid-snapped by the caller).
      * @param width   Optional override — only meaningful for resizable entities.
      * @param height  Optional override — only meaningful for resizable entities.
+     * @param variant Optional texture variant key (e.g. 'grass-1' for platforms).
      * @param id      Optional stable UUID — supply when deserialising from a save file.
      */
     static create(
@@ -108,8 +110,9 @@ export default class EntityRegistry {
         y: number,
         width?: number,
         height?: number,
+        variant?: string,
         id?: string,
     ): GameEntity {
-        return EntityRegistry.factories[type](scene, x, y, width, height, id);
+        return EntityRegistry.factories[type](scene, x, y, width, height, variant, id);
     }
 }

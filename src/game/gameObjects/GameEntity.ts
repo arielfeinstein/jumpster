@@ -30,8 +30,12 @@ export default abstract class GameEntity {
     /** Stable UUID assigned at creation. Persisted in save files. */
     readonly id: string;
 
-    constructor(id?: string) {
+    /** Variant key for texture/skin selection (e.g. 'grass-1' for platforms). */
+    readonly variant: string;
+
+    constructor(id?: string, variant?: string) {
         this.id = id ?? crypto.randomUUID();
+        this.variant = variant ?? 'default';
     }
 
     // -----------------------------------------------------------------------
@@ -140,6 +144,7 @@ export default abstract class GameEntity {
             y: this.y,
             width: this.width,
             height: this.height,
+            variant: this.variant,
         };
     }
 
@@ -152,6 +157,7 @@ export default abstract class GameEntity {
             y: this.y,
             width: this.width,
             height: this.height,
+            variant: this.variant,
         };
     }
 }

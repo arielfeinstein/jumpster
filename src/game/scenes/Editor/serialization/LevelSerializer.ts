@@ -81,6 +81,7 @@ export default class LevelSerializer {
                 entityData.y,
                 entityData.width,
                 entityData.height,
+                entityData.variant,
                 entityData.id,
             );
 

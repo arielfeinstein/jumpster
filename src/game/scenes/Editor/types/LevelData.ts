@@ -27,6 +27,7 @@ export interface EntityData {
     /** Only set for resizable entities (e.g. platforms). */
     width?: number;
     height?: number;
+    variant?: string;
 }
 
 // ---------------------------------------------------------------------------

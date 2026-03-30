@@ -65,6 +65,7 @@ export default class DeleteCommand extends Command {
                 snap.y,
                 snap.width,
                 snap.height,
+                snap.variant,
                 snap.id,
             );
             this.entityManager.addEntity(entity);

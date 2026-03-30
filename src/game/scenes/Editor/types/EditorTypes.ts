@@ -75,6 +75,7 @@ export interface EntitySnapshot {
     y: number;
     width: number;
     height: number;
+    variant?: string;
 }
 
 // ---------------------------------------------------------------------------

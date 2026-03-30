@@ -20,6 +20,15 @@ import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { TILE_SIZE } from '../config';
 
+export type PlatformVariant = 'grass-1' | 'grass-2' | 'grass-3';
+
+/** Maps each variant to the spritesheet frame indices for the top and fill layers. */
+const VARIANT_FRAMES: Record<PlatformVariant, { top: number; fill: number }> = {
+    'grass-1': { top: 0, fill: 1 },
+    'grass-2': { top: 2, fill: 3 },
+    'grass-3': { top: 4, fill: 5 },
+};
+
 export default class Platform extends GameEntity {
 
     readonly entityType = 'platform' as const;
@@ -44,12 +53,13 @@ export default class Platform extends GameEntity {
     get height(): number { return this._height; }
 
     /**
-     * @param scene   The Phaser scene that owns this entity.
-     * @param x       World-space top-left x (grid-snapped).
-     * @param y       World-space top-left y (grid-snapped).
-     * @param width   Initial width in pixels (multiples of TILE_SIZE).
-     * @param height  Initial height in pixels (multiples of TILE_SIZE).
-     * @param id      Optional stable UUID — supply when deserialising.
+     * @param scene    The Phaser scene that owns this entity.
+     * @param x        World-space top-left x (grid-snapped).
+     * @param y        World-space top-left y (grid-snapped).
+     * @param width    Initial width in pixels (multiples of TILE_SIZE).
+     * @param height   Initial height in pixels (multiples of TILE_SIZE).
+     * @param variant  Which texture variant to use (determines spritesheet frames).
+     * @param id       Optional stable UUID — supply when deserialising.
      */
     constructor(
         scene: Phaser.Scene,
@@ -57,25 +67,28 @@ export default class Platform extends GameEntity {
         y: number,
         width: number,
         height: number,
+        variant: PlatformVariant = 'grass-1',
         id?: string,
     ) {
-        super(id);
+        super(id, variant);
 
         this._width = width;
         this._height = height;
+
+        const frames = VARIANT_FRAMES[variant];
 
         // Build the Container.
         this.displayObject = new Phaser.GameObjects.Container(scene, x, y);
 
         // Top grass layer.
         this.topLayer = scene.add
-            .tileSprite(0, 0, width, TILE_SIZE, 'platform', 0)
+            .tileSprite(0, 0, width, TILE_SIZE, 'platform', frames.top)
             .setOrigin(0, 0);
         scene.physics.add.existing(this.topLayer, true);
 
         // Dirt fill layer.
         this.fillLayer = scene.add
-            .tileSprite(0, TILE_SIZE, width, Math.max(height - TILE_SIZE, 0), 'platform', 1)
+            .tileSprite(0, TILE_SIZE, width, Math.max(height - TILE_SIZE, 0), 'platform', frames.fill)
             .setOrigin(0, 0);
         scene.physics.add.existing(this.fillLayer, true);
 
@@ -160,7 +173,7 @@ export default class Platform extends GameEntity {
     // -----------------------------------------------------------------------
 
     createGhost(scene: Phaser.Scene): Platform {
-        const ghost = new Platform(scene, this.x, this.y, this._width, this._height);
+        const ghost = new Platform(scene, this.x, this.y, this._width, this._height, this.variant as PlatformVariant);
         ghost.setAlpha(0.5);
         return ghost;
     }

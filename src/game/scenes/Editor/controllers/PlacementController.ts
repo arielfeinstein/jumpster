@@ -45,6 +45,7 @@ export default class PlacementController {
 
     private ghost: GameEntity | null = null;
     private currentEntityType: EntityType | null = null;
+    private currentVariant: string | undefined = undefined;
 
     /** Whether the ghost's current position is valid for placement. */
     private isValid = false;
@@ -79,14 +80,14 @@ export default class PlacementController {
         }
 
         this.currentEntityType = entityType;
-        void variant; // reserved for future texture variant support
+        this.currentVariant = variant;
 
         // Place the ghost at the pointer's current world position so it
         // appears under the cursor immediately.
         const ptr = this.scene.input.activePointer;
         const snapped = GridManager.snapXY(ptr.worldX, ptr.worldY);
 
-        this.ghost = EntityRegistry.create(entityType, this.scene, snapped.x, snapped.y);
+        this.ghost = EntityRegistry.create(entityType, this.scene, snapped.x, snapped.y, undefined, undefined, variant);
         this.ghost.setAlpha(0.5);
 
         // Validate the initial position.
@@ -162,6 +163,7 @@ export default class PlacementController {
 
         // Capture state before the command mutates the ghost.
         const placedEntityType = this.currentEntityType!;
+        const placedVariant = this.currentVariant;
         const isSingleton = this.ghost.isSingleton;
         const lastX = this.ghost.x;
         const lastY = this.ghost.y;
@@ -181,7 +183,7 @@ export default class PlacementController {
             // Non-singletons: immediately create a new ghost at the same
             // position so the user can keep placing without re-clicking the dock.
             const snapped = GridManager.snapXY(lastX, lastY);
-            this.ghost = EntityRegistry.create(placedEntityType, this.scene, snapped.x, snapped.y);
+            this.ghost = EntityRegistry.create(placedEntityType, this.scene, snapped.x, snapped.y, undefined, undefined, placedVariant);
             this.ghost.setAlpha(0.5);
 
             // Re-validate for the new position (another entity was just placed there,
@@ -212,6 +214,7 @@ export default class PlacementController {
         this.scene.input.off('pointerdown', this.boundPointerDown);
         this.isPlacing = false;
         this.currentEntityType = null;
+        this.currentVariant = undefined;
         this.notifyReact(false);
     }
 

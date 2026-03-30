@@ -70,6 +70,7 @@ export default class PlaceCommand extends Command {
                     snap.y,
                     snap.width,
                     snap.height,
+                    snap.variant,
                     snap.id,
                 )
             );
