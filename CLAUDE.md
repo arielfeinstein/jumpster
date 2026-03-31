@@ -12,7 +12,9 @@ React and Phaser communicate through an `EventBus` (mitt-style emitter).
 
 ## Current state
 
-The core editor is built and working on branch `editor-command-refactor`. It uses a Command Pattern architecture (undo/redo, PlaceCommand/DeleteCommand/MoveCommand/ResizeCommand) with an EntityManager for spatial queries and a PlatformRelationshipManager for tracking which objects sit on which platform. Game objects (Platform, Enemy, Coin, Checkpoint, Flag) live in `src/game/gameObjects/` and are shared between the editor and future gameplay scenes.
+The core editor is built and working on branch `Editor`. It uses a Command Pattern architecture (undo/redo, PlaceCommand/DeleteCommand/MoveCommand/ResizeCommand) with an EntityManager for spatial queries and a PlatformRelationshipManager for tracking which objects sit on which platform. Game objects (Platform, Enemy, Coin, Checkpoint, Flag) live in `src/game/gameObjects/` and are shared between the editor and future gameplay scenes.
+To place new game objects or change the settings of the level, the user interacts with a React UI that communicates with Phaser canvas via the `EventBus`.
+To change existing game objects (like moving them), the user interacts directly with Phaser.
 
 The gameplay scene doesn't exist yet — we're focused on the editor right now.
 
