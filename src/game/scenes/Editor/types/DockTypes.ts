@@ -9,7 +9,7 @@
  * without touching any rendering logic.
  */
 
-import { EntityType } from './EditorTypes';
+import { BackgroundKey, EntityType } from './EditorTypes';
 
 // ---------------------------------------------------------------------------
 // Dock position
@@ -58,6 +58,25 @@ export interface DropdownOption {
      */
     variant?: string;
     /** Path to the icon image (standalone) or spritesheet (when spriteFrame is set). */
+    assetSrc: string;
+    /** When present, assetSrc is treated as a spritesheet and this frame is shown. */
+    spriteFrame?: SpriteFrame;
+}
+
+// ---------------------------------------------------------------------------
+// Background options
+// ---------------------------------------------------------------------------
+
+/**
+ * A single selectable option in the background dropdown.
+ * Each option maps to a frame in the 'bg-tilesheet' spritesheet.
+ */
+export interface BackgroundOption {
+    /** Label shown in the dropdown list. */
+    label: string;
+    /** Frame index in the 'bg-tilesheet' spritesheet. */
+    backgroundKey: BackgroundKey;
+    /** Path to the image (standalone) or spritesheet (when spriteFrame is set) used as icon. */
     assetSrc: string;
     /** When present, assetSrc is treated as a spritesheet and this frame is shown. */
     spriteFrame?: SpriteFrame;
@@ -114,6 +133,17 @@ export type DockSlotConfig =
           label: string;
           iconSrc?: string;
           content: 'level-size';
+      }
+    /**
+     * A button that opens a dropdown listing background tile variants.
+     * Clicking an option emits 'editor-set-background'.
+     */
+    | {
+          kind: 'background-dropdown';
+          label: string;
+          iconSrc: string;
+          iconSpriteFrame?: SpriteFrame;
+          options: BackgroundOption[];
       };
 
 // ---------------------------------------------------------------------------
@@ -228,6 +258,20 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
                 entityType: 'end-flag',
                 assetSrc: '/assets/phaser/end-flag.png',
             },
+        ],
+    },
+    {
+        kind: 'background-dropdown',
+        label: 'Background',
+        iconSrc: '/assets/phaser/bg-tilesheet.png',
+        iconSpriteFrame: { frameX: 0, frameY: 0, frameSize: 32 },
+        options: [
+            { label: 'Tile 1', backgroundKey: 0, assetSrc: '/assets/phaser/bg-tilesheet.png', spriteFrame: { frameX: 0,   frameY: 0, frameSize: 32 } },
+            { label: 'Tile 2', backgroundKey: 1, assetSrc: '/assets/phaser/bg-tilesheet.png', spriteFrame: { frameX: 32,  frameY: 0, frameSize: 32 } },
+            { label: 'Tile 3', backgroundKey: 2, assetSrc: '/assets/phaser/bg-tilesheet.png', spriteFrame: { frameX: 64,  frameY: 0, frameSize: 32 } },
+            { label: 'Tile 4', backgroundKey: 3, assetSrc: '/assets/phaser/bg-tilesheet.png', spriteFrame: { frameX: 96,  frameY: 0, frameSize: 32 } },
+            { label: 'Tile 5', backgroundKey: 4, assetSrc: '/assets/phaser/bg-tilesheet.png', spriteFrame: { frameX: 128, frameY: 0, frameSize: 32 } },
+            { label: 'Tile 6', backgroundKey: 5, assetSrc: '/assets/phaser/bg-tilesheet.png', spriteFrame: { frameX: 160, frameY: 0, frameSize: 32 } },
         ],
     },
     {

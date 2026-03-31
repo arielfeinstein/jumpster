@@ -22,8 +22,10 @@
 
 import Phaser from 'phaser';
 import { LevelData } from '../types/LevelData';
+import { BackgroundKey } from '../types/EditorTypes';
 import EntityManager from '../managers/EntityManager';
 import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
+import BackgroundManager from '../managers/BackgroundManager';
 import EntityRegistry from '../registry/EntityRegistry';
 
 export default class LevelSerializer {
@@ -35,12 +37,14 @@ export default class LevelSerializer {
      * @param worldWidthUnit  Number of viewport-width units the world spans.
      * @param worldHeightUnit Number of viewport-height units the world spans.
      * @param name            Human-readable level name.
+     * @param background      Active background frame index.
      */
     static serialize(
         entityManager: EntityManager,
         worldWidthUnit: number,
         worldHeightUnit: number,
         name = 'Untitled',
+        background: BackgroundKey,
     ): LevelData {
         return {
             version: 1,
@@ -48,6 +52,7 @@ export default class LevelSerializer {
             worldWidthUnit,
             worldHeightUnit,
             entities: entityManager.getAllEntities().map(e => e.serialize()),
+            background,
         };
     }
 
@@ -68,6 +73,7 @@ export default class LevelSerializer {
         scene: Phaser.Scene,
         entityManager: EntityManager,
         relManager: PlatformRelationshipManager,
+        backgroundManager: BackgroundManager,
     ): void {
         if (data.version !== 1) {
             throw new Error(`Unsupported level version: ${(data as { version: unknown }).version}`);
@@ -88,5 +94,6 @@ export default class LevelSerializer {
             entityManager.addEntity(entity);
             relManager.onEntityPlaced(entity);
         }
+        backgroundManager.setBackground(data.background);
     }
 }

@@ -23,7 +23,6 @@ import {
     DOCK_SLOTS,
     DockPosition,
     DockSlotConfig,
-    DropdownOption,
     PlacementActivePayload,
     StartPlacementPayload,
     SpriteFrame,
@@ -131,12 +130,17 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
     switch (config.kind) {
         case 'entity-dropdown':
             return (
-                <EntityDropdownSlot
+                <DropdownSlot
                     label={config.label}
                     iconSrc={config.iconSrc}
                     iconSpriteFrame={config.iconSpriteFrame}
-                    options={config.options}
-                    onSelect={onEntitySelect}
+                    items={config.options.map(o => ({
+                        key: `${o.entityType}-${o.variant ?? 'default'}`,
+                        label: o.label,
+                        assetSrc: o.assetSrc,
+                        spriteFrame: o.spriteFrame,
+                        onSelect: () => onEntitySelect({ entityType: o.entityType, variant: o.variant }),
+                    }))}
                 />
             );
         case 'action-button': {
@@ -161,6 +165,21 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
                 </button>
             );
         }
+        case 'background-dropdown':
+            return (
+                <DropdownSlot
+                    label={config.label}
+                    iconSrc={config.iconSrc}
+                    iconSpriteFrame={config.iconSpriteFrame}
+                    items={config.options.map(o => ({
+                        key: String(o.backgroundKey),
+                        label: o.label,
+                        assetSrc: o.assetSrc,
+                        spriteFrame: o.spriteFrame,
+                        onSelect: () => EventBus.emit('editor-set-background', o.backgroundKey),
+                    }))}
+                />
+            );
         case 'popover':
             return <LevelSizePopoverSlot />;
     }
@@ -201,24 +220,30 @@ function DropdownItemIcon({ assetSrc, spriteFrame, alt }: { assetSrc: string; sp
 }
 
 // ---------------------------------------------------------------------------
-// EntityDropdownSlot
+// DropdownSlot
 // ---------------------------------------------------------------------------
 
-interface EntityDropdownSlotProps {
+interface DropdownSlotItem {
+    key: string;
+    label: string;
+    assetSrc: string;
+    spriteFrame?: SpriteFrame;
+    onSelect: () => void;
+}
+
+interface DropdownSlotProps {
     label: string;
     iconSrc: string;
     iconSpriteFrame?: SpriteFrame;
-    options: DropdownOption[];
-    onSelect: (payload: StartPlacementPayload) => void;
+    items: DropdownSlotItem[];
 }
 
 /**
- * Dock button that opens a Radix DropdownMenu listing entity variants.
- * Selecting an option emits 'editor-start-placement' with the chosen type and
- * optional variant.  Every entity always shows a dropdown — even with one
- * option — for consistency and to support future texture variants.
+ * Generic dock button that opens a Radix DropdownMenu.
+ * Each item carries its own key and onSelect callback — the caller is
+ * responsible for binding the correct action (EventBus emit, prop callback, etc.).
  */
-function EntityDropdownSlot({ label, iconSrc, iconSpriteFrame, options, onSelect }: EntityDropdownSlotProps) {
+function DropdownSlot({ label, iconSrc, iconSpriteFrame, items }: DropdownSlotProps) {
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -231,14 +256,14 @@ function EntityDropdownSlot({ label, iconSrc, iconSpriteFrame, options, onSelect
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
                 <DropdownMenu.Content className={styles.dropdownContent} sideOffset={6}>
-                    {options.map(option => (
+                    {items.map(item => (
                         <DropdownMenu.Item
-                            key={`${option.entityType}-${option.variant ?? 'default'}`}
+                            key={item.key}
                             className={styles.dropdownItem}
-                            onSelect={() => onSelect({ entityType: option.entityType, variant: option.variant })}
+                            onSelect={item.onSelect}
                         >
-                            <DropdownItemIcon assetSrc={option.assetSrc} spriteFrame={option.spriteFrame} alt={option.label} />
-                            {option.label}
+                            <DropdownItemIcon assetSrc={item.assetSrc} spriteFrame={item.spriteFrame} alt={item.label} />
+                            {item.label}
                         </DropdownMenu.Item>
                     ))}
                 </DropdownMenu.Content>

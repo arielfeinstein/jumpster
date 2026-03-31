@@ -23,9 +23,11 @@ import { TILE_SIZE } from '../../config';
 // Managers
 import EntityManager from './managers/EntityManager';
 import PlatformRelationshipManager from './managers/PlatformRelationshipManager';
+import BackgroundManager from './managers/BackgroundManager';
 // Commands
 import CommandHistory from './commands/CommandHistory';
 import DeleteCommand from './commands/DeleteCommand';
+import SetBackgroundCommand from './commands/SetBackgroundCommand';
 
 // Controllers
 import CameraController from './controllers/CameraController';
@@ -43,7 +45,7 @@ import GameEntity from '../../gameObjects/GameEntity';
 import Platform from '../../gameObjects/Platform';
 import ControllerEvents from './utils/ControllerEvents';
 import { calcBoundingBox } from './utils/GeometryUtils';
-import { depthConfig } from './types/EditorTypes';
+import { BackgroundKey, depthConfig } from './types/EditorTypes';
 
 export class Editor extends Scene {
 
@@ -54,6 +56,7 @@ export class Editor extends Scene {
     private entityManager!: EntityManager;
     private relManager!: PlatformRelationshipManager;
     private history!: CommandHistory;
+    private backgroundManager!: BackgroundManager;
 
     private cameraController!: CameraController;
     private selectionController!: SelectionController;
@@ -85,16 +88,8 @@ export class Editor extends Scene {
     }
 
     create(): void {
-        const vw = this.scale.width;
-        const vh = this.scale.height;
-
         // Background (scroll-fixed, behind everything).
-        this.add
-            .image(0, 0, 'background')
-            .setOrigin(0, 0)
-            .setDisplaySize(vw, vh)
-            .setScrollFactor(0)
-            .setDepth(-10);
+        this.backgroundManager = new BackgroundManager(this);
 
         // Grid overlay.
         this.grid = this.add
@@ -241,6 +236,7 @@ export class Editor extends Scene {
         EventBus.on('editor-start-placement', this.placementController.startPlacement, this.placementController);
         EventBus.on('editor-cancel-placement', this.placementController.cancelPlacement, this.placementController);
         EventBus.on('editor-change-dimensions', this.changeDimensions, this);
+        EventBus.on('editor-set-background', this.handleSetBackground, this);
 
         // Delete button.
         this.deleteButton.on('pointerdown', (_p: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
@@ -327,6 +323,8 @@ export class Editor extends Scene {
             EventBus.off('editor-start-placement');
             EventBus.off('editor-cancel-placement');
             EventBus.off('editor-change-dimensions');
+            EventBus.off('editor-set-background');
+            this.backgroundManager.destroy();
             this.placementController.destroy();
             this.selectionController.destroy();
             this.dragController.destroy();
@@ -381,6 +379,16 @@ export class Editor extends Scene {
         this.physics.world.setBounds(0, 0, width, height);
         this.grid.width = width;
         this.grid.height = height;
+    }
+
+    // -----------------------------------------------------------------------
+    // Background
+    // -----------------------------------------------------------------------
+
+    private handleSetBackground(key: BackgroundKey): void {
+        if (key === this.backgroundManager.currentKey) return;
+        const cmd = new SetBackgroundCommand(this.backgroundManager, this.backgroundManager.currentKey, key);
+        this.history.executeCommand(cmd);
     }
 
     // -----------------------------------------------------------------------

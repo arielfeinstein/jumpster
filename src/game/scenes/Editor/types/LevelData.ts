@@ -7,7 +7,7 @@
  * portable and easy to version.
  */
 
-import { EntityType } from './EditorTypes';
+import { BackgroundKey, EntityType } from './EditorTypes';
 
 // ---------------------------------------------------------------------------
 // Per-entity serialisation
@@ -48,4 +48,6 @@ export interface LevelData {
     /** Number of viewport-height units the world spans vertically. */
     worldHeightUnit: number;
     entities: EntityData[];
+    /** Background tile frame index. Absent means DEFAULT_BACKGROUND. */
+    background: BackgroundKey;
 }

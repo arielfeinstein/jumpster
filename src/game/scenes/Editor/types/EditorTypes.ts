@@ -23,6 +23,16 @@ export type EntityType =
     | 'spikes';
 
 // ---------------------------------------------------------------------------
+// Background types
+// ---------------------------------------------------------------------------
+
+/** Frame index in the 'bg-tilesheet' spritesheet. */
+export type BackgroundKey = 0 | 1 | 2 | 3 | 4 | 5;
+
+/** The background shown when creating a new level. */
+export const DEFAULT_BACKGROUND: BackgroundKey = 0;
+
+// ---------------------------------------------------------------------------
 // Geometry / direction types
 // ---------------------------------------------------------------------------
 
