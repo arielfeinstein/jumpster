@@ -29,6 +29,8 @@ import CommandHistory from './commands/CommandHistory';
 import DeleteCommand from './commands/DeleteCommand';
 import SetBackgroundCommand from './commands/SetBackgroundCommand';
 
+import WorldManager from './managers/WorldManager';
+
 // Controllers
 import CameraController from './controllers/CameraController';
 import SelectionController from './controllers/SelectionController';
@@ -57,6 +59,7 @@ export class Editor extends Scene {
     private relManager!: PlatformRelationshipManager;
     private history!: CommandHistory;
     private backgroundManager!: BackgroundManager;
+    private worldManager!: WorldManager;
 
     private cameraController!: CameraController;
     private selectionController!: SelectionController;
@@ -108,6 +111,25 @@ export class Editor extends Scene {
         this.entityManager = new EntityManager();
         this.relManager = new PlatformRelationshipManager(this.entityManager);
         this.history = new CommandHistory();
+        this.worldManager = new WorldManager(
+            this,
+            this.entityManager,
+            this.relManager,
+            this.history,
+            (wUnits, hUnits) => {
+                this.worldWidthUnit = wUnits;
+                this.worldHeightUnit = hUnits;
+                
+                const width = this.canvasWidth() * wUnits;
+                const height = this.canvasHeight() * hUnits;
+
+                this.cameras.main.setBounds(0, 0, width, height);
+                this.physics.world.setBounds(0, 0, width, height);
+                this.grid.width = width;
+                this.grid.height = height;
+            },
+            () => ({ w: this.worldWidthUnit, h: this.worldHeightUnit })
+        );
 
         // Interactivity setup is called whenever EntityManager registers a new entity.
         this.entityManager.onEntityAdded = (entity) => this.setupEntityInteractivity(entity);
@@ -235,7 +257,7 @@ export class Editor extends Scene {
         // React UI → Phaser.
         EventBus.on('editor-start-placement', this.placementController.startPlacement, this.placementController);
         EventBus.on('editor-cancel-placement', this.placementController.cancelPlacement, this.placementController);
-        EventBus.on('editor-change-dimensions', this.changeDimensions, this);
+        EventBus.on('editor-change-dimensions', this.worldManager.handleChangeDimensions, this.worldManager);
         EventBus.on('editor-set-background', this.handleSetBackground, this);
 
         // Delete button.
@@ -360,25 +382,6 @@ export class Editor extends Scene {
         this.history.executeCommand(cmd);
 
         this.selectionController.deselectAll();
-    }
-
-    // -----------------------------------------------------------------------
-    // Dimensions
-    // -----------------------------------------------------------------------
-
-    private changeDimensions({ worldWidthUnit, worldHeightUnit }: { worldWidthUnit: number; worldHeightUnit: number }): void {
-        if (worldWidthUnit <= 0 || worldHeightUnit <= 0) return;
-
-        this.worldWidthUnit = worldWidthUnit;
-        this.worldHeightUnit = worldHeightUnit;
-
-        const width = this.canvasWidth() * worldWidthUnit;
-        const height = this.canvasHeight() * worldHeightUnit;
-
-        this.cameras.main.setBounds(0, 0, width, height);
-        this.physics.world.setBounds(0, 0, width, height);
-        this.grid.width = width;
-        this.grid.height = height;
     }
 
     // -----------------------------------------------------------------------

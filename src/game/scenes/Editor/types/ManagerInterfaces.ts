@@ -22,6 +22,7 @@ export interface IEntityManager {
         rect: { x: number; y: number; width: number; height: number },
         requiredOnly?: boolean,
     ): Set<GameEntity>;
+    getAllEntities(): GameEntity[];
 }
 
 // ---------------------------------------------------------------------------
@@ -47,4 +48,10 @@ export interface IPlatformRelManager {
      * For non-platforms: re-registers with the platforms below.
      */
     onEntityResized(entity: GameEntity): void;
+
+    /**
+     * Given a list of entities about to be deleted or removed, returns the list of
+     * entities that would be stranded (requiresPlatformBelow) without them.
+     */
+    getStrandedEntities(entitiesToRemove: GameEntity[]): GameEntity[];
 }

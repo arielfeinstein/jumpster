@@ -10,8 +10,13 @@ export const TILE_SIZE = 32;
 const TILES_ACROSS = 32;              
 const TILES_DOWN = 18;                
 
-const DESIGN_WIDTH = TILE_SIZE * TILES_ACROSS;   // 1024
-const DESIGN_HEIGHT = TILE_SIZE * TILES_DOWN;    // 576
+export const DESIGN_WIDTH = TILE_SIZE * TILES_ACROSS;   // 1024
+export const DESIGN_HEIGHT = TILE_SIZE * TILES_DOWN;    // 576
+
+/** The maximum width of a level in pixels. */
+export const MAX_WORLD_WIDTH = 10 * DESIGN_WIDTH;
+/** The maximum height of a level in pixels. */
+export const MAX_WORLD_HEIGHT = 10 * DESIGN_HEIGHT;
 
 export const makeConfig = (
   parent: HTMLElement
