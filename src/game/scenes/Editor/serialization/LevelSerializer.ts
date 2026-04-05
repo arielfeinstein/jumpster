@@ -39,6 +39,7 @@ export default class LevelSerializer {
      * @param name            Human-readable level name.
      * @param background      Active background frame index.
      */
+    // TODO: consider if we actually need id of entities to be stable across serialisation. If not, we could simplify by letting EntityRegistry.create() generate new IDs.
     static serialize(
         entityManager: EntityManager,
         worldWidthUnit: number,
@@ -68,6 +69,7 @@ export default class LevelSerializer {
      *
      * @throws Error if `data.version` is not 1.
      */
+    // TODO: consider if we actually need id of entities to be stable across serialisation. If not, we could simplify by letting EntityRegistry.create() generate new IDs.
     static deserialize(
         data: LevelData,
         scene: Phaser.Scene,

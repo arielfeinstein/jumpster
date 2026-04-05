@@ -48,6 +48,7 @@ import Platform from '../../gameObjects/Platform';
 import ControllerEvents from './utils/ControllerEvents';
 import { calcBoundingBox } from './utils/GeometryUtils';
 import { BackgroundKey, depthConfig } from './types/EditorTypes';
+import LevelSerializer from './serialization/LevelSerializer';
 
 export class Editor extends Scene {
 
@@ -261,6 +262,16 @@ export class Editor extends Scene {
         EventBus.on('editor-set-background', this.handleSetBackground, this);
         EventBus.on('editor-undo', () => this.history.undo());
         EventBus.on('editor-redo', () => this.history.redo());
+        EventBus.on('editor-save-level', ({ name }: { name: string }) => {
+            const data = LevelSerializer.serialize(
+                this.entityManager,
+                this.worldWidthUnit,
+                this.worldHeightUnit,
+                name,
+                this.backgroundManager.currentKey,
+            );
+            EventBus.emit('editor-level-saved', data);
+        });
 
         // Delete button.
         this.deleteButton.on('pointerdown', (_p: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
@@ -348,6 +359,8 @@ export class Editor extends Scene {
             EventBus.off('editor-cancel-placement');
             EventBus.off('editor-change-dimensions');
             EventBus.off('editor-set-background');
+            EventBus.off('editor-save-level');
+            EventBus.off('editor-level-saved');
             this.backgroundManager.destroy();
             this.placementController.destroy();
             this.selectionController.destroy();

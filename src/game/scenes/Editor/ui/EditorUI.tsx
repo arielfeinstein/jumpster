@@ -18,6 +18,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DropdownMenu, Popover } from 'radix-ui';
 import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
+import { Save, Undo2, Redo2 } from 'lucide-react';
 import { EventBus } from '../../../EventBus';
 import {
     DOCK_SLOTS,
@@ -28,6 +29,7 @@ import {
     SpriteFrame,
 } from '../types/DockTypes';
 import ConfirmationDialog from './ConfirmationDialog';
+import SaveLevelDialog from './SaveLevelDialog';
 import styles from './EditorUI.module.css';
 
 // ---------------------------------------------------------------------------
@@ -45,6 +47,26 @@ export default function EditorUI() {
         };
         EventBus.on('editor-placement-active', handler);
         return () => { EventBus.off('editor-placement-active', handler); };
+    }, []);
+
+    // Save level dialog state.
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+
+    // Listen for serialized level data emitted by Editor.ts, then download it.
+    useEffect(() => {
+        const handler = (data: object) => {
+            // TODO: Replace browser download with server API call to persist the level.
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(data as { name?: string }).name ?? 'level'}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+        EventBus.on('editor-level-saved', handler);
+        return () => { EventBus.off('editor-level-saved', handler); };
     }, []);
 
     // Confirmation dialog state (driven by 'editor-confirm-dialog' events).
@@ -76,6 +98,11 @@ export default function EditorUI() {
         EventBus.emit('editor-cancel-placement');
     }, []);
 
+    const handleSaveLevel = useCallback((name: string) => {
+        setSaveDialogOpen(false);
+        EventBus.emit('editor-save-level', { name });
+    }, []);
+
     const cycleDockPosition = useCallback(() => {
         const order: DockPosition[] = ['bottom', 'right', 'top', 'left'];
         setDockPosition(prev => order[(order.indexOf(prev) + 1) % order.length]);
@@ -99,6 +126,7 @@ export default function EditorUI() {
                         onEntitySelect={handleEntitySelect}
                         onCancelPlacement={handleCancelPlacement}
                         onCycleDockPosition={cycleDockPosition}
+                        onOpenSaveDialog={() => setSaveDialogOpen(true)}
                     />
                 ))}
             </div>
@@ -110,6 +138,11 @@ export default function EditorUI() {
                     onCancel={dialogState.onCancel}
                 />
             )}
+            <SaveLevelDialog
+                open={saveDialogOpen}
+                onSave={handleSaveLevel}
+                onCancel={() => setSaveDialogOpen(false)}
+            />
         </div>
     );
 }
@@ -124,9 +157,10 @@ interface DockSlotProps {
     onEntitySelect: (payload: StartPlacementPayload) => void;
     onCancelPlacement: () => void;
     onCycleDockPosition: () => void;
+    onOpenSaveDialog: () => void;
 }
 
-function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, onCycleDockPosition }: DockSlotProps) {
+function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, onCycleDockPosition, onOpenSaveDialog }: DockSlotProps) {
     switch (config.kind) {
         case 'entity-dropdown':
             return (
@@ -150,15 +184,17 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
             const isCancel = config.action === 'cancel-placement';
             let onClick: () => void;
             if (config.action === 'cancel-placement') onClick = onCancelPlacement;
-            else if (config.action === 'undo')         onClick = () => EventBus.emit('editor-undo');
-            else if (config.action === 'redo')         onClick = () => EventBus.emit('editor-redo');
-            else                                       onClick = onCycleDockPosition;
+            else if (config.action === 'undo')        onClick = () => EventBus.emit('editor-undo');
+            else if (config.action === 'redo')        onClick = () => EventBus.emit('editor-redo');
+            else if (config.action === 'save-level')  onClick = onOpenSaveDialog;
+            else                                      onClick = onCycleDockPosition;
 
             let icon: React.ReactNode;
-            if (config.action === 'undo')        icon = <span style={{ fontSize: 16 }}>↩</span>;
-            else if (config.action === 'redo')   icon = <span style={{ fontSize: 16 }}>↪</span>;
-            else if (isCancel)                   icon = <Cross1Icon width={18} height={18} />;
-            else                                 icon = <DotFilledIcon width={18} height={18} />;
+            if (config.action === 'undo')             icon = <Undo2 size={18} />;
+            else if (config.action === 'redo')        icon = <Redo2 size={18} />;
+            else if (isCancel)                        icon = <Cross1Icon width={18} height={18} />;
+            else if (config.action === 'save-level')  icon = <Save size={18} />;
+            else                                      icon = <DotFilledIcon width={18} height={18} />;
 
             return (
                 <button
