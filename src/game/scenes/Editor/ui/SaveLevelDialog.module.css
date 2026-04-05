@@ -1,0 +1,109 @@
+/* -------------------------------------------------------------------------
+   SaveLevelDialog.module.css
+   Styles for the save level naming dialog.
+   Follows the same aesthetic as ConfirmationDialog.
+   ------------------------------------------------------------------------- */
+
+/* ---- Backdrop ---------------------------------------------------------- */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 200;
+}
+
+/* ---- Dialog panel ------------------------------------------------------ */
+
+.content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    padding: 20px 24px;
+    width: 360px;
+    max-width: 90vw;
+    z-index: 201;
+}
+
+.title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: #222;
+}
+
+.description {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    margin: 0 0 12px;
+}
+
+/* ---- Name input -------------------------------------------------------- */
+
+.input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #222;
+    outline: none;
+}
+
+.input:focus {
+    border-color: #666;
+}
+
+.error {
+    font-size: 12px;
+    color: #d32f2f;
+    margin: 6px 0 0;
+}
+
+/* ---- Action buttons ---------------------------------------------------- */
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.cancelButton,
+.saveButton {
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.cancelButton {
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #333;
+}
+
+.cancelButton:hover {
+    background: #f0f0f0;
+    border-color: #999;
+}
+
+.saveButton {
+    border: 1px solid #1976d2;
+    background: #1976d2;
+    color: #fff;
+}
+
+.saveButton:hover {
+    background: #1565c0;
+    border-color: #1565c0;
+}

@@ -281,6 +281,12 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
     },
     {
         kind: 'action-button',
+        label: 'Save Level',
+        action: 'save-level',
+        visibleDuringPlacement: 'always',
+    },
+    {
+        kind: 'action-button',
         label: 'Undo',
         action: 'undo',
         visibleDuringPlacement: 'always',
