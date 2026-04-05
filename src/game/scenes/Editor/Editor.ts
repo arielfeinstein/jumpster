@@ -259,6 +259,8 @@ export class Editor extends Scene {
         EventBus.on('editor-cancel-placement', this.placementController.cancelPlacement, this.placementController);
         EventBus.on('editor-change-dimensions', this.worldManager.handleChangeDimensions, this.worldManager);
         EventBus.on('editor-set-background', this.handleSetBackground, this);
+        EventBus.on('editor-undo', () => this.history.undo());
+        EventBus.on('editor-redo', () => this.history.redo());
 
         // Delete button.
         this.deleteButton.on('pointerdown', (_p: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {

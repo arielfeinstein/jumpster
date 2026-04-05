@@ -15,7 +15,7 @@
  *   Phaser → React:  'editor-placement-active', 'editor-confirm-dialog'
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DropdownMenu, Popover } from 'radix-ui';
 import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
 import { EventBus } from '../../../EventBus';
@@ -148,9 +148,17 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
             if (config.visibleDuringPlacement === 'only' && !placementActive) return null;
 
             const isCancel = config.action === 'cancel-placement';
-            const onClick = config.action === 'cancel-placement'
-                ? onCancelPlacement
-                : onCycleDockPosition;
+            let onClick: () => void;
+            if (config.action === 'cancel-placement') onClick = onCancelPlacement;
+            else if (config.action === 'undo')         onClick = () => EventBus.emit('editor-undo');
+            else if (config.action === 'redo')         onClick = () => EventBus.emit('editor-redo');
+            else                                       onClick = onCycleDockPosition;
+
+            let icon: React.ReactNode;
+            if (config.action === 'undo')        icon = <span style={{ fontSize: 16 }}>↩</span>;
+            else if (config.action === 'redo')   icon = <span style={{ fontSize: 16 }}>↪</span>;
+            else if (isCancel)                   icon = <Cross1Icon width={18} height={18} />;
+            else                                 icon = <DotFilledIcon width={18} height={18} />;
 
             return (
                 <button
@@ -158,10 +166,7 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
                     title={config.label}
                     onClick={onClick}
                 >
-                    {isCancel
-                        ? <Cross1Icon width={18} height={18} />
-                        : <DotFilledIcon width={18} height={18} />
-                    }
+                    {icon}
                 </button>
             );
         }

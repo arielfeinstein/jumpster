@@ -281,6 +281,18 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
     },
     {
         kind: 'action-button',
+        label: 'Undo',
+        action: 'undo',
+        visibleDuringPlacement: 'always',
+    },
+    {
+        kind: 'action-button',
+        label: 'Redo',
+        action: 'redo',
+        visibleDuringPlacement: 'always',
+    },
+    {
+        kind: 'action-button',
         label: 'Cancel Placement',
         action: 'cancel-placement',
         visibleDuringPlacement: 'only',
