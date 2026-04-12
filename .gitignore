@@ -41,3 +41,6 @@ next-env.d.ts
 
 # github
 .github/
+
+# local test files
+dev_tmp/
