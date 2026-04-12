@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { Boot } from './scenes/Boot';
 import { Preloader } from './scenes/Preloader';
-import { Game } from './scenes/Game';
+import { Play } from './scenes/Play/Play';
 import { GameOver } from './scenes/GameOver';
 import { MainMenu } from './scenes/MainMenu/MainMenu';
 import { Editor } from './scenes/Editor/Editor';
@@ -45,5 +45,5 @@ export const makeConfig = (
     antialias: false,
     roundPixels: true
   },
-  scene: [Boot, Preloader, Game, GameOver, MainMenu, Editor]
+  scene: [Boot, Preloader, Play, GameOver, MainMenu, Editor]
 });
