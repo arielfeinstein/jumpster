@@ -39,9 +39,8 @@ export class Preloader extends Scene
             frameHeight: 32,
         });
 
-        
-
-        //todo: load dude
+        // Load the player spritesheet
+        this.load.spritesheet('fox', 'assets/phaser/fox.png', { frameWidth: 32, frameHeight: 32 });
     }
 
     create ()
@@ -49,6 +48,38 @@ export class Preloader extends Scene
         //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
         //  For example, you can define global animations here, so we can use them in other scenes.
 
-        this.scene.start('MainMenu');
+        this.anims.create({
+            key: 'fox-idle',
+            frames: this.anims.generateFrameNumbers('fox', { start: 0, end: 10 }),
+            frameRate: 20,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'fox-jump',
+            frames: [{ key: 'fox', frame: 11 }],
+            frameRate: 10
+        });
+
+        this.anims.create({
+            key: 'fox-fall',
+            frames: [{ key: 'fox', frame: 12 }],
+            frameRate: 10
+        });
+
+        this.anims.create({
+            key: 'fox-hit-ground',
+            frames: this.anims.generateFrameNumbers('fox', { start: 13, end: 17 }),
+            frameRate: 20
+        });
+
+        this.anims.create({
+            key: 'fox-run',
+            frames: this.anims.generateFrameNumbers('fox', { start: 18, end: 29 }),
+            frameRate: 20,
+            repeat: -1
+        });
+
+        this.scene.start('Play');
     }
 }
