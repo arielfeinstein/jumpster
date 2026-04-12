@@ -12,7 +12,7 @@
  */
 
 import Phaser from 'phaser';
-import { BackgroundKey, DEFAULT_BACKGROUND } from '../types/EditorTypes';
+import { BackgroundKey, DEFAULT_BACKGROUND } from '../../../shared/types/BackgroundKey';
 
 export default class BackgroundManager {
 

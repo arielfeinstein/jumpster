@@ -9,8 +9,12 @@
  * `displayObject`.  The Container is added to the scene inside the constructor
  * so callers do not need to call `scene.add.existing()`.
  *
- * Physics bodies are attached to each TileSprite individually so the game
- * scene can add colliders against `topLayer` and `fillLayer` independently.
+ * Physics bodies are NOT attached in the constructor — the scene is responsible
+ * for calling `scene.physics.add.existing()` on each object returned by
+ * `getCollidables()`.  This keeps the constructor scene-agnostic.
+ *
+ * The editor is responsible for calling `displayObject.setInteractive(...)` via
+ * the EntityManager's `onEntityAdded` hook — not done here for the same reason.
  *
  * Relationship state (which entities stand on this platform) is owned by
  * PlatformRelationshipManager, not here.
@@ -18,7 +22,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
-import { TILE_SIZE } from '../config';
+import { TILE_SIZE } from '../../config';
 
 export type PlatformVariant = 'grass-1' | 'grass-2' | 'grass-3';
 
@@ -35,6 +39,7 @@ export default class Platform extends GameEntity {
     readonly requiresPlatformBelow = false;
     readonly isSingleton = false;
     readonly isResizable = true;
+    readonly playBehavior = 'solid' as const;
 
     // The Phaser Container that holds the two TileSprites.
     readonly displayObject: Phaser.GameObjects.Container;
@@ -80,32 +85,51 @@ export default class Platform extends GameEntity {
         // Build the Container.
         this.displayObject = new Phaser.GameObjects.Container(scene, x, y);
 
-        // Top grass layer.
+        // Top grass layer (no physics body — set up externally by the scene).
         this.topLayer = scene.add
             .tileSprite(0, 0, width, TILE_SIZE, 'platform', frames.top)
             .setOrigin(0, 0);
-        scene.physics.add.existing(this.topLayer, true);
 
-        // Dirt fill layer.
+        // Dirt fill layer (no physics body — set up externally by the scene).
         this.fillLayer = scene.add
             .tileSprite(0, TILE_SIZE, width, Math.max(height - TILE_SIZE, 0), 'platform', frames.fill)
             .setOrigin(0, 0);
-        scene.physics.add.existing(this.fillLayer, true);
 
         this.displayObject.add([this.topLayer, this.fillLayer]);
-
-        // Make the container interactive and draggable (editor setup).
-        const hitArea = new Phaser.Geom.Rectangle(width / 2, height / 2, width, height);
-        this.displayObject.setInteractive({
-            hitArea,
-            hitAreaCallback: Phaser.Geom.Rectangle.Contains,
-            draggable: true,
-        });
 
         this.resize(width, height);
 
         // Register with the scene display list.
         scene.add.existing(this.displayObject);
+    }
+
+    // -----------------------------------------------------------------------
+    // Collidables (play scene physics)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns the TileSprites that should receive Arcade physics bodies.
+     * Arcade physics on a Container does not composite children, so the play
+     * scene must attach bodies to `topLayer` and `fillLayer` individually.
+     */
+    getCollidables(): Phaser.GameObjects.GameObject[] {
+        return [this.topLayer, this.fillLayer];
+    }
+
+    /**
+     * Containers have no automatic hit area, so we must supply an explicit
+     * Rectangle that covers the full platform extent.  The Editor passes this
+     * to `displayObject.setInteractive()` and never needs to know that
+     * Platform uses a Container internally.
+     *
+     * `resize()` keeps the hitArea in sync as the platform is resized.
+     */
+    getEditorInteractiveConfig(): Phaser.Types.Input.InputConfiguration {
+        return {
+            hitArea: new Phaser.Geom.Rectangle(this.width / 2, this.height / 2, this.width, this.height),
+            hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+            draggable: true,
+        };
     }
 
     // -----------------------------------------------------------------------
@@ -118,6 +142,9 @@ export default class Platform extends GameEntity {
      * Height logic:
      *   - 1 tile:  only topLayer is shown; fillLayer is hidden and disabled.
      *   - 2+ tiles: both layers shown; fillLayer height = height - TILE_SIZE.
+     *
+     * Physics bodies (if present) are kept in sync so the play scene does not
+     * need to call anything extra after a resize.
      */
     resize(newWidth: number, newHeight: number): void {
         this._width = newWidth;
@@ -128,7 +155,7 @@ export default class Platform extends GameEntity {
         this.topLayer.width = newWidth;
         this.fillLayer.width = newWidth;
 
-        // Keep the hit area in sync.
+        // Keep the hit area in sync (only present in the editor after setInteractive).
         if (this.displayObject.input?.hitArea) {
             const hitArea = this.displayObject.input.hitArea as Phaser.Geom.Rectangle;
             hitArea.x = newWidth / 2;
@@ -142,11 +169,17 @@ export default class Platform extends GameEntity {
             this.topLayer.height = TILE_SIZE;
             this.fillLayer.setActive(false).setVisible(false);
             this.fillLayer.height = 0;
-            (this.fillLayer.body as Phaser.Physics.Arcade.StaticBody).enable = false;
+            // Guard: physics body only exists in the play scene.
+            if (this.fillLayer.body) {
+                (this.fillLayer.body as Phaser.Physics.Arcade.StaticBody).enable = false;
+            }
         } else {
             // Multi-tile platform — show fill layer beneath the top row.
             this.fillLayer.setActive(true).setVisible(true);
-            (this.fillLayer.body as Phaser.Physics.Arcade.StaticBody).enable = true;
+            // Guard: physics body only exists in the play scene.
+            if (this.fillLayer.body) {
+                (this.fillLayer.body as Phaser.Physics.Arcade.StaticBody).enable = true;
+            }
             this.topLayer.height = TILE_SIZE;
             this.fillLayer.height = newHeight - TILE_SIZE;
         }

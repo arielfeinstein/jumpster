@@ -10,11 +10,11 @@
  *   - getById() enables commands to look up entities by stable UUID.
  */
 
-import GameEntity from '../../../gameObjects/GameEntity';
-import Platform from '../../../gameObjects/Platform';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
+import Platform from '../../../shared/gameObjects/Platform';
 import { IEntityManager } from '../types/ManagerInterfaces';
 import { TILE_SIZE } from '../../../config';
-import GridManager from './GridManager';
+import GridManager from '../../../shared/managers/GridManager';
 
 export default class EntityManager implements IEntityManager {
 

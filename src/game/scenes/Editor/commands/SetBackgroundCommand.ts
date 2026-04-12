@@ -8,7 +8,7 @@
 
 import Command from './Command';
 import BackgroundManager from '../managers/BackgroundManager';
-import { BackgroundKey } from '../types/EditorTypes';
+import { BackgroundKey } from '../../../shared/types/BackgroundKey';
 
 export default class SetBackgroundCommand extends Command {
 

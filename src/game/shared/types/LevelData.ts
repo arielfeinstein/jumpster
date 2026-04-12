@@ -7,7 +7,8 @@
  * portable and easy to version.
  */
 
-import { BackgroundKey, EntityType } from './EditorTypes';
+import { BackgroundKey } from './BackgroundKey';
+import { EntityType } from './EntityType';
 
 // ---------------------------------------------------------------------------
 // Per-entity serialisation

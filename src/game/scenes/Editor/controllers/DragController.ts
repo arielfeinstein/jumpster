@@ -13,14 +13,14 @@
  */
 
 import Phaser from 'phaser';
-import GameEntity from '../../../gameObjects/GameEntity';
-import Platform from '../../../gameObjects/Platform';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
+import Platform from '../../../shared/gameObjects/Platform';
 import EntityManager from '../managers/EntityManager';
 import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
 import CommandHistory from '../commands/CommandHistory';
 import MoveCommand, { MoveEntry } from '../commands/MoveCommand';
 import { RED_TINT } from '../types/EditorTypes';
-import GridManager from '../managers/GridManager';
+import GridManager from '../../../shared/managers/GridManager';
 import ControllerEvents from '../utils/ControllerEvents';
 import { TILE_SIZE } from '../../../config';
 

@@ -5,7 +5,7 @@
  * entities and invoking the confirmation dialog when shrinking the world.
  */
 import { EventBus } from '../../../EventBus';
-import GameEntity from '../../../gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
 import { MAX_WORLD_WIDTH, MAX_WORLD_HEIGHT, DESIGN_WIDTH, DESIGN_HEIGHT } from '../../../config';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
 import ResizeWorldCommand from '../commands/ResizeWorldCommand';

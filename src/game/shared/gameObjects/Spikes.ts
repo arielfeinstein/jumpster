@@ -12,7 +12,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
-import { TILE_SIZE } from '../config';
+import { TILE_SIZE } from '../../config';
 
 export default class Spikes extends GameEntity {
 
@@ -20,6 +20,7 @@ export default class Spikes extends GameEntity {
     readonly requiresPlatformBelow = true;
     readonly isSingleton = false;
     readonly isResizable = true;
+    readonly playBehavior = 'hazard' as const;
 
     readonly displayObject: Phaser.GameObjects.TileSprite;
 

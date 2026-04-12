@@ -4,24 +4,25 @@
  * Thin factory that maps an EntityType string to the constructor for that
  * entity type.  This is the ONLY place where the mapping lives — adding a new
  * entity type requires:
- *   1. A new GameEntity subclass in src/game/gameObjects/
+ *   1. A new GameEntity subclass in src/game/shared/gameObjects/
  *   2. One new entry below
  *   No other file needs to change.
  *
  * Game objects own their own properties (width, height, requiresPlatformBelow,
- * etc.).  The registry does NOT duplicate that metadata.
+ * playBehavior, etc.).  The registry does NOT duplicate that metadata.
  */
 
 import Phaser from 'phaser';
-import { EntityType, ResizeConfig } from '../types/EditorTypes';
-import GameEntity from '../../../gameObjects/GameEntity';
-import Platform, { PlatformVariant } from '../../../gameObjects/Platform';
-import Enemy from '../../../gameObjects/Enemy';
-import Coin from '../../../gameObjects/Coin';
-import Checkpoint from '../../../gameObjects/Checkpoint';
-import Flag, { FlagKind } from '../../../gameObjects/Flag';
-import { TILE_SIZE } from '../../../config';
-import Spikes from '@/game/gameObjects/Spikes';
+import { EntityType } from '../types/EntityType';
+import { ResizeConfig } from '../../scenes/Editor/types/EditorTypes';
+import GameEntity from '../gameObjects/GameEntity';
+import Platform, { PlatformVariant } from '../gameObjects/Platform';
+import Enemy from '../gameObjects/Enemy';
+import Coin from '../gameObjects/Coin';
+import Checkpoint from '../gameObjects/Checkpoint';
+import Flag, { FlagKind } from '../gameObjects/Flag';
+import Spikes from '../gameObjects/Spikes';
+import { TILE_SIZE } from '../../config';
 
 /** Signature shared by all factory functions. */
 type FactoryFn = (
@@ -55,6 +56,7 @@ export default class EntityRegistry {
 
         'end-flag':   (scene, x, y, _w, _h, _variant, id) =>
                           new Flag(scene, x, y, 'end-flag', id),
+
         'spikes':     (scene, x, y, w = TILE_SIZE, _h, _variant, id) =>
                           new Spikes(scene, x, y, w, id),
     };

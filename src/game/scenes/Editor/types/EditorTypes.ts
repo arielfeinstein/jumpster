@@ -1,36 +1,14 @@
 /**
  * EditorTypes.ts
  *
- * Shared type definitions and constants used throughout the level editor.
- * Centralises what was previously scattered across Editor.ts and EditorUI.tsx.
+ * Editor-specific type definitions and constants.
+ * Scene-agnostic types (EntityType, BackgroundKey, EntitySnapshot, etc.) live
+ * in src/game/shared/ and are imported from there by both this file and by
+ * editor subsystems directly.
  */
 
-import type GameEntity from '../../../gameObjects/GameEntity';
+import type GameEntity from '../../../shared/gameObjects/GameEntity';
 import type { IEntityManager } from './ManagerInterfaces';
-
-// ---------------------------------------------------------------------------
-// Entity types
-// ---------------------------------------------------------------------------
-
-/** All placeable entity kinds in the editor. */
-export type EntityType =
-    | 'platform'
-    | 'enemy'
-    | 'coin'
-    | 'checkpoint'
-    | 'start-flag'
-    | 'end-flag'
-    | 'spikes';
-
-// ---------------------------------------------------------------------------
-// Background types
-// ---------------------------------------------------------------------------
-
-/** Frame index in the 'bg-tilesheet' spritesheet. */
-export type BackgroundKey = 0 | 1 | 2 | 3 | 4 | 5;
-
-/** The background shown when creating a new level. */
-export const DEFAULT_BACKGROUND: BackgroundKey = 0;
 
 // ---------------------------------------------------------------------------
 // Geometry / direction types
@@ -68,25 +46,6 @@ export interface Rect {
 
 /** Whether a drag is repositioning existing entities. */
 export type DragMode = 'move';
-
-// ---------------------------------------------------------------------------
-// Snapshots (used by Commands)
-// ---------------------------------------------------------------------------
-
-/**
- * Immutable data snapshot of a single entity.
- * Stored inside commands so that undo/redo can recreate or restore entities
- * without holding live Phaser object references that may have been destroyed.
- */
-export interface EntitySnapshot {
-    id: string;
-    entityType: EntityType;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    variant?: string;
-}
 
 // ---------------------------------------------------------------------------
 // Constants

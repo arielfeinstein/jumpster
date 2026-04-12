@@ -9,7 +9,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
-import { TILE_SIZE } from '../config';
+import { TILE_SIZE } from '../../config';
 
 export default class Coin extends GameEntity {
 
@@ -17,6 +17,7 @@ export default class Coin extends GameEntity {
     readonly requiresPlatformBelow = false;
     readonly isSingleton = false;
     readonly isResizable = false;
+    readonly playBehavior = 'collectible' as const;
 
     readonly displayObject: Phaser.GameObjects.Image;
 

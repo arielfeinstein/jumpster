@@ -10,16 +10,16 @@
  */
 
 import Phaser from 'phaser';
-import GameEntity from '../../../gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
 import EntityManager from '../managers/EntityManager';
 import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
 import CommandHistory from '../commands/CommandHistory';
 import ResizeCommand from '../commands/ResizeCommand';
-import EntityRegistry from '../registry/EntityRegistry';
+import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import ControllerEvents from '../utils/ControllerEvents';
 import { CardinalDir, RED_TINT, Rect, ResizeConfig, depthConfig } from '../types/EditorTypes';
 import { handleResizeConfig } from '../views/SelectionView';
-import GridManager from '../managers/GridManager';
+import GridManager from '../../../shared/managers/GridManager';
 import { TILE_SIZE } from '../../../config';
 
 // ---------------------------------------------------------------------------

@@ -43,12 +43,12 @@ import SelectionView from './views/SelectionView';
 import DeleteButtonView from './views/DeleteButtonView';
 
 // Types
-import GameEntity from '../../gameObjects/GameEntity';
-import Platform from '../../gameObjects/Platform';
+import GameEntity from '../../shared/gameObjects/GameEntity';
 import ControllerEvents from './utils/ControllerEvents';
 import { calcBoundingBox } from './utils/GeometryUtils';
-import { BackgroundKey, depthConfig } from './types/EditorTypes';
-import LevelSerializer from './serialization/LevelSerializer';
+import { BackgroundKey } from '../../shared/types/BackgroundKey';
+import { depthConfig } from './types/EditorTypes';
+import LevelSerializer from '../../shared/serialization/LevelSerializer';
 
 export class Editor extends Scene {
 
@@ -194,11 +194,7 @@ export class Editor extends Scene {
     private setupEntityInteractivity(entity: GameEntity): void {
         const obj = entity.displayObject;
 
-        // Platforms set their own interactive hit area in the constructor.
-        // All other entities need it set up here.
-        if (!(entity instanceof Platform)) {
-            obj.setInteractive({ draggable: true });
-        }
+        obj.setInteractive(entity.getEditorInteractiveConfig());
 
         obj.on('pointerdown', (_p: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
             // During placement mode let the click fall through to the scene so

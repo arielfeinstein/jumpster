@@ -4,12 +4,10 @@
  * Static helpers for grid snapping and position-key generation.
  * The key is used by EntityManager's spatial map to look up which entity
  * occupies a given tile cell.
- *
- * This file is a direct port of the original GridManager — no behaviour change.
  */
 
 import Phaser from 'phaser';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../config';
 
 export default class GridManager {
 

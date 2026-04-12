@@ -10,7 +10,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
-import { TILE_SIZE } from '../config';
+import { TILE_SIZE } from '../../config';
 
 export default class Enemy extends GameEntity {
 
@@ -18,6 +18,7 @@ export default class Enemy extends GameEntity {
     readonly requiresPlatformBelow = true;
     readonly isSingleton = false;
     readonly isResizable = false;
+    readonly playBehavior = 'stompable' as const;
 
     readonly displayObject: Phaser.GameObjects.Image;
 

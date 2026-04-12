@@ -11,10 +11,9 @@
  */
 
 import Command from './Command';
-import GameEntity from '../../../gameObjects/GameEntity';
+import GameEntity, { EntitySnapshot } from '../../../shared/gameObjects/GameEntity';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
-import EntityRegistry from '../registry/EntityRegistry';
-import { EntitySnapshot } from '../types/EditorTypes';
+import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import Phaser from 'phaser';
 
 export default class PlaceCommand extends Command {

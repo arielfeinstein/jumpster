@@ -14,8 +14,8 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
-import { EntityType } from '../scenes/Editor/types/EditorTypes';
-import { TILE_SIZE } from '../config';
+import { PlayBehavior } from '../types/PlayBehavior';
+import { TILE_SIZE } from '../../config';
 
 /** The two flag variants this class handles. */
 export type FlagKind = 'start-flag' | 'end-flag';
@@ -26,6 +26,7 @@ export default class Flag extends GameEntity {
     readonly requiresPlatformBelow = true;
     readonly isSingleton = true;
     readonly isResizable = false;
+    readonly playBehavior: PlayBehavior;
 
     readonly displayObject: Phaser.GameObjects.Image;
 
@@ -48,6 +49,8 @@ export default class Flag extends GameEntity {
     ) {
         super(id);
         this.entityType = flagKind;
+        // Start flag marks the player spawn point; end flag triggers the win condition.
+        this.playBehavior = flagKind === 'start-flag' ? 'spawn' : 'goal';
         this.displayObject = scene.add.image(x, y, flagKind).setOrigin(0, 0);
     }
 

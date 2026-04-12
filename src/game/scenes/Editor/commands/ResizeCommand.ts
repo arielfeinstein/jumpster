@@ -11,7 +11,7 @@
  */
 
 import Command from './Command';
-import GameEntity from '../../../gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
 import { Rect } from '../types/EditorTypes';
 

@@ -9,7 +9,8 @@
  * without touching any rendering logic.
  */
 
-import { BackgroundKey, EntityType } from './EditorTypes';
+import { BackgroundKey } from '../../../shared/types/BackgroundKey';
+import { EntityType } from '../../../shared/types/EntityType';
 
 // ---------------------------------------------------------------------------
 // Dock position

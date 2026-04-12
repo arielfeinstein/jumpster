@@ -7,7 +7,7 @@
  * and so the managers are easily testable in isolation.
  */
 
-import GameEntity from '../../../gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
 
 // ---------------------------------------------------------------------------
 // Entity manager

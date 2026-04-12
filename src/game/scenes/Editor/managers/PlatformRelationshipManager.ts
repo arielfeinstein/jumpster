@@ -12,8 +12,8 @@
  *   Spatial queries delegate to EntityManager.getPlatformsBelow / getEntitiesAbove.
  */
 
-import GameEntity from '../../../gameObjects/GameEntity';
-import Platform from '../../../gameObjects/Platform';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
+import Platform from '../../../shared/gameObjects/Platform';
 import { IPlatformRelManager } from '../types/ManagerInterfaces';
 import EntityManager from './EntityManager';
 

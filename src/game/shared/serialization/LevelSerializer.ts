@@ -22,10 +22,10 @@
 
 import Phaser from 'phaser';
 import { LevelData } from '../types/LevelData';
-import { BackgroundKey } from '../types/EditorTypes';
-import EntityManager from '../managers/EntityManager';
-import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
-import BackgroundManager from '../managers/BackgroundManager';
+import { BackgroundKey } from '../types/BackgroundKey';
+import EntityManager from '../../scenes/Editor/managers/EntityManager';
+import PlatformRelationshipManager from '../../scenes/Editor/managers/PlatformRelationshipManager';
+import BackgroundManager from '../../scenes/Editor/managers/BackgroundManager';
 import EntityRegistry from '../registry/EntityRegistry';
 
 export default class LevelSerializer {

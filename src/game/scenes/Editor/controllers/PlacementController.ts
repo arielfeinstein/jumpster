@@ -22,17 +22,17 @@
  */
 
 import Phaser from 'phaser';
-import GameEntity from '../../../gameObjects/GameEntity';
-import EntityRegistry from '../registry/EntityRegistry';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
+import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import EntityManager from '../managers/EntityManager';
 import PlatformRelationshipManager from '../managers/PlatformRelationshipManager';
 import CommandHistory from '../commands/CommandHistory';
 import PlaceCommand from '../commands/PlaceCommand';
-import GridManager from '../managers/GridManager';
+import GridManager from '../../../shared/managers/GridManager';
 import { EventBus } from '../../../EventBus';
 import { RED_TINT } from '../types/EditorTypes';
 import { StartPlacementPayload, PlacementActivePayload } from '../types/DockTypes';
-import { EntityType } from '../types/EditorTypes';
+import { EntityType } from '../../../shared/types/EntityType';
 
 export default class PlacementController {
 

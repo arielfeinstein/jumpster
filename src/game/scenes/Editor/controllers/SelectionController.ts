@@ -14,9 +14,9 @@
  */
 
 import Phaser from 'phaser';
-import GameEntity from '../../../gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
 import EntityManager from '../managers/EntityManager';
-import GridManager from '../managers/GridManager';
+import GridManager from '../../../shared/managers/GridManager';
 import ControllerEvents from '../utils/ControllerEvents';
 import { DRAG_THRESHOLD } from '../types/EditorTypes';
 import { TILE_SIZE } from '../../../config';
