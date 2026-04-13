@@ -13,6 +13,7 @@
 
 import Phaser from 'phaser';
 import { BackgroundKey, DEFAULT_BACKGROUND } from '../../../shared/types/BackgroundKey';
+import { createBackground } from '../../../shared/utils/BackgroundUtils';
 
 export default class BackgroundManager {
 
@@ -24,9 +25,7 @@ export default class BackgroundManager {
         this.scene = scene;
         this._currentKey = DEFAULT_BACKGROUND;
 
-        const vw = scene.scale.width;
-        const vh = scene.scale.height;
-        this.tileSprite = this.createTileSprite(vw, vh, DEFAULT_BACKGROUND);
+        this.tileSprite = createBackground(this.scene, DEFAULT_BACKGROUND);
     }
 
     /** The currently active background frame index. */
@@ -41,31 +40,12 @@ export default class BackgroundManager {
     setBackground(key: BackgroundKey): void {
         this._currentKey = key;
 
-        const vw = this.scene.scale.width;
-        const vh = this.scene.scale.height;
-
         this.tileSprite.destroy();
-        this.tileSprite = this.createTileSprite(vw, vh, key);
+        this.tileSprite = createBackground(this.scene, key);
     }
 
     /** Tears down the TileSprite. Called on scene shutdown. */
     destroy(): void {
         this.tileSprite.destroy();
-    }
-
-    // -----------------------------------------------------------------------
-    // Internal
-    // -----------------------------------------------------------------------
-
-    private createTileSprite(
-        width: number,
-        height: number,
-        frame: BackgroundKey,
-    ): Phaser.GameObjects.TileSprite {
-        return this.scene.add
-            .tileSprite(0, 0, width, height, 'bg-tilesheet', frame)
-            .setOrigin(0, 0)
-            .setScrollFactor(0)
-            .setDepth(-10);
     }
 }

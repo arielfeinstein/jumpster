@@ -3,15 +3,14 @@ import { Scene } from 'phaser';
 import Player from './Player';
 import LevelSerializer from '../../shared/serialization/LevelSerializer';
 import { LevelData } from '../../shared/types/LevelData';
-import EntityRegistry from '../../shared/registry/EntityRegistry';
-import GameEntity from '../../shared/gameObjects/GameEntity';
+import { createBackground } from '../../shared/utils/BackgroundUtils';
+import { PlayPhysicsGroups } from '../../shared/types/PlayPhysicsGroups';
 
-export class Play extends Scene
-{
+export class Play extends Scene {
     private camera!: Phaser.Cameras.Scene2D.Camera;
-    private background!: Phaser.GameObjects.Image;
+    private background!: Phaser.GameObjects.TileSprite;
     private player!: Player;
-    
+
     private solidGroup!: Phaser.Physics.Arcade.StaticGroup;
     private hazardGroup!: Phaser.Physics.Arcade.StaticGroup;
     private collectibleGroup!: Phaser.Physics.Arcade.StaticGroup;
@@ -19,109 +18,78 @@ export class Play extends Scene
     private goalGroup!: Phaser.Physics.Arcade.StaticGroup;
     private stompableGroup!: Phaser.Physics.Arcade.Group;
 
-    constructor ()
-    {
+    constructor() {
         super('Play');
     }
 
-    preload()
-    {
+    preload() {
         // Explicitly load dev level inside Play for early development
         this.load.json('level1', 'dev_tmp/level1.json');
     }
 
-    create ()
-    {
+    create() {
         this.camera = this.cameras.main;
-        this.camera.setBackgroundColor(0x00ff00);
-        
+
         // Physics groups
         this.solidGroup = this.physics.add.staticGroup();
         this.hazardGroup = this.physics.add.staticGroup();
         this.collectibleGroup = this.physics.add.staticGroup();
         this.checkpointGroup = this.physics.add.staticGroup();
         this.goalGroup = this.physics.add.staticGroup();
-        this.stompableGroup = this.physics.add.group({ allowGravity: true }); 
+        this.stompableGroup = this.physics.add.group({ allowGravity: true });
 
+        // Listen for the loader to complete before building the world
+        // This ensures level1.json is actually in the cache
+        if (this.load.isLoading()) {
+            this.load.once('complete', () => this.buildWorld());
+        } else {
+            // If already loaded (e.g. from a previous scene or cache), build immediately
+            this.buildWorld();
+        }
+    }
+
+    private buildWorld() {
         // Try load level data
         const levelData = this.cache.json.get('level1') as LevelData | undefined;
 
+        // Default spawn point if no 'spawn' checkpoint is found in the entities.
+        // Editor should enforce that exactly one spawn point exists, but we fall back to a safe default just in case.
         let spawnX = 100;
         let spawnY = 300;
 
-        if (levelData) {
-            // Setup world bounds
-            const vw = this.scale.width;
-            const vh = this.scale.height;
-            const worldW = (levelData.worldWidthUnit || 1) * vw;
-            const worldH = (levelData.worldHeightUnit || 1) * vh;
+        if (!levelData) {
+            console.error('Play Scene: levelData (level1.json) not found in cache. Returning to MainMenu.');
+            this.scene.start('MainMenu');
+            return;
+        }
 
-            this.physics.world.setBounds(0, 0, worldW, worldH);
-            this.camera.setBounds(0, 0, worldW, worldH);
+        // Setup world bounds
+        const vw = this.scale.width;
+        const vh = this.scale.height;
+        const worldW = (levelData.worldWidthUnit || 1) * vw;
+        const worldH = (levelData.worldHeightUnit || 1) * vh;
 
-            // Add background based on level data
-            const bgKey = levelData.background ?? 0;
-            // Simple generic tile sprite for now, adjust later if complex
-            this.background = this.add.image(0, 0, 'bg-tilesheet', bgKey)
-                .setOrigin(0, 0)
-                .setDisplaySize(worldW, worldH)
-                .setDepth(-10);
-            this.background.setAlpha(0.5);
+        this.physics.world.setBounds(0, 0, worldW, worldH);
+        this.camera.setBounds(0, 0, worldW, worldH);
 
-            // Parse Entities
-            if (levelData.entities) {
-                for (const eData of levelData.entities) {
-                    const entity = EntityRegistry.create(eData.entityType, this, eData.x, eData.y, eData.width, eData.height, eData.variant, eData.id);
-                    
-                    const collidables = entity.getCollidables();
+        // Add background based on level data using shared utility
+        const bgKey = levelData.background ?? 0;
+        this.background = createBackground(this, bgKey);
+        this.background.setAlpha(0.5);
 
-                    // Map behavior to groups
-                    switch (entity.playBehavior) {
-                        case 'spawn':
-                            spawnX = eData.x;
-                            spawnY = eData.y;
-                            break;
-                        case 'solid':
-                            this.solidGroup.addMultiple(collidables);
-                            break;
-                        case 'hazard':
-                            this.hazardGroup.addMultiple(collidables);
-                            break;
-                        case 'stompable':
-                            this.stompableGroup.addMultiple(collidables);
-                            break;
-                        case 'collectible':
-                            this.collectibleGroup.addMultiple(collidables);
-                            break;
-                        case 'checkpoint':
-                            this.checkpointGroup.addMultiple(collidables);
-                            break;
-                        case 'goal':
-                            this.goalGroup.addMultiple(collidables);
-                            break;
-                    }
-                }
-            }
-        } else {
-            // Fallback empty background if json missing
-            const vw = this.scale.width;
-            const vh = this.scale.height;
-            this.background = this.add
-                .image(0, 0, 'background')
-                .setOrigin(0, 0)
-                .setDisplaySize(vw, vh)
-                .setScrollFactor(0)
-                .setDepth(-10);
-            this.background.setAlpha(0.5);
-            this.physics.world.setBounds(0, 0, vw, vh);
-            this.camera.setBounds(0, 0, vw, vh);
-            
-            // Helpful text
-            this.add.text(vw/2, vh/2, 'Level Data Missing.\nRefresh after creating dev_tmp/level1.json', {
-                fontFamily: 'Arial Black', fontSize: 32, color: '#ffffff',
-                stroke: '#000000', strokeThickness: 6,
-                align: 'center'
-            }).setOrigin(0.5).setDepth(100);
+        // Parse Entities
+        if (levelData.entities) {
+            const spawn = LevelSerializer.deserializeForPlay(levelData, this, {
+                solid: this.solidGroup,
+                hazard: this.hazardGroup,
+                collectible: this.collectibleGroup,
+                checkpoint: this.checkpointGroup,
+                goal: this.goalGroup,
+                stompable: this.stompableGroup
+            });
+
+            spawnX = spawn.spawnX;
+            spawnY = spawn.spawnY;
         }
 
         // Initialize Player at spawn point
@@ -138,16 +106,14 @@ export class Play extends Scene
         EventBus.emit('current-scene-ready', this);
     }
 
-    update()
-    {
+    update() {
         const cursors = this.input.keyboard?.createCursorKeys();
-        if (cursors) {
+        if (cursors && this.player) {
             this.player.update(cursors);
         }
     }
 
-    changeScene ()
-    {
+    changeScene() {
         this.scene.start('GameOver');
     }
 }
