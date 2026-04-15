@@ -4,6 +4,8 @@ export const ANIMATION_KEYS = {
     FOX_FALL: 'fox-fall',
     FOX_HIT_GROUND: 'fox-hit-ground',
     FOX_RUN: 'fox-run',
+    GOOMBA_STOMP: 'goomba-stomp',
+    GOOMBA_WALK: 'goomba-walk',
 } as const;
 
 export type AnimationKey = typeof ANIMATION_KEYS[keyof typeof ANIMATION_KEYS];
@@ -53,6 +55,24 @@ export const PLAYER_ANIMATIONS: AnimationConfig[] = [
         startFrame: 18,
         endFrame: 29,
         frameRate: 20,
+        repeat: -1,
+    },
+];
+
+export const ENEMY_ANIMATIONS: AnimationConfig[] = [
+    {
+        key: ANIMATION_KEYS.GOOMBA_STOMP,
+        textureKey: 'enemy',
+        startFrame: 4,
+        endFrame: 4,
+        frameRate: 10,
+    },
+    {
+        key: ANIMATION_KEYS.GOOMBA_WALK,
+        textureKey: 'enemy',
+        startFrame: 0,
+        endFrame: 2,
+        frameRate: 10,
         repeat: -1,
     },
 ];
