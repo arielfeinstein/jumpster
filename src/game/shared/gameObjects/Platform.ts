@@ -23,7 +23,7 @@
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { PlatformData } from '../types/LevelData';
-import { TILE_SIZE } from '../../config';
+import { TILE_SIZE } from '../../config/GameConfig';
 
 export type PlatformVariant = 'grass-1' | 'grass-2' | 'grass-3';
 

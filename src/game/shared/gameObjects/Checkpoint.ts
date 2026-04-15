@@ -10,7 +10,7 @@
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { CheckpointData } from '../types/LevelData';
-import { TILE_SIZE } from '../../config';
+import { TILE_SIZE } from '../../config/GameConfig';
 
 export default class Checkpoint extends GameEntity {
 

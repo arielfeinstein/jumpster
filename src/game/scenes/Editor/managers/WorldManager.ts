@@ -6,7 +6,7 @@
  */
 import { EventBus } from '../../../EventBus';
 import GameEntity from '../../../shared/gameObjects/GameEntity';
-import { MAX_WORLD_WIDTH, MAX_WORLD_HEIGHT, DESIGN_WIDTH, DESIGN_HEIGHT } from '../../../config';
+import { MAX_WORLD_WIDTH, MAX_WORLD_HEIGHT, DESIGN_WIDTH, DESIGN_HEIGHT } from '../../../config/GameConfig';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
 import ResizeWorldCommand from '../commands/ResizeWorldCommand';
 import CommandHistory from '../commands/CommandHistory';

@@ -14,7 +14,7 @@
 import Phaser from 'phaser';
 import { Rect, CardinalDir } from '../types/EditorTypes';
 import { getViewportEdgeAlignment } from '../utils/GeometryUtils';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../../config/GameConfig';
 
 /** The four corners where the delete button can be placed. */
 type CornerKey = 'nw' | 'ne' | 'sw' | 'se';

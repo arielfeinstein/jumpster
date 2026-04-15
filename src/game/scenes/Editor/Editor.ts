@@ -18,7 +18,7 @@
 import { Scene } from 'phaser';
 import Phaser from 'phaser';
 import { EventBus } from '../../EventBus';
-import { TILE_SIZE } from '../../config';
+import { TILE_SIZE } from '../../config/GameConfig';
 
 // Managers
 import EntityManager from './managers/EntityManager';

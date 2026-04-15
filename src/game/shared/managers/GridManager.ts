@@ -7,7 +7,7 @@
  */
 
 import Phaser from 'phaser';
-import { TILE_SIZE } from '../../config';
+import { TILE_SIZE } from '../../config/GameConfig';
 
 export default class GridManager {
 

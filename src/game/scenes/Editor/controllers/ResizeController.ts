@@ -20,7 +20,7 @@ import ControllerEvents from '../utils/ControllerEvents';
 import { CardinalDir, RED_TINT, Rect, ResizeConfig, depthConfig } from '../types/EditorTypes';
 import { handleResizeConfig } from '../views/SelectionView';
 import GridManager from '../../../shared/managers/GridManager';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../../config/GameConfig';
 
 // ---------------------------------------------------------------------------
 // Resize strategy type

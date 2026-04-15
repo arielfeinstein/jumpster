@@ -16,7 +16,7 @@ import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { StartFlagData, EndFlagData } from '../types/LevelData';
 import { PlayBehavior } from '../types/PlayBehavior';
-import { TILE_SIZE } from '../../config';
+import { TILE_SIZE } from '../../config/GameConfig';
 
 /** The two flag variants this class handles. */
 export type FlagKind = 'start-flag' | 'end-flag';

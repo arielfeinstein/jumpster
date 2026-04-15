@@ -12,7 +12,7 @@
 
 import Phaser from 'phaser';
 import { CardinalDir, Rect, depthConfig } from '../types/EditorTypes';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../../config/GameConfig';
 
 // ---------------------------------------------------------------------------
 // Visual config

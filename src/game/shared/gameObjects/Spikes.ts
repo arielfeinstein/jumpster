@@ -13,7 +13,7 @@
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { SpikesData } from '../types/LevelData';
-import { TILE_SIZE } from '../../config';
+import { TILE_SIZE } from '../../config/GameConfig';
 
 export default class Spikes extends GameEntity {
 

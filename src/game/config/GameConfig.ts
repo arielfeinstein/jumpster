@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
-import { Boot } from './scenes/Boot';
-import { Preloader } from './scenes/Preloader';
-import { Play } from './scenes/Play/Play';
-import { GameOver } from './scenes/GameOver';
-import { MainMenu } from './scenes/MainMenu/MainMenu';
-import { Editor } from './scenes/Editor/Editor';
+import { Boot } from '../scenes/Boot';
+import { Preloader } from '../scenes/Preloader';
+import { Play } from '../scenes/Play/Play';
+import { GameOver } from '../scenes/GameOver';
+import { MainMenu } from '../scenes/MainMenu/MainMenu';
+import { Editor } from '../scenes/Editor/Editor';
 
 export const TILE_SIZE = 32;                 
 const TILES_ACROSS = 32;              

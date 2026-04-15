@@ -1,7 +1,7 @@
 'use client';
 
 import Phaser from 'phaser';
-import { makeConfig } from './config';
+import { makeConfig } from './config/GameConfig';
 
 const StartGame = (parent: string) => {
   const el = (typeof parent === 'string')

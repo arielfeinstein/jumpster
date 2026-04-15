@@ -13,7 +13,7 @@
 import GameEntity from '../../../shared/gameObjects/GameEntity';
 import Platform from '../../../shared/gameObjects/Platform';
 import { IEntityManager } from '../types/ManagerInterfaces';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../../config/GameConfig';
 import GridManager from '../../../shared/managers/GridManager';
 
 export default class EntityManager implements IEntityManager {

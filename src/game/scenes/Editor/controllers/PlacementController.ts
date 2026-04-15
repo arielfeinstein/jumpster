@@ -34,7 +34,7 @@ import { RED_TINT } from '../types/EditorTypes';
 import { StartPlacementPayload, PlacementActivePayload } from '../types/DockTypes';
 import { EntityType } from '../../../shared/types/EntityType';
 import { EntityData } from '../../../shared/types/LevelData';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../../config/GameConfig';
 
 export default class PlacementController {
 

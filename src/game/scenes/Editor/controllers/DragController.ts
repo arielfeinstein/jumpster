@@ -22,7 +22,7 @@ import MoveCommand, { MoveEntry } from '../commands/MoveCommand';
 import { RED_TINT } from '../types/EditorTypes';
 import GridManager from '../../../shared/managers/GridManager';
 import ControllerEvents from '../utils/ControllerEvents';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../../config/GameConfig';
 
 export default class DragController extends Phaser.Events.EventEmitter {
 

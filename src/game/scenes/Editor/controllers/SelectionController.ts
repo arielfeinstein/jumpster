@@ -19,7 +19,7 @@ import EntityManager from '../managers/EntityManager';
 import GridManager from '../../../shared/managers/GridManager';
 import ControllerEvents from '../utils/ControllerEvents';
 import { DRAG_THRESHOLD } from '../types/EditorTypes';
-import { TILE_SIZE } from '../../../config';
+import { TILE_SIZE } from '../../../config/GameConfig';
 
 export default class SelectionController extends Phaser.Events.EventEmitter {
 
