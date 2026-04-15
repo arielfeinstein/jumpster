@@ -69,7 +69,6 @@ export default abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
      */
     kill(): void {
         this.onKill();
-        // TODO: play death animation, then destroy on animation complete
         this.destroy();
     }
 

@@ -18,6 +18,7 @@
 
 import Phaser from 'phaser';
 import Enemy, { PatrolBounds, ContactInfo, EnemyContactResult } from './Enemy';
+import { ANIMATION_KEYS } from '@/game/config/AnimationCatalog';
 
 const WALK_SPEED = 80; // px/s
 
@@ -53,6 +54,9 @@ export default class Goomba extends Enemy {
 
         // Start walking right
         this.setVelocityX(WALK_SPEED * this.direction);
+
+        // Start walk animation (loops forever due to repeat: -1)
+        this.play(ANIMATION_KEYS.GOOMBA_WALK);
     }
 
     update(_delta: number): void {
@@ -72,9 +76,6 @@ export default class Goomba extends Enemy {
         } else if (this.x >= this.patrolRight && this.direction === 1) {
             this.turn();
         }
-
-        // TODO: play walk animation
-        // TODO: flip sprite based on direction
     }
 
     handlePlayerContact(_player: Phaser.Physics.Arcade.Sprite, info: ContactInfo): EnemyContactResult {
@@ -82,7 +83,7 @@ export default class Goomba extends Enemy {
     }
 
     protected onKill(): void {
-        // TODO: play squash animation / particle burst
+        this.play(ANIMATION_KEYS.GOOMBA_STOMP);
     }
 
     private turn(): void {
