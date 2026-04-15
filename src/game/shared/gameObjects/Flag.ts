@@ -14,6 +14,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
+import { StartFlagData, EndFlagData } from '../types/LevelData';
 import { PlayBehavior } from '../types/PlayBehavior';
 import { TILE_SIZE } from '../../config';
 
@@ -58,5 +59,9 @@ export default class Flag extends GameEntity {
         const ghost = new Flag(scene, this.x, this.y, this.entityType);
         ghost.setAlpha(0.5);
         return ghost;
+    }
+
+    serialize(): StartFlagData | EndFlagData {
+        return { entityType: this.entityType, id: this.id, x: this.x, y: this.y };
     }
 }

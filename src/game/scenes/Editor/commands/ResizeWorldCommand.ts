@@ -8,7 +8,8 @@
  */
 
 import Command from './Command';
-import GameEntity, { EntitySnapshot } from '../../../shared/gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
+import { EntityData } from '../../../shared/types/LevelData';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
 import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import Phaser from 'phaser';
@@ -23,7 +24,7 @@ export default class ResizeWorldCommand extends Command {
     private readonly newWidthUnits: number;
     private readonly newHeightUnits: number;
 
-    private readonly deletedSnapshots: EntitySnapshot[];
+    private readonly deletedSnapshots: EntityData[];
     
     // Provided dimension callback to keep Editor.ts synchronized
     private readonly changeDimensionsFn: (w: number, h: number) => void;
@@ -45,7 +46,7 @@ export default class ResizeWorldCommand extends Command {
         this.oldHeightUnits = oldHeight;
         this.newWidthUnits = newWidth;
         this.newHeightUnits = newHeight;
-        this.deletedSnapshots = outboundEntities.map(e => e.snapshot());
+        this.deletedSnapshots = outboundEntities.map(e => e.serialize());
         this.entityManager = entityManager;
         this.relManager = relManager;
         this.changeDimensionsFn = changeDimensionsFn;
@@ -76,16 +77,7 @@ export default class ResizeWorldCommand extends Command {
 
         // Recreate deleted entities
         for (const snap of this.deletedSnapshots) {
-            const entity = EntityRegistry.create(
-                snap.entityType,
-                this.scene,
-                snap.x,
-                snap.y,
-                snap.width,
-                snap.height,
-                snap.variant,
-                snap.id,
-            );
+            const entity = EntityRegistry.create(this.scene, snap);
             this.entityManager.addEntity(entity);
             this.relManager.onEntityPlaced(entity);
         }

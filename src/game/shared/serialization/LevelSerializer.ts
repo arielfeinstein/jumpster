@@ -27,8 +27,6 @@ import EntityManager from '../../scenes/Editor/managers/EntityManager';
 import PlatformRelationshipManager from '../../scenes/Editor/managers/PlatformRelationshipManager';
 import BackgroundManager from '../../scenes/Editor/managers/BackgroundManager';
 import EntityRegistry from '../registry/EntityRegistry';
-import { PlayPhysicsGroups } from '../types/PlayPhysicsGroups';
-
 export default class LevelSerializer {
 
     /**
@@ -83,16 +81,7 @@ export default class LevelSerializer {
         }
 
         for (const entityData of data.entities) {
-            const entity = EntityRegistry.create(
-                entityData.entityType,
-                scene,
-                entityData.x,
-                entityData.y,
-                entityData.width,
-                entityData.height,
-                entityData.variant,
-                entityData.id,
-            );
+            const entity = EntityRegistry.create(scene, entityData);
 
             entityManager.addEntity(entity);
             relManager.onEntityPlaced(entity);
@@ -100,74 +89,4 @@ export default class LevelSerializer {
         backgroundManager.setBackground(data.background);
     }
 
-    /**
-     * Deserializes a level for gameplay, instantiating entities and populating
-     * physics groups based on their playBehavior.
-     *
-     * @param data      The parsed level data.
-     * @param scene     The Phaser scene used to construct display objects and physics bodies.
-     * @param groups    The physics groups to populate (solid, hazard, etc.).
-     *
-     * @returns An object containing { spawnX, spawnY } where the player should spawn.
-     *          Defaults to (100, 300) if no 'spawn' checkpoint is found.
-     *
-     * @throws Error if `data.version` is not 1.
-     */
-    static deserializeForPlay(
-        data: LevelData,
-        scene: Phaser.Scene,
-        groups: PlayPhysicsGroups,
-    ): { spawnX: number; spawnY: number } {
-        if (data.version !== 1) {
-            throw new Error(`Unsupported level version: ${(data as { version: unknown }).version}`);
-        }
-
-        // Default spawn point if no 'spawn' checkpoint is found in the entities.
-        // Editor should enforce that exactly one spawn point exists, but we fall back to a safe default just in case.
-        let spawnX = 100;
-        let spawnY = 300;
-
-        for (const entityData of data.entities) {
-            const entity = EntityRegistry.create(
-                entityData.entityType,
-                scene,
-                entityData.x,
-                entityData.y,
-                entityData.width,
-                entityData.height,
-                entityData.variant,
-                entityData.id,
-            );
-
-            const collidables = entity.getCollidables();
-
-            // Route entity to appropriate physics group based on playBehavior
-            switch (entity.playBehavior) {
-                case 'spawn':
-                    spawnX = entityData.x;
-                    spawnY = entityData.y;
-                    break;
-                case 'solid':
-                    groups.solid.addMultiple(collidables);
-                    break;
-                case 'hazard':
-                    groups.hazard.addMultiple(collidables);
-                    break;
-                case 'stompable':
-                    groups.stompable.addMultiple(collidables);
-                    break;
-                case 'collectible':
-                    groups.collectible.addMultiple(collidables);
-                    break;
-                case 'checkpoint':
-                    groups.checkpoint.addMultiple(collidables);
-                    break;
-                case 'goal':
-                    groups.goal.addMultiple(collidables);
-                    break;
-            }
-        }
-
-        return { spawnX, spawnY };
-    }
 }

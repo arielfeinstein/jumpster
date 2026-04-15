@@ -9,6 +9,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
+import { CheckpointData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config';
 
 export default class Checkpoint extends GameEntity {
@@ -40,5 +41,9 @@ export default class Checkpoint extends GameEntity {
         const ghost = new Checkpoint(scene, this.x, this.y);
         ghost.setAlpha(0.5);
         return ghost;
+    }
+
+    serialize(): CheckpointData {
+        return { entityType: 'checkpoint', id: this.id, x: this.x, y: this.y };
     }
 }

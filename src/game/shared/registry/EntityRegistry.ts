@@ -1,65 +1,74 @@
 /**
  * EntityRegistry.ts
  *
- * Thin factory that maps an EntityType string to the constructor for that
- * entity type.  This is the ONLY place where the mapping lives — adding a new
- * entity type requires:
- *   1. A new GameEntity subclass in src/game/shared/gameObjects/
- *   2. One new entry below
- *   No other file needs to change.
+ * Pure factory — maps a fully-typed EntityData union member to the correct
+ * GameEntity subclass.  This is the ONLY place where the entityType → constructor
+ * mapping lives.
  *
- * Game objects own their own properties (width, height, requiresPlatformBelow,
- * playBehavior, etc.).  The registry does NOT duplicate that metadata.
+ * TypeScript narrows the EntityData union in each switch case, so only the fields
+ * that exist for that type are accessible (accessing `data.width` in the 'coin'
+ * case is a compile error).
+ *
+ * Adding a new entity type:
+ *   1. Add a new interface to LevelData.ts and add it to the EntityData union.
+ *   2. Create a new GameEntity subclass in src/game/shared/gameObjects/.
+ *   3. Add a case to create() below.
+ *   No other file needs to change.
  */
 
 import Phaser from 'phaser';
 import { EntityType } from '../types/EntityType';
+import { EntityData } from '../types/LevelData';
 import { ResizeConfig } from '../../scenes/Editor/types/EditorTypes';
 import GameEntity from '../gameObjects/GameEntity';
 import Platform, { PlatformVariant } from '../gameObjects/Platform';
-import Enemy from '../gameObjects/Enemy';
+import EnemyEntity from '../gameObjects/EnemyEntity';
 import Coin from '../gameObjects/Coin';
 import Checkpoint from '../gameObjects/Checkpoint';
-import Flag, { FlagKind } from '../gameObjects/Flag';
+import Flag from '../gameObjects/Flag';
 import Spikes from '../gameObjects/Spikes';
-import { TILE_SIZE } from '../../config';
-
-/** Signature shared by all factory functions. */
-type FactoryFn = (
-    scene: Phaser.Scene,
-    x: number,
-    y: number,
-    width?: number,
-    height?: number,
-    variant?: string,
-    id?: string,
-) => GameEntity;
 
 export default class EntityRegistry {
 
+    // -----------------------------------------------------------------------
+    // Factory
+    // -----------------------------------------------------------------------
+
     /**
-     * Factory map — one entry per EntityType.
-     * TypeScript enforces that every key of the union is present at compile time.
+     * Creates the correct GameEntity subclass from a fully-typed EntityData.
+     * TypeScript narrows the union in each case, giving compile-time
+     * safety — accessing `data.width` in the 'platform' case is fine;
+     * doing so in the 'coin' case is a type error.
      */
-    private static readonly factories: Record<EntityType, FactoryFn> = {
-        'platform':   (scene, x, y, w = TILE_SIZE, h = TILE_SIZE, variant, id) =>
-                          new Platform(scene, x, y, w, h, variant as PlatformVariant, id),
+    static create(scene: Phaser.Scene, data: EntityData): GameEntity {
+        switch (data.entityType) {
+            case 'platform':
+                return new Platform(
+                    scene, data.x, data.y,
+                    data.width, data.height,
+                    data.variant as PlatformVariant,
+                    data.id,
+                );
 
-        'enemy':      (scene, x, y, _w, _h, _variant, id) => new Enemy(scene, x, y, id),
+            case 'enemy':
+                return new EnemyEntity(scene, data.x, data.y, data.enemyType, data.variant, data.id);
 
-        'coin':       (scene, x, y, _w, _h, _variant, id) => new Coin(scene, x, y, id),
+            case 'coin':
+                return new Coin(scene, data.x, data.y, data.id);
 
-        'checkpoint': (scene, x, y, _w, _h, _variant, id) => new Checkpoint(scene, x, y, id),
+            case 'checkpoint':
+                return new Checkpoint(scene, data.x, data.y, data.id);
 
-        'start-flag': (scene, x, y, _w, _h, _variant, id) =>
-                          new Flag(scene, x, y, 'start-flag', id),
+            case 'start-flag':
+                return new Flag(scene, data.x, data.y, 'start-flag', data.id);
 
-        'end-flag':   (scene, x, y, _w, _h, _variant, id) =>
-                          new Flag(scene, x, y, 'end-flag', id),
+            case 'end-flag':
+                return new Flag(scene, data.x, data.y, 'end-flag', data.id);
 
-        'spikes':     (scene, x, y, w = TILE_SIZE, _h, _variant, id) =>
-                          new Spikes(scene, x, y, w, id),
-    };
+            case 'spikes':
+                return new Spikes(scene, data.x, data.y, data.width, data.id);
+        }
+    }
 
     // -----------------------------------------------------------------------
     // Resize configuration — static per-entity-type config for the resize system.
@@ -93,28 +102,4 @@ export default class EntityRegistry {
         return EntityRegistry.resizeConfigs[type];
     }
 
-    /**
-     * Creates a new entity of the given type and adds it to `scene`.
-     *
-     * @param type    The entity kind to create.
-     * @param scene   The Phaser scene that will own the entity.
-     * @param x       World-space top-left x (should be grid-snapped by the caller).
-     * @param y       World-space top-left y (should be grid-snapped by the caller).
-     * @param width   Optional override — only meaningful for resizable entities.
-     * @param height  Optional override — only meaningful for resizable entities.
-     * @param variant Optional texture variant key (e.g. 'grass-1' for platforms).
-     * @param id      Optional stable UUID — supply when deserialising from a save file.
-     */
-    static create(
-        type: EntityType,
-        scene: Phaser.Scene,
-        x: number,
-        y: number,
-        width?: number,
-        height?: number,
-        variant?: string,
-        id?: string,
-    ): GameEntity {
-        return EntityRegistry.factories[type](scene, x, y, width, height, variant, id);
-    }
 }

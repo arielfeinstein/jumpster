@@ -80,6 +80,6 @@ export class Preloader extends Scene
             repeat: -1
         });
 
-        this.scene.start('Play');
+        this.scene.start('Editor');
     }
 }

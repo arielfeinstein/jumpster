@@ -11,7 +11,7 @@
  * Mapping:
  *   'solid'       — Platform:    collider — player stands on / bumps into it
  *   'hazard'      — Spikes:      overlap  — any contact → damage
- *   'stompable'   — Enemy:       overlap  — top → kill enemy; else → damage player
+ *   'enemy'       — Enemy:       overlap  — top → kill enemy; else → damage player
  *   'collectible' — Coin:        overlap  — collect and destroy
  *   'checkpoint'  — Checkpoint:  overlap  — update player respawn point
  *   'goal'        — End flag:    overlap  — win condition
@@ -20,7 +20,7 @@
 export type PlayBehavior =
     | 'solid'
     | 'hazard'
-    | 'stompable'
+    | 'enemy'
     | 'collectible'
     | 'checkpoint'
     | 'goal'

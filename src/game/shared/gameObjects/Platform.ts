@@ -22,6 +22,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
+import { PlatformData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config';
 
 export type PlatformVariant = 'grass-1' | 'grass-2' | 'grass-3';
@@ -209,6 +210,18 @@ export default class Platform extends GameEntity {
         const ghost = new Platform(scene, this.x, this.y, this._width, this._height, this.variant as PlatformVariant);
         ghost.setAlpha(0.5);
         return ghost;
+    }
+
+    serialize(): PlatformData {
+        return {
+            entityType: 'platform',
+            id: this.id,
+            x: this.x,
+            y: this.y,
+            width: this._width,
+            height: this._height,
+            variant: this.variant,
+        };
     }
 
 }

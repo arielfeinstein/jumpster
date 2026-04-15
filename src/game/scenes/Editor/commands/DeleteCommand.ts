@@ -8,14 +8,15 @@
  */
 
 import Command from './Command';
-import GameEntity, { EntitySnapshot } from '../../../shared/gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
+import { EntityData } from '../../../shared/types/LevelData';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
 import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import Phaser from 'phaser';
 
 export default class DeleteCommand extends Command {
 
-    private readonly snapshots: EntitySnapshot[];
+    private readonly snapshots: EntityData[];
     private readonly scene: Phaser.Scene;
     private readonly entityManager: IEntityManager;
     private readonly relManager: IPlatformRelManager;
@@ -32,7 +33,7 @@ export default class DeleteCommand extends Command {
     ) {
         super();
         this.scene = scene;
-        this.snapshots = entities.map(e => e.snapshot());
+        this.snapshots = entities.map(e => e.serialize());
         this.entityManager = entityManager;
         this.relManager = relManager;
     }
@@ -57,16 +58,7 @@ export default class DeleteCommand extends Command {
     undo(): void {
         // Recreate each entity from its snapshot and re-register it.
         for (const snap of this.snapshots) {
-            const entity = EntityRegistry.create(
-                snap.entityType,
-                this.scene,
-                snap.x,
-                snap.y,
-                snap.width,
-                snap.height,
-                snap.variant,
-                snap.id,
-            );
+            const entity = EntityRegistry.create(this.scene, snap);
             this.entityManager.addEntity(entity);
             this.relManager.onEntityPlaced(entity);
         }

@@ -9,6 +9,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
+import { CoinData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config';
 
 export default class Coin extends GameEntity {
@@ -39,5 +40,9 @@ export default class Coin extends GameEntity {
         const ghost = new Coin(scene, this.x, this.y);
         ghost.setAlpha(0.5);
         return ghost;
+    }
+
+    serialize(): CoinData {
+        return { entityType: 'coin', id: this.id, x: this.x, y: this.y };
     }
 }

@@ -28,6 +28,37 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         });
     }
 
+    /**
+     * Teleports the player to the respawn position and resets movement state.
+     * Called by CheckpointManager during the respawn sequence.
+     */
+    respawn(x: number, y: number): void {
+        this.setPosition(x, y);
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        body.setVelocity(0, 0);
+        body.setAcceleration(0, 0);
+        this.isHittingGround = false;
+        this.play('fox-idle', true);
+        // TODO: play respawn animation / brief invincibility flash
+    }
+
+    /**
+     * Triggers the player's hit visual feedback (flash, knockback, etc.).
+     * HP reduction is handled by HealthManager — this is purely cosmetic.
+     */
+    takeDamage(): void {
+        // TODO: play hit animation, flash sprite for iframe duration
+    }
+
+    /**
+     * Applies an upward velocity burst after stomping an enemy.
+     */
+    bounceOffEnemy(): void {
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        // TODO: tune bounce force
+        body.setVelocityY(-200);
+    }
+
     update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {
         if (!this.body) return;
 

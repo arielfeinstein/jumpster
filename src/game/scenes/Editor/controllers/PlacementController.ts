@@ -33,6 +33,8 @@ import { EventBus } from '../../../EventBus';
 import { RED_TINT } from '../types/EditorTypes';
 import { StartPlacementPayload, PlacementActivePayload } from '../types/DockTypes';
 import { EntityType } from '../../../shared/types/EntityType';
+import { EntityData } from '../../../shared/types/LevelData';
+import { TILE_SIZE } from '../../../config';
 
 export default class PlacementController {
 
@@ -46,6 +48,7 @@ export default class PlacementController {
     private ghost: GameEntity | null = null;
     private currentEntityType: EntityType | null = null;
     private currentVariant: string | undefined = undefined;
+    private currentEnemyType: string | undefined = undefined;
 
     /** Whether the ghost's current position is valid for placement. */
     private isValid = false;
@@ -73,7 +76,7 @@ export default class PlacementController {
      * If already placing a different entity, the current ghost is discarded
      * first so the user always gets the entity they most recently selected.
      */
-    startPlacement = ({ entityType, variant }: StartPlacementPayload): void => {
+    startPlacement = ({ entityType, variant, enemyType }: StartPlacementPayload): void => {
         // Discard any in-progress ghost before starting a new one.
         if (this.isPlacing) {
             this.destroyGhost();
@@ -81,13 +84,14 @@ export default class PlacementController {
 
         this.currentEntityType = entityType;
         this.currentVariant = variant;
+        this.currentEnemyType = enemyType;
 
         // Place the ghost at the pointer's current world position so it
         // appears under the cursor immediately.
         const ptr = this.scene.input.activePointer;
         const snapped = GridManager.snapXY(ptr.worldX, ptr.worldY);
 
-        this.ghost = EntityRegistry.create(entityType, this.scene, snapped.x, snapped.y, undefined, undefined, variant);
+        this.ghost = EntityRegistry.create(this.scene, this.buildEntityData(entityType, snapped.x, snapped.y));
         this.ghost.setAlpha(0.5);
 
         // Validate the initial position.
@@ -163,7 +167,6 @@ export default class PlacementController {
 
         // Capture state before the command mutates the ghost.
         const placedEntityType = this.currentEntityType!;
-        const placedVariant = this.currentVariant;
         const isSingleton = this.ghost.isSingleton;
         const lastX = this.ghost.x;
         const lastY = this.ghost.y;
@@ -183,7 +186,7 @@ export default class PlacementController {
             // Non-singletons: immediately create a new ghost at the same
             // position so the user can keep placing without re-clicking the dock.
             const snapped = GridManager.snapXY(lastX, lastY);
-            this.ghost = EntityRegistry.create(placedEntityType, this.scene, snapped.x, snapped.y, undefined, undefined, placedVariant);
+            this.ghost = EntityRegistry.create(this.scene, this.buildEntityData(placedEntityType, snapped.x, snapped.y));
             this.ghost.setAlpha(0.5);
 
             // Re-validate for the new position (another entity was just placed there,
@@ -196,6 +199,32 @@ export default class PlacementController {
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
+
+    /**
+     * Builds a complete EntityData for the current placement session.
+     * PlacementController owns this because it knows the placement context
+     * (current variant, enemyType, default sizes for resizable entities).
+     * EntityRegistry stays a pure factory that only accepts complete data.
+     */
+    private buildEntityData(entityType: EntityType, x: number, y: number): EntityData {
+        const id = crypto.randomUUID();
+        switch (entityType) {
+            case 'platform':
+                return { entityType, id, x, y, width: TILE_SIZE, height: TILE_SIZE, variant: this.currentVariant ?? 'grass-1' };
+            case 'enemy':
+                return { entityType, id, x, y, enemyType: this.currentEnemyType ?? 'goomba', variant: this.currentVariant };
+            case 'coin':
+                return { entityType, id, x, y };
+            case 'checkpoint':
+                return { entityType, id, x, y };
+            case 'start-flag':
+                return { entityType, id, x, y };
+            case 'end-flag':
+                return { entityType, id, x, y };
+            case 'spikes':
+                return { entityType, id, x, y, width: TILE_SIZE };
+        }
+    }
 
     /** Destroy the ghost display object and clear the reference. */
     private destroyGhost(): void {
@@ -215,6 +244,7 @@ export default class PlacementController {
         this.isPlacing = false;
         this.currentEntityType = null;
         this.currentVariant = undefined;
+        this.currentEnemyType = undefined;
         this.notifyReact(false);
     }
 

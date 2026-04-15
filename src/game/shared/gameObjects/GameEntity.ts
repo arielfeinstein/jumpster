@@ -23,6 +23,8 @@ import { EntityType } from '../types/EntityType';
 import { PlayBehavior } from '../types/PlayBehavior';
 import { EntityData } from '../types/LevelData';
 
+// EntitySnapshot has been removed — commands now store EntityData directly via serialize().
+
 export default abstract class GameEntity {
 
     // -----------------------------------------------------------------------
@@ -178,45 +180,10 @@ export default abstract class GameEntity {
     // Serialisation
     // -----------------------------------------------------------------------
 
-    /** Produces the minimal plain-data snapshot needed to recreate this entity. */
-    serialize(): EntityData {
-        return {
-            id: this.id,
-            entityType: this.entityType,
-            x: this.x,
-            y: this.y,
-            width: this.width,
-            height: this.height,
-            variant: this.variant,
-        };
-    }
-
-    /** Compact snapshot used by Commands for undo/redo state. */
-    snapshot(): EntitySnapshot {
-        return {
-            id: this.id,
-            entityType: this.entityType,
-            x: this.x,
-            y: this.y,
-            width: this.width,
-            height: this.height,
-            variant: this.variant,
-        };
-    }
-}
-
-// ---------------------------------------------------------------------------
-// EntitySnapshot — kept here so it can be imported from a single location.
-// Commands store these instead of live entity references so that undo/redo
-// works even after a display object has been destroyed.
-// ---------------------------------------------------------------------------
-
-export interface EntitySnapshot {
-    id: string;
-    entityType: EntityType;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    variant?: string;
+    /**
+     * Returns the exact EntityData union member for this entity.
+     * Commands and the serializer store this directly — no separate snapshot type needed.
+     * Each subclass returns only the fields relevant to its type.
+     */
+    abstract serialize(): EntityData;
 }

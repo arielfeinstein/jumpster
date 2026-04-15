@@ -11,15 +11,16 @@
  */
 
 import Command from './Command';
-import GameEntity, { EntitySnapshot } from '../../../shared/gameObjects/GameEntity';
+import GameEntity from '../../../shared/gameObjects/GameEntity';
+import { EntityData } from '../../../shared/types/LevelData';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
 import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import Phaser from 'phaser';
 
 export default class PlaceCommand extends Command {
 
-    /** Snapshots captured at placement time for recreating entities on redo. */
-    private readonly snapshots: EntitySnapshot[];
+    /** Serialized data captured at placement time for recreating entities on redo. */
+    private readonly snapshots: EntityData[];
 
     /** Live entity references — replaced after each undo/redo cycle. */
     private entities: GameEntity[];
@@ -43,7 +44,7 @@ export default class PlaceCommand extends Command {
         super();
         this.scene = scene;
         this.entities = [...entities];
-        this.snapshots = entities.map(e => e.snapshot());
+        this.snapshots = entities.map(e => e.serialize());
         this.entityManager = entityManager;
         this.relManager = relManager;
     }
@@ -61,18 +62,7 @@ export default class PlaceCommand extends Command {
     execute(): void {
         if (this.entities.length === 0) {
             // Redo path — recreate from snapshots.
-            this.entities = this.snapshots.map(snap =>
-                EntityRegistry.create(
-                    snap.entityType,
-                    this.scene,
-                    snap.x,
-                    snap.y,
-                    snap.width,
-                    snap.height,
-                    snap.variant,
-                    snap.id,
-                )
-            );
+            this.entities = this.snapshots.map(snap => EntityRegistry.create(this.scene, snap));
         } else {
             // First placement — ghost was already in the scene at alpha 0.5.
             for (const entity of this.entities) {

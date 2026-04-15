@@ -12,6 +12,7 @@
 
 import Phaser from 'phaser';
 import GameEntity from './GameEntity';
+import { SpikesData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config';
 
 export default class Spikes extends GameEntity {
@@ -60,5 +61,9 @@ export default class Spikes extends GameEntity {
         const ghost = new Spikes(scene, this.x, this.y, this._width);
         ghost.setAlpha(0.5);
         return ghost;
+    }
+
+    serialize(): SpikesData {
+        return { entityType: 'spikes', id: this.id, x: this.x, y: this.y, width: this._width };
     }
 }

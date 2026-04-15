@@ -6,5 +6,5 @@ export interface PlayPhysicsGroups {
     collectible: Phaser.Physics.Arcade.StaticGroup;
     checkpoint: Phaser.Physics.Arcade.StaticGroup;
     goal: Phaser.Physics.Arcade.StaticGroup;
-    stompable: Phaser.Physics.Arcade.Group;
+    enemy: Phaser.Physics.Arcade.Group;
 }

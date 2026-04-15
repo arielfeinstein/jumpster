@@ -54,10 +54,14 @@ export interface DropdownOption {
     /** The EntityType that will be placed when this option is selected. */
     entityType: EntityType;
     /**
-     * Optional variant key for future texture/skin support.
+     * Optional variant key for texture/skin selection.
      * Sent as-is in the StartPlacementPayload so Phaser can choose the right asset.
      */
     variant?: string;
+    /**
+     * For enemy entities: the behavioral subtype to instantiate (e.g. 'goomba').
+     */
+    enemyType?: string;
     /** Path to the icon image (standalone) or spritesheet (when spriteFrame is set). */
     assetSrc: string;
     /** When present, assetSrc is treated as a spritesheet and this frame is shown. */
@@ -158,6 +162,8 @@ export type DockSlotConfig =
 export interface StartPlacementPayload {
     entityType: EntityType;
     variant?: string;
+    /** For enemy entities: the behavioral subtype (e.g. 'goomba'). */
+    enemyType?: string;
 }
 
 /**
@@ -217,6 +223,7 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
             {
                 label: 'Slime',
                 entityType: 'enemy',
+                enemyType: 'goomba',
                 assetSrc: '/assets/react/enemy.png',
             },
             {
