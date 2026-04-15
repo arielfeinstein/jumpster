@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ANIMATION_KEYS } from '../../config/AnimationCatalog';
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     private isHittingGround: boolean = false;
@@ -20,10 +21,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.body?.setOffset(6, 6);
 
         // Start idle
-        this.play('fox-idle');
+        this.play(ANIMATION_KEYS.FOX_IDLE);
         
         // Handle when hit ground animation completes
-        this.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + 'fox-hit-ground', () => {
+        this.on(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + ANIMATION_KEYS.FOX_HIT_GROUND, () => {
             this.isHittingGround = false;
         });
     }
@@ -38,7 +39,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         body.setVelocity(0, 0);
         body.setAcceleration(0, 0);
         this.isHittingGround = false;
-        this.play('fox-idle', true);
+        this.play(ANIMATION_KEYS.FOX_IDLE, true);
         // TODO: play respawn animation / brief invincibility flash
     }
 
@@ -73,9 +74,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         // Detect just landed
-        if (isOnGround && this.anims.currentAnim?.key === 'fox-fall') {
+        if (isOnGround && this.anims.currentAnim?.key === ANIMATION_KEYS.FOX_FALL) {
             this.isHittingGround = true;
-            this.play('fox-hit-ground', true);
+            this.play(ANIMATION_KEYS.FOX_HIT_GROUND, true);
         }
 
         // Horizontal movement
@@ -106,19 +107,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         if (isOnGround && (cursors.up.isDown || cursors.space.isDown)) {
             body.setVelocityY(-350);
             this.isHittingGround = false;
-            this.play('fox-jump', true);
+            this.play(ANIMATION_KEYS.FOX_JUMP, true);
         }
 
         // Animations Update
         if (!this.isHittingGround) {
             if (isJumping) {
-                this.play('fox-jump', true);
+                this.play(ANIMATION_KEYS.FOX_JUMP, true);
             } else if (isFalling) {
-                this.play('fox-fall', true);
+                this.play(ANIMATION_KEYS.FOX_FALL, true);
             } else if (isOnGround && Math.abs(body.velocity.x) > 10) {
-                this.play('fox-run', true);
+                this.play(ANIMATION_KEYS.FOX_RUN, true);
             } else if (isOnGround && Math.abs(body.velocity.x) <= 10) {
-                this.play('fox-idle', true);
+                this.play(ANIMATION_KEYS.FOX_IDLE, true);
             }
         }
     }
