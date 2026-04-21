@@ -10,18 +10,20 @@
  * snapshot and not recreated).
  *
  * Play.ts wires `onCoinsChanged` to emit to the React HUD.
- *
- * NOTE: Coins collected before the last checkpoint are gone permanently from the world.
  */
 
 import Phaser from 'phaser';
 import { CoinData } from '../../../shared/types/LevelData';
 import EntityRegistry from '../../../shared/registry/EntityRegistry';
+import Coin from '../../../shared/gameObjects/Coin';
 
 export default class CoinManager {
 
     /** All coin entity data from the level, keyed by stable entity ID. */
     private readonly allCoins: Map<string, CoinData> = new Map();
+
+    /** Live Coin instances keyed by stable entity ID. Coins are never destroyed — only hidden/disabled. */
+    private readonly coinEntities: Map<string, Coin> = new Map();
 
     /** IDs of coins the player has collected this run. */
     private collectedIds: Set<string> = new Set();
@@ -38,29 +40,30 @@ export default class CoinManager {
     }
 
     /**
-     * Registers all coins from level data.  Called once at level load time.
-     * CoinManager takes over coin creation so it can track entity IDs for
-     * restoration — the LevelSerializer skips 'collectible' entities.
+     * Registers and adds to scene all coins from level data.
      */
     loadFromLevelData(coinEntities: CoinData[]): void {
-        // TODO: create each coin via EntityRegistry, add display object to collectibleGroup,
-        //       enable physics, store EntityData in allCoins keyed by id
         for (const data of coinEntities) {
+            const coin = EntityRegistry.create(this.scene, data) as Coin;
+            this.collectibleGroup.add(coin.displayObject);
             this.allCoins.set(data.id, data);
+            this.coinEntities.set(data.id, coin);
         }
     }
 
     /**
-     * Called by CollisionController when the player touches a coin.
-     * Destroys the physics body and marks the coin as collected.
+     * Hides the display object and disables its physics body without destroying it,
+     * so it can be cheaply restored on checkpoint respawn.
      *
      * @param coinId  Stable entity ID from the GameEntity.
-     * @param coinObject  The Phaser game object to destroy.
+     * @param coinObject  The Phaser game object to hide.
      */
     collect(coinId: string, coinObject: Phaser.GameObjects.GameObject): void {
         if (this.collectedIds.has(coinId)) return; // already collected
 
-        coinObject.destroy();
+        const arcadeImage = coinObject as Phaser.Physics.Arcade.Image;
+        arcadeImage.setVisible(false);
+        arcadeImage.body!.enable = false;
         this.collectedIds.add(coinId);
         this.onCoinsChanged?.(this.collectedIds.size, this.allCoins.size);
     }
@@ -85,12 +88,10 @@ export default class CoinManager {
         const toRestore = [...this.collectedIds].filter(id => !collectedAtCheckpoint.has(id));
 
         for (const id of toRestore) {
-            const data = this.allCoins.get(id);
-            if (!data) continue;
-
-            // TODO: recreate coin via EntityRegistry, add to collectibleGroup, enable physics
-            // const coin = EntityRegistry.create(data.entityType, this.scene, data.x, data.y, ...);
-            // this.collectibleGroup.add(coin.getCollidables()[0]);
+            const coin = this.coinEntities.get(id);
+            if (!coin) continue;
+            coin.displayObject.setVisible(true);
+            (coin.displayObject as Phaser.Physics.Arcade.Image).body!.enable = true;
         }
 
         this.collectedIds = new Set(collectedAtCheckpoint);
