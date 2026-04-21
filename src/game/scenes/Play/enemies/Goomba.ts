@@ -19,6 +19,7 @@
 import Phaser from 'phaser';
 import Enemy, { PatrolBounds, ContactInfo, EnemyContactResult } from './Enemy';
 import { ANIMATION_KEYS } from '@/game/config/AnimationCatalog';
+import { TILE_SIZE } from '@/game/config/GameConfig';
 import { EnemyData } from '../../../shared/types/LevelData';
 import { PlayPhysicsGroups } from '../../../shared/types/PlayPhysicsGroups';
 
@@ -96,26 +97,117 @@ export default class Goomba extends Enemy {
      * Computes left/right patrol bounds by sweeping the solid platform surfaces
      * adjacent to the spawn position.
      *
-     * @param data    Enemy spawn data (position, variant, etc.).
-     * @param _groups All physics groups for the level. Use `_groups.solid` for the
-     *                platform surface sweep and `_groups.hazard` as impassable boundaries
-     *                (e.g. the goomba should not patrol into spikes).
-     *
-     * TODO: Implement the sweep:
-     *   1. Find which platform the enemy is standing on (its spawn y - 1 tile).
-     *   2. Walk left/right along platforms at the same height (use their x/width).
-     *   3. Stop when there is a gap, a hazard tile, or a blocking solid in the way.
-     *   4. Return { left: minX, right: maxX } of the connected surface.
+     * Steps:
+     *   1. Find the platform body directly under the enemy's feet.
+     *   2. Build a surface row: all solid bodies at that same Y, sorted by X.
+     *   3. Build a hazard row: all hazard bodies sitting on that surface, sorted by X.
+     *   4. Sweep left and right via sweepBound(), which independently finds how far
+     *      the surface extends (gaps stop it) and how far hazards allow (first spike
+     *      stops it), then takes the more restrictive of the two.
      */
     private static computePatrolBounds(
         data: EnemyData,
-        _groups: PlayPhysicsGroups,
+        groups: PlayPhysicsGroups,
     ): PatrolBounds {
-        // TODO: replace with real platform graph sweep (see doc comment above)
-        const DEFAULT_RANGE = 200;
+        // Y uses a small tolerance to absorb floating-point drift from Arcade physics
+        // body registration. X uses no tolerance — adjacency is a strict structural check.
+        const TOLERANCE = 2;
+
+        const solidBodies = groups.solid.children.entries
+            .map(e => (e as any).body as Phaser.Physics.Arcade.StaticBody)
+            .filter(b => b?.enable);
+        const hazardBodies = groups.hazard.children.entries
+            .map(e => (e as any).body as Phaser.Physics.Arcade.StaticBody)
+            .filter(b => b?.enable);
+
+        // Find the topLayer body directly under the enemy's feet
+        const feetY = data.y + TILE_SIZE;
+        const supporting = solidBodies.find(b =>
+            Math.abs(b.y - feetY) <= TOLERANCE &&
+            b.x <= data.x &&
+            b.x + b.width > data.x
+        );
+
+        if (!supporting) {
+            console.warn('Goomba: no supporting platform found at spawn, using default range');
+            return { left: data.x - 200, right: data.x + 200 };
+        }
+
+        // All solid bodies at the same surface height, sorted left to right
+        const surfaceRow = solidBodies
+            .filter(b => Math.abs(b.y - supporting.y) <= TOLERANCE)
+            .sort((a, b) => a.x - b.x);
+
+        // Hazard bodies whose bottom edge sits on this surface (spikes stand on platforms)
+        const hazardRow = hazardBodies
+            .filter(h => Math.abs((h.y + h.height) - supporting.y) <= TOLERANCE)
+            .sort((a, b) => a.x - b.x);
+
+        const startIdx = surfaceRow.indexOf(supporting);
+
         return {
-            left: data.x - DEFAULT_RANGE,
-            right: data.x + DEFAULT_RANGE,
+            left:  Goomba.sweepBound(-1, data.x, startIdx, surfaceRow, hazardRow),
+            right: Goomba.sweepBound(+1, data.x, startIdx, surfaceRow, hazardRow),
         };
+    }
+
+    /**
+     * Sweeps the surface and hazard rows in one direction from startIdx, returning
+     * the furthest X the goomba can reach before a gap or hazard blocks it.
+     *
+     * @param direction  +1 = sweep right, -1 = sweep left
+     * @param spawnX     Enemy spawn X, used to determine which hazards are "ahead"
+     * @param startIdx   Index of the supporting body in surfaceRow
+     * @param surfaceRow All platform bodies at the surface height, sorted by X
+     * @param hazardRow  All hazard bodies at the surface height, sorted by X
+     */
+    private static sweepBound(
+        direction: 1 | -1,
+        spawnX: number,
+        startIdx: number,
+        surfaceRow: Phaser.Physics.Arcade.StaticBody[],
+        hazardRow: Phaser.Physics.Arcade.StaticBody[],
+    ): number {
+        // --- Surface pass: walk until a gap is found ---
+        let idx = startIdx;
+        while (true) {
+            const nextIdx = idx + direction;
+            if (nextIdx < 0 || nextIdx >= surfaceRow.length) break;
+
+            // Gap check is always: left body's right edge vs right body's left edge.
+            // Which body is "left" vs "right" depends on direction.
+            const leftBody  = direction > 0 ? surfaceRow[idx] : surfaceRow[nextIdx];
+            const rightBody = direction > 0 ? surfaceRow[nextIdx] : surfaceRow[idx];
+
+            // + 1: platforms flush or overlapping are connected; 1px gap or more is not
+            if (leftBody.x + leftBody.width + 1 < rightBody.x) break;
+
+            idx = nextIdx;
+        }
+
+        const reachedBody = surfaceRow[idx];
+        const surfaceBound = direction > 0
+            ? reachedBody.x + reachedBody.width
+            : reachedBody.x;
+
+        // --- Hazard pass: find nearest hazard ahead in this direction ---
+        // Infinity/-Infinity compose cleanly with Math.min/Math.max — no null checks needed
+        let hazardBound = direction > 0 ? Infinity : -Infinity;
+        for (const h of hazardRow) {
+            const isAhead = direction > 0
+                ? h.x >= spawnX
+                : h.x + h.width <= spawnX;
+            if (isAhead) {
+                const edge = direction > 0 ? h.x : h.x + h.width;
+                hazardBound = direction > 0
+                    ? Math.min(hazardBound, edge)
+                    : Math.max(hazardBound, edge);
+            }
+        }
+
+        // Take the more restrictive of the two bounds
+        return direction > 0
+            ? Math.min(surfaceBound, hazardBound)
+            : Math.max(surfaceBound, hazardBound);
     }
 }
