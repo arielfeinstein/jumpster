@@ -137,7 +137,7 @@ export class Play extends Scene {
         );
         this.enemyManager.loadFromLevelData(
             entities.filter((e): e is EnemyData => e.entityType === 'enemy'),
-            this.groups.solid.getChildren(),
+            this.groups,
         );
 
         // Player

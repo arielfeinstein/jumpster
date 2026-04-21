@@ -6,9 +6,10 @@
  *   - Ticking each enemy's AI each frame
  *   - Killing enemies (removing from physics group and internal set)
  *
- * Each enemy type is responsible for its own setup inside createEnemy().
- * For example, Goomba computes patrol bounds there; a future FlyingEnemy
- * would compute a flight path there instead.  The load loop stays generic.
+ * Each enemy type is responsible for its own full setup — it receives raw level
+ * data and resolves environment queries (e.g. patrol bounds, flight paths) in its
+ * own constructor.  EnemyManager stays generic: it holds Set<Enemy>, calls
+ * enemy.update(delta) each frame, and never inspects enemy internals.
  *
  * Extensibility:
  *   To add a new enemy type, create a subclass of Enemy, register it here in
@@ -18,7 +19,8 @@
 
 import Phaser from 'phaser';
 import { EnemyData } from '../../../shared/types/LevelData';
-import Enemy, { PatrolBounds } from '../enemies/Enemy';
+import { PlayPhysicsGroups } from '../../../shared/types/PlayPhysicsGroups';
+import Enemy from '../enemies/Enemy';
 import Goomba from '../enemies/Goomba';
 
 export default class EnemyManager {
@@ -37,14 +39,15 @@ export default class EnemyManager {
      * Called once during Play.buildWorld() so EnemyManager can track live Arcade.Sprite instances.
      *
      * @param enemyEntities  EntityData entries with entityType === 'enemy'.
-     * @param solidObjects   All solid Phaser objects in the level, used for patrol bound computation.
+     * @param groups   All physics groups for the level, forwarded to each enemy so it
+     *                 can compute patrol bounds and query any group it needs.
      */
     loadFromLevelData(
         enemyEntities: EnemyData[],
-        solidObjects: Phaser.GameObjects.GameObject[],
+        groups: PlayPhysicsGroups,
     ): void {
         for (const data of enemyEntities) {
-            const enemy = this.createEnemy(data, solidObjects);
+            const enemy = this.createEnemy(data, groups);
             if (!enemy) continue;
 
             this.enemies.add(enemy);
@@ -77,42 +80,17 @@ export default class EnemyManager {
 
     /**
      * Factory — maps entity type string to the correct Enemy subclass.
-     * Each case is responsible for its own type-specific setup (e.g. patrol
-     * bounds for Goomba, flight path for a future FlyingEnemy).
+     * Each enemy receives raw level data and handles its own setup internally.
      * Add new enemy types here as the game grows.
      */
-    private createEnemy(data: EnemyData, solidObjects: Phaser.GameObjects.GameObject[]): Enemy | null {
+    private createEnemy(data: EnemyData, groups: PlayPhysicsGroups): Enemy | null {
         switch (data.enemyType) {
-            case 'goomba': {
-                const patrolBounds = this.computePatrolBounds(data, solidObjects);
-                return new Goomba(this.scene, data.x, data.y, data.variant ?? 'default', patrolBounds);
-            }
+            case 'goomba':
+                return new Goomba(this.scene, data, groups);
 
             default:
                 console.warn(`EnemyManager: unknown enemy type "${data.enemyType}"`);
                 return null;
         }
-    }
-
-    /**
-     * Computes left/right patrol bounds for a Goomba by sweeping the solid
-     * platform surfaces adjacent to its spawn position.
-     *
-     * TODO: Implement the sweep:
-     *   1. Find which platform the enemy is standing on (its spawn y - 1 tile).
-     *   2. Walk left/right along platforms at the same height (use their x/width).
-     *   3. Stop when there is a gap or a blocking solid object in the way.
-     *   4. Return { left: minX, right: maxX } of the connected surface.
-     */
-    private computePatrolBounds(
-        enemyData: EnemyData,
-        _solidObjects: Phaser.GameObjects.GameObject[],
-    ): PatrolBounds {
-        // TODO: replace with real platform graph sweep (see doc comment above)
-        const DEFAULT_RANGE = 200;
-        return {
-            left: enemyData.x - DEFAULT_RANGE,
-            right: enemyData.x + DEFAULT_RANGE,
-        };
     }
 }
