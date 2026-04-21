@@ -6,6 +6,7 @@ export const ANIMATION_KEYS = {
     FOX_RUN: 'fox-run',
     GOOMBA_STOMP: 'goomba-stomp',
     GOOMBA_WALK: 'goomba-walk',
+    FLAG_RAISE: 'flag-raise',
 } as const;
 
 export type AnimationKey = typeof ANIMATION_KEYS[keyof typeof ANIMATION_KEYS];
@@ -75,4 +76,14 @@ export const ENEMY_ANIMATIONS: AnimationConfig[] = [
         frameRate: 10,
         repeat: -1,
     },
+];
+
+export const FLAG_ANIMATIONS: AnimationConfig[] = [
+    {
+        key: ANIMATION_KEYS.FLAG_RAISE,
+        textureKey: 'checkpoint-flag',
+        startFrame: 0,
+        endFrame: 4,
+        frameRate: 10,
+    }
 ];
