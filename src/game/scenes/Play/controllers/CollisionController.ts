@@ -97,15 +97,11 @@ export default class CollisionController {
 
     private onHazardContact(): void {
         this.healthManager.takeDamage(1);
-        // TODO: trigger player hit animation via player.takeDamage()
+        this.player.takeDamage();
     }
 
     private onCoinCollected(coinObject: Phaser.GameObjects.GameObject): void {
-        // TODO: retrieve stable entity ID from the coin object.
-        // Coins must store their entity ID via setData('entityId', id) when created.
-        const coinId = coinObject.getData?.('entityId') as string ?? '';
-        this.coinManager.collect(coinId, coinObject);
-        // TODO: play coin collect sound / animation
+        this.coinManager.collect(coinObject);
     }
 
     private onCheckpointReached(checkpointObject: Phaser.GameObjects.GameObject): void {
@@ -128,11 +124,11 @@ export default class CollisionController {
         switch (result) {
             case 'enemy-killed':
                 this.enemyManager.killEnemy(enemy);
-                // TODO: bounce player upward after stomp
+                this.player.bounceOffEnemy();
                 break;
             case 'player-damaged':
                 this.healthManager.takeDamage(1);
-                // TODO: trigger player hit animation via player.takeDamage()
+                this.player.takeDamage()
                 break;
             case 'none':
                 break;

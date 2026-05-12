@@ -23,6 +23,8 @@ import { EntityType } from '../types/EntityType';
 import { PlayBehavior } from '../types/PlayBehavior';
 import { EntityData } from '../types/LevelData';
 
+export const ENTITY_ID_DATA_KEY = 'entityId';
+
 // EntitySnapshot has been removed — commands now store EntityData directly via serialize().
 
 export default abstract class GameEntity {

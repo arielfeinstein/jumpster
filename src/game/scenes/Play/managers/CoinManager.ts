@@ -16,6 +16,7 @@ import Phaser from 'phaser';
 import { CoinData } from '../../../shared/types/LevelData';
 import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import Coin from '../../../shared/gameObjects/Coin';
+import { ENTITY_ID_DATA_KEY } from '../../../shared/gameObjects/GameEntity';
 
 export default class CoinManager {
 
@@ -55,15 +56,19 @@ export default class CoinManager {
      * Hides the display object and disables its physics body without destroying it,
      * so it can be cheaply restored on checkpoint respawn.
      *
-     * @param coinId  Stable entity ID from the GameEntity.
      * @param coinObject  The Phaser game object to hide.
      */
-    collect(coinId: string, coinObject: Phaser.GameObjects.GameObject): void {
-        if (this.collectedIds.has(coinId)) return; // already collected
+    collect(coinObject: Phaser.GameObjects.GameObject): void {
+        const coinId = coinObject.getData(ENTITY_ID_DATA_KEY) as string;
+        if (!coinId || this.collectedIds.has(coinId)) return; // already collected
 
-        const arcadeImage = coinObject as Phaser.Physics.Arcade.Image;
-        arcadeImage.setVisible(false);
-        arcadeImage.body!.enable = false;
+        const coin = this.coinEntities.get(coinId);
+        if (coin) {
+            coin.onCollected();
+        } else {
+            console.warn(`CoinManager: Unknown coin ID "${coinId}"`);
+        }
+
         this.collectedIds.add(coinId);
         this.onCoinsChanged?.(this.collectedIds.size, this.allCoins.size);
     }

@@ -8,7 +8,7 @@
  */
 
 import Phaser from 'phaser';
-import GameEntity from './GameEntity';
+import GameEntity, { ENTITY_ID_DATA_KEY } from './GameEntity';
 import { CoinData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
 
@@ -21,6 +21,7 @@ export default class Coin extends GameEntity {
     readonly playBehavior = 'collectible' as const;
 
     readonly displayObject: Phaser.GameObjects.Image;
+    private readonly scene: Phaser.Scene;
 
     get width(): number { return TILE_SIZE; }
     get height(): number { return TILE_SIZE; }
@@ -33,7 +34,25 @@ export default class Coin extends GameEntity {
      */
     constructor(scene: Phaser.Scene, x: number, y: number, id?: string) {
         super(id);
+        this.scene = scene;
         this.displayObject = scene.add.image(x, y, 'coin').setOrigin(0, 0);
+        this.displayObject.setData(ENTITY_ID_DATA_KEY, this.id);
+    }
+
+    /**
+     * Called when the coin is collected in the play scene.
+     * Handles visual feedback and disables physics.
+     */
+    onCollected(): void {
+        // Disable physics immediately
+        if (this.displayObject.body) {
+            (this.displayObject as Phaser.Physics.Arcade.Image).body!.enable = false;
+        }
+
+        // TODO: play coin collect animation (tween)
+        // TODO: play coin collect sound
+        
+        this.displayObject.setVisible(false);
     }
 
     createGhost(scene: Phaser.Scene): Coin {
