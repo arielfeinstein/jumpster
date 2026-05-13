@@ -14,6 +14,12 @@ export interface EventBusRegistry {
         total: number;
     };
 
+    /** Emitted when the game is paused (e.g., via ESC key). */
+    'play-pause': Record<string, never>;
+
+    /** Emitted when the game is resumed from a pause. */
+    'play-resume': Record<string, never>;
+
     // TODO: Add other Play scene events here (e.g., health, coins)
 
     // ─── Editor Scene ───────────────────────────────────────────────────────────

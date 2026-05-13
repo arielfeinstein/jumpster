@@ -6,12 +6,12 @@
  *   - Instantiate all managers and the collision controller
  *   - Wire manager callbacks to EventBus (all React communication centralised here)
  *   - Tick managers each frame
- *   - Handle pause (ESC key)
+ *   - Handle pause / resume (ESC key ↔ play-resume event)
  *
  * This scene stays thin — all gameplay logic lives in the managers and controllers.
  */
 
-import { EventBus } from '../../EventBus';
+import { EventBus, emitEvent } from '../../EventBus';
 import { Scene } from 'phaser';
 import Player from './Player';
 import { LevelData, EntityData, EnemyData, CoinData } from '../../shared/types/LevelData';
@@ -88,7 +88,16 @@ export class Play extends Scene {
             EventBus.emit('play-coins-changed', { collected, total });
         };
 
-        // TODO: wire pause (ESC key) → EventBus.emit('play-paused') + this.scene.pause()
+        // ESC pauses the scene and tells React to show the pause overlay.
+        // 'play-resume' is emitted by React (e.g. a "Resume" button) to unpause.
+        this.input.keyboard!.on('keydown-ESC', () => {
+            emitEvent('play-pause', {});
+            this.scene.pause();
+        });
+
+        EventBus.on('play-resume', () => {
+            this.scene.resume();
+        });
 
         if (this.load.isLoading()) {
             this.load.once('complete', () => this.buildWorld());
@@ -187,8 +196,6 @@ export class Play extends Scene {
 
         this.player.update(this.cursors);
         this.enemyManager.update(delta);
-
-        // TODO: check ESC for pause
     }
 
     changeScene() {
