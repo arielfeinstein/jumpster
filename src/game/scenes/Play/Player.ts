@@ -60,6 +60,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         body.setVelocityY(-200);
     }
 
+    /**
+     * Triggers the player's level completion sequence.
+     */
+    onLevelCompleted(): void {
+        // TODO: trigger win sequence — play animation, sound, etc...
+    }
+
     update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {
         if (!this.body) return;
 

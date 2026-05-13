@@ -26,6 +26,7 @@ import CoinManager from '../managers/CoinManager';
 import CheckpointManager from '../managers/CheckpointManager';
 import EnemyManager from '../managers/EnemyManager';
 import Enemy from '../enemies/Enemy';
+import { emitEvent } from '../../../EventBus';
 
 export default class CollisionController {
 
@@ -111,8 +112,13 @@ export default class CollisionController {
     }
 
     private onGoalReached(): void {
-        // TODO: trigger win sequence — pause player input, play animation, emit to React
-        // EventBus.emit('play-level-complete');
+        this.player.onLevelCompleted();
+        
+        emitEvent('play-level-complete', {
+            collected: this.coinManager.getCollectedCount(),
+            total: this.coinManager.getTotalCount()
+        });
+
         console.log('Level complete!');
     }
 
