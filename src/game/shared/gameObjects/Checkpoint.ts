@@ -20,8 +20,6 @@ export default class Checkpoint extends GameEntity {
     readonly isResizable = false;
     readonly playBehavior = 'checkpoint' as const;
 
-    readonly displayObject: Phaser.GameObjects.Image;
-
     get width(): number { return TILE_SIZE; }
     get height(): number { return TILE_SIZE * 2; }
 
@@ -32,9 +30,23 @@ export default class Checkpoint extends GameEntity {
      * @param id     Optional stable UUID — supply when deserialising.
      */
     constructor(scene: Phaser.Scene, x: number, y: number, id?: string) {
-        super(id);
         // Frame 4 is the closed/idle frame used in the editor palette.
-        this.displayObject = scene.add.image(x, y, 'checkpoint-flag', 4).setOrigin(0, 0);
+        const displayObject = scene.add.image(x, y, 'checkpoint-flag', 4).setOrigin(0, 0);
+        super(displayObject, id);
+    }
+
+    /**
+     * Called when the checkpoint is reached in the play scene.
+     * Handles visual feedback and disables physics.
+     */
+    onReached(): void {
+        // Disable physics immediately to prevent re-triggering
+        if (this.displayObject.body) {
+            (this.displayObject as Phaser.Physics.Arcade.Image).body!.enable = false;
+        }
+
+        // TODO: play checkpoint activation animation (change frame to open flag)
+        // TODO: play checkpoint activation sound
     }
 
     createGhost(scene: Phaser.Scene): Checkpoint {

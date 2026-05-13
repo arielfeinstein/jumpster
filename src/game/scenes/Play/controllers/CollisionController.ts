@@ -26,6 +26,8 @@ import CoinManager from '../managers/CoinManager';
 import CheckpointManager from '../managers/CheckpointManager';
 import EnemyManager from '../managers/EnemyManager';
 import Enemy from '../enemies/Enemy';
+import Checkpoint from '../../../shared/gameObjects/Checkpoint';
+import { ENTITY_DATA_KEY } from '../../../shared/gameObjects/GameEntity';
 import { emitEvent } from '../../../EventBus';
 
 export default class CollisionController {
@@ -106,9 +108,14 @@ export default class CollisionController {
     }
 
     private onCheckpointReached(checkpointObject: Phaser.GameObjects.GameObject): void {
-        // Checkpoint entities use Image as their display object, so x/y are available.
-        const { x, y } = checkpointObject as Phaser.GameObjects.Image;
-        this.checkpointManager.onCheckpointReached(x, y);
+        // Retrieve the Checkpoint entity instance from the Phaser object
+        const checkpoint = checkpointObject.getData(ENTITY_DATA_KEY) as Checkpoint;
+
+        if (checkpoint) {
+            this.checkpointManager.onCheckpointReached(checkpoint);
+        } else {
+            console.error('CollisionController: Checkpoint entity not found on display object');
+        }
     }
 
     private onGoalReached(): void {

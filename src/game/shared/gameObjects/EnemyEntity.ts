@@ -24,8 +24,6 @@ export default class EnemyEntity extends GameEntity {
     readonly isResizable = false;
     readonly playBehavior = 'enemy' as const;
 
-    readonly displayObject: Phaser.GameObjects.Image;
-
     /** Which Enemy subclass to spawn at runtime (e.g. 'goomba'). */
     readonly enemyType: string;
 
@@ -41,10 +39,10 @@ export default class EnemyEntity extends GameEntity {
      * @param id         Optional stable UUID — supply when deserialising from a save file.
      */
     constructor(scene: Phaser.Scene, x: number, y: number, enemyType = 'goomba', variant?: string, id?: string) {
-        super(id, variant);
-        this.enemyType = enemyType;
         // Frame 1 is the standing pose used as the palette / editor icon.
-        this.displayObject = scene.add.image(x, y, 'enemy', 1).setOrigin(0, 0);
+        const displayObject = scene.add.image(x, y, 'enemy', 1).setOrigin(0, 0);
+        super(displayObject, id, variant);
+        this.enemyType = enemyType;
     }
 
     createGhost(scene: Phaser.Scene): EnemyEntity {

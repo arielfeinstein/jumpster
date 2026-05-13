@@ -23,8 +23,6 @@ export default class Spikes extends GameEntity {
     readonly isResizable = true;
     readonly playBehavior = 'hazard' as const;
 
-    readonly displayObject: Phaser.GameObjects.TileSprite;
-
     private _width: number;
 
     get width(): number { return this._width; }
@@ -38,12 +36,11 @@ export default class Spikes extends GameEntity {
      * @param id     Optional stable UUID — supply when deserialising.
      */
     constructor(scene: Phaser.Scene, x: number, y: number, width: number = TILE_SIZE, id?: string) {
-        super(id);
-        this._width = width;
-
-        this.displayObject = scene.add
+        const displayObject = scene.add
             .tileSprite(x, y, width, TILE_SIZE, 'spikes', 2)
             .setOrigin(0, 0);
+        super(displayObject, id);
+        this._width = width;
     }
 
     resize(newWidth: number, _newHeight: number): void {

@@ -23,6 +23,7 @@
 import Player from '../Player';
 import HealthManager from './HealthManager';
 import CoinManager from './CoinManager';
+import Checkpoint from '../../../shared/gameObjects/Checkpoint';
 
 interface CheckpointSnapshot {
     spawnX: number;
@@ -66,19 +67,17 @@ export default class CheckpointManager {
      * Called by CollisionController when the player overlaps a checkpoint entity.
      * Reads current game state from managers and saves a new snapshot.
      *
-     * @param checkpointX  World-space X of the checkpoint entity.
-     * @param checkpointY  World-space Y of the checkpoint entity.
+     * @param checkpoint The checkpoint entity that was reached.
      */
-    onCheckpointReached(checkpointX: number, checkpointY: number): void {
+    onCheckpointReached(checkpoint: Checkpoint): void {
         this.snapshot = {
-            spawnX: checkpointX,
-            spawnY: checkpointY,
+            spawnX: checkpoint.x,
+            spawnY: checkpoint.y,
             health: this.healthManager.getHp(),
             collectedCoinIds: this.coinManager.getCollectedIds(),
         };
 
-        // TODO: play checkpoint activation animation / sound
-        // TODO: prevent re-triggering the same checkpoint (mark as activated)
+        checkpoint.onReached();
     }
 
     /**
@@ -97,7 +96,5 @@ export default class CheckpointManager {
         this.coinManager.restoreToSnapshot(collectedCoinIds);
         this.player.respawn(spawnX, spawnY);
         this.healthManager.clearIframes();
-
-        // TODO: play respawn animation / fade-in effect
     }
 }

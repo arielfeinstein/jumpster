@@ -16,7 +16,7 @@ import Phaser from 'phaser';
 import { CoinData } from '../../../shared/types/LevelData';
 import EntityRegistry from '../../../shared/registry/EntityRegistry';
 import Coin from '../../../shared/gameObjects/Coin';
-import { ENTITY_ID_DATA_KEY } from '../../../shared/gameObjects/GameEntity';
+import GameEntity, { ENTITY_DATA_KEY } from '../../../shared/gameObjects/GameEntity';
 
 export default class CoinManager {
 
@@ -59,17 +59,12 @@ export default class CoinManager {
      * @param coinObject  The Phaser game object to hide.
      */
     collect(coinObject: Phaser.GameObjects.GameObject): void {
-        const coinId = coinObject.getData(ENTITY_ID_DATA_KEY) as string;
-        if (!coinId || this.collectedIds.has(coinId)) return; // already collected
+        const coin = coinObject.getData(ENTITY_DATA_KEY) as Coin;
 
-        const coin = this.coinEntities.get(coinId);
-        if (coin) {
-            coin.onCollected();
-        } else {
-            console.warn(`CoinManager: Unknown coin ID "${coinId}"`);
-        }
+        if (!coin || this.collectedIds.has(coin.id)) return; // already collected
 
-        this.collectedIds.add(coinId);
+        coin.onCollected();
+        this.collectedIds.add(coin.id);
         this.onCoinsChanged?.(this.collectedIds.size, this.allCoins.size);
     }
 

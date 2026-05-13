@@ -12,7 +12,7 @@
  *   - Game:   scene.physics.add.collider(player, entity.getCollidables())
  *
  * Subclass responsibilities:
- *   - Declare the rule properties (entityType, requiresPlatformBelow, playBehavior, …)
+ *   - Declare the rule properties (entityType, requiresPlatformBelow, playBehavior, ...)
  *   - Create the Phaser display object and expose it via `displayObject`
  *   - Implement `createGhost(scene)` to return a semi-transparent preview copy
  *   - Override `getCollidables()` if physics bodies are on child objects (e.g. Platform)
@@ -23,9 +23,9 @@ import { EntityType } from '../types/EntityType';
 import { PlayBehavior } from '../types/PlayBehavior';
 import { EntityData } from '../types/LevelData';
 
-export const ENTITY_ID_DATA_KEY = 'entityId';
+export const ENTITY_DATA_KEY = 'entity';
 
-// EntitySnapshot has been removed — commands now store EntityData directly via serialize().
+// EntitySnapshot has been removed - commands now store EntityData directly via serialize().
 
 export default abstract class GameEntity {
 
@@ -39,9 +39,22 @@ export default abstract class GameEntity {
     /** Variant key for texture/skin selection (e.g. 'grass-1' for platforms). */
     readonly variant: string;
 
-    constructor(id?: string, variant?: string) {
+    /**
+     * @param displayObject The underlying Phaser object.
+     * @param id            Optional stable UUID.
+     * @param variant       Optional skin variant.
+     */
+    constructor(
+        public readonly displayObject: Phaser.GameObjects.Image | Phaser.GameObjects.TileSprite | Phaser.GameObjects.Container,
+        id?: string,
+        variant?: string
+    ) {
         this.id = id ?? crypto.randomUUID();
         this.variant = variant ?? 'default';
+
+        // Automated linking: bind this instance to the display object for retrieval
+        // during collisions, selection, etc.
+        this.displayObject.setData(ENTITY_DATA_KEY, this);
     }
 
     // -----------------------------------------------------------------------
@@ -62,7 +75,7 @@ export default abstract class GameEntity {
     /**
      * Declares how this entity participates in gameplay physics.
      * The play scene groups entities by this value and sets up colliders/overlaps
-     * per group — no per-entity branching needed in the scene.
+     * per group - no per-entity branching needed in the scene.
      */
     abstract readonly playBehavior: PlayBehavior;
 
@@ -72,13 +85,6 @@ export default abstract class GameEntity {
     // -----------------------------------------------------------------------
     // Phaser display object
     // -----------------------------------------------------------------------
-
-    /**
-     * The underlying Phaser object.  Callers use this for scene-specific setup
-     * (interactivity, camera follow) rather than reaching into GameEntity internals.
-     * For physics setup, prefer `getCollidables()`.
-     */
-    abstract readonly displayObject: Phaser.GameObjects.Image | Phaser.GameObjects.TileSprite | Phaser.GameObjects.Container;
 
     /**
      * Returns the Phaser game objects that should receive physics bodies.

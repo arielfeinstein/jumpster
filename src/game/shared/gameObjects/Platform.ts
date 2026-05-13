@@ -42,9 +42,6 @@ export default class Platform extends GameEntity {
     readonly isResizable = true;
     readonly playBehavior = 'solid' as const;
 
-    // The Phaser Container that holds the two TileSprites.
-    readonly displayObject: Phaser.GameObjects.Container;
-
     /** Surface row — 1 tile tall, always visible. */
     topLayer: Phaser.GameObjects.TileSprite;
 
@@ -76,27 +73,29 @@ export default class Platform extends GameEntity {
         variant: PlatformVariant = 'grass-1',
         id?: string,
     ) {
-        super(id, variant);
-
-        this._width = width;
-        this._height = height;
-
         const frames = VARIANT_FRAMES[variant];
 
         // Build the Container.
-        this.displayObject = new Phaser.GameObjects.Container(scene, x, y);
+        const container = new Phaser.GameObjects.Container(scene, x, y);
 
         // Top grass layer (no physics body — set up externally by the scene).
-        this.topLayer = scene.add
+        const topLayer = scene.add
             .tileSprite(0, 0, width, TILE_SIZE, 'platform', frames.top)
             .setOrigin(0, 0);
 
         // Dirt fill layer (no physics body — set up externally by the scene).
-        this.fillLayer = scene.add
+        const fillLayer = scene.add
             .tileSprite(0, TILE_SIZE, width, Math.max(height - TILE_SIZE, 0), 'platform', frames.fill)
             .setOrigin(0, 0);
 
-        this.displayObject.add([this.topLayer, this.fillLayer]);
+        container.add([topLayer, fillLayer]);
+
+        super(container, id, variant);
+
+        this._width = width;
+        this._height = height;
+        this.topLayer = topLayer;
+        this.fillLayer = fillLayer;
 
         this.resize(width, height);
 

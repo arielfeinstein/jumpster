@@ -29,8 +29,6 @@ export default class Flag extends GameEntity {
     readonly isResizable = false;
     readonly playBehavior: PlayBehavior;
 
-    readonly displayObject: Phaser.GameObjects.Image;
-
     get width(): number { return TILE_SIZE; }
     get height(): number { return TILE_SIZE * 2; }
 
@@ -48,11 +46,11 @@ export default class Flag extends GameEntity {
         flagKind: FlagKind,
         id?: string,
     ) {
-        super(id);
-        this.entityType = flagKind;
         // Start flag marks the player spawn point; end flag triggers the win condition.
+        const displayObject = scene.add.image(x, y, flagKind).setOrigin(0, 0);
+        super(displayObject, id);
+        this.entityType = flagKind;
         this.playBehavior = flagKind === 'start-flag' ? 'spawn' : 'goal';
-        this.displayObject = scene.add.image(x, y, flagKind).setOrigin(0, 0);
     }
 
     createGhost(scene: Phaser.Scene): Flag {

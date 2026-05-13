@@ -8,7 +8,7 @@
  */
 
 import Phaser from 'phaser';
-import GameEntity, { ENTITY_ID_DATA_KEY } from './GameEntity';
+import GameEntity from './GameEntity';
 import { CoinData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
 
@@ -20,7 +20,9 @@ export default class Coin extends GameEntity {
     readonly isResizable = false;
     readonly playBehavior = 'collectible' as const;
 
-    readonly displayObject: Phaser.GameObjects.Image;
+    /** Specific type for this subclass to satisfy physics body checks. */
+    declare readonly displayObject: Phaser.GameObjects.Image;
+
     private readonly scene: Phaser.Scene;
 
     get width(): number { return TILE_SIZE; }
@@ -33,10 +35,8 @@ export default class Coin extends GameEntity {
      * @param id     Optional stable UUID — supply when deserialising.
      */
     constructor(scene: Phaser.Scene, x: number, y: number, id?: string) {
-        super(id);
+        super(scene.add.image(x, y, 'coin').setOrigin(0, 0), id);
         this.scene = scene;
-        this.displayObject = scene.add.image(x, y, 'coin').setOrigin(0, 0);
-        this.displayObject.setData(ENTITY_ID_DATA_KEY, this.id);
     }
 
     /**
