@@ -33,7 +33,7 @@ export default class CoinManager {
     private readonly collectibleGroup: Phaser.Physics.Arcade.StaticGroup;
 
     /** Wired by Play.ts → emits to React HUD. */
-    onCoinsChanged?: (collected: number, total: number) => void;
+    onCoinsChanged?: (collected: number) => void;
 
     constructor(scene: Phaser.Scene, collectibleGroup: Phaser.Physics.Arcade.StaticGroup) {
         this.scene = scene;
@@ -65,7 +65,7 @@ export default class CoinManager {
 
         coin.onCollected();
         this.collectedIds.add(coin.id);
-        this.onCoinsChanged?.(this.collectedIds.size, this.allCoins.size);
+        this.onCoinsChanged?.(this.collectedIds.size);
     }
 
     getCollectedIds(): Set<string> {
@@ -95,6 +95,6 @@ export default class CoinManager {
         }
 
         this.collectedIds = new Set(collectedAtCheckpoint);
-        this.onCoinsChanged?.(this.collectedIds.size, this.allCoins.size);
+        this.onCoinsChanged?.(this.collectedIds.size);
     }
 }

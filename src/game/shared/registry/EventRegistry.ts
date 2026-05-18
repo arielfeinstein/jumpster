@@ -20,7 +20,25 @@ export interface EventBusRegistry {
     /** Emitted when the game is resumed from a pause. */
     'play-resume': Record<string, never>;
 
-    // TODO: Add other Play scene events here (e.g., health, coins)
+    /** Emitted once when the level is fully loaded and ready to play.
+     * Use this to initialize the HUD state. */
+    'play-ready': {
+        levelName: string;
+        hp: number;
+        maxHp: number;
+        coinsCollected: number;
+        totalCoins: number;
+    };
+
+    /** Emitted when the player's health changes. */
+    'play-health-changed': {
+        hp: number;
+    };
+
+    /** Emitted when the player collects a coin or the total coins in the level changes. */
+    'play-coins-changed': {
+        coinsCollected: number;
+    };
 
     // ─── Editor Scene ───────────────────────────────────────────────────────────
     

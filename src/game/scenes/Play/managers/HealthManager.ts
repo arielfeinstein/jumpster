@@ -19,7 +19,7 @@ export default class HealthManager {
     private iframeTimer: ReturnType<typeof setTimeout> | null = null;
 
     /** Wired by Play.ts → emits to React HUD. */
-    onHealthChanged?: (hp: number, maxHp: number) => void;
+    onHealthChanged?: (hp: number) => void;
 
     /** Wired by Play.ts → triggers CheckpointManager.respawn(). */
     onDied?: () => void;
@@ -57,7 +57,7 @@ export default class HealthManager {
     /** Sets HP to an exact value (used by CheckpointManager on respawn). */
     setHealth(amount: number): void {
         this.hp = Math.max(0, Math.min(amount, this.maxHp));
-        this.onHealthChanged?.(this.hp, this.maxHp);
+        this.onHealthChanged?.(this.hp);
     }
 
     /** Called by CheckpointManager after respawn to clear any lingering iframes. */

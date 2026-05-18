@@ -82,11 +82,11 @@ export class Play extends Scene {
 
         // Wire callbacks → EventBus (all React communication in one place).
         // onDied is wired in buildWorld() after CheckpointManager exists.
-        this.healthManager.onHealthChanged = (hp, maxHp) => {
-            EventBus.emit('play-health-changed', { hp, maxHp });
+        this.healthManager.onHealthChanged = (hp) => {
+            emitEvent('play-health-changed', { hp });
         };
-        this.coinManager.onCoinsChanged = (collected, total) => {
-            EventBus.emit('play-coins-changed', { collected, total });
+        this.coinManager.onCoinsChanged = (collected) => {
+            emitEvent('play-coins-changed', { coinsCollected: collected });
         };
 
         // ESC pauses the scene and tells React to show the pause overlay.
@@ -165,6 +165,14 @@ export class Play extends Scene {
             this.checkpointManager,
             this.enemyManager,
         );
+
+        emitEvent('play-ready', {
+            levelName: levelData.name || 'Untitled Level',
+            hp: this.healthManager.getHp(),
+            maxHp: this.healthManager.getMaxHp(),
+            coinsCollected: this.coinManager.getCollectedCount(),
+            totalCoins: this.coinManager.getTotalCount(),
+        });
 
         EventBus.emit('current-scene-ready', this);
     }
