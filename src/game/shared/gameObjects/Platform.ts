@@ -10,9 +10,8 @@
  * so callers do not need to call `scene.add.existing()`.
  *
  * Physics bodies are NOT attached in the constructor — the scene is responsible
- * for calling `scene.physics.add.existing()` on each object returned by
- * `getCollidables()`.  This keeps the constructor scene-agnostic.
- *
+ * for calling `entity.addToPhysics()`. This keeps the constructor scene-agnostic.
+ 
  * The editor is responsible for calling `displayObject.setInteractive(...)` via
  * the EntityManager's `onEntityAdded` hook — not done here for the same reason.
  *
@@ -108,12 +107,19 @@ export default class Platform extends GameEntity {
     // -----------------------------------------------------------------------
 
     /**
-     * Returns the TileSprites that should receive Arcade physics bodies.
-     * Arcade physics on a Container does not composite children, so the play
-     * scene must attach bodies to `topLayer` and `fillLayer` individually.
+     * Platforms use a Container as their displayObject. Arcade Physics on a
+     * Container defaults to a centered body. We override this to force the
+     * body to be correctly sized and top-left aligned.
      */
-    getCollidables(): Phaser.GameObjects.GameObject[] {
-        return [this.topLayer, this.fillLayer];
+    override addToPhysics(group: Phaser.Physics.Arcade.StaticGroup | Phaser.Physics.Arcade.Group): void {
+        super.addToPhysics(group);
+
+        const body = this.displayObject.body as Phaser.Physics.Arcade.StaticBody;
+        if (body) {
+            // false = do not center the body over the (x,y) origin.
+            body.setSize(this.width, this.height, false);
+            body.position.set(this.x, this.y);
+        }
     }
 
     /**
@@ -142,9 +148,6 @@ export default class Platform extends GameEntity {
      * Height logic:
      *   - 1 tile:  only topLayer is shown; fillLayer is hidden and disabled.
      *   - 2+ tiles: both layers shown; fillLayer height = height - TILE_SIZE.
-     *
-     * Physics bodies (if present) are kept in sync so the play scene does not
-     * need to call anything extra after a resize.
      */
     resize(newWidth: number, newHeight: number): void {
         this._width = newWidth;
@@ -169,17 +172,9 @@ export default class Platform extends GameEntity {
             this.topLayer.height = TILE_SIZE;
             this.fillLayer.setActive(false).setVisible(false);
             this.fillLayer.height = 0;
-            // Guard: physics body only exists in the play scene.
-            if (this.fillLayer.body) {
-                (this.fillLayer.body as Phaser.Physics.Arcade.StaticBody).enable = false;
-            }
         } else {
             // Multi-tile platform — show fill layer beneath the top row.
             this.fillLayer.setActive(true).setVisible(true);
-            // Guard: physics body only exists in the play scene.
-            if (this.fillLayer.body) {
-                (this.fillLayer.body as Phaser.Physics.Arcade.StaticBody).enable = true;
-            }
             this.topLayer.height = TILE_SIZE;
             this.fillLayer.height = newHeight - TILE_SIZE;
         }

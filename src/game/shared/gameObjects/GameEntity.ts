@@ -9,13 +9,13 @@
  * This separation lets the editor and the game scene each set up only the
  * behaviour they need:
  *   - Editor: entity.displayObject.setInteractive(entity.getEditorInteractiveConfig())
- *   - Game:   scene.physics.add.collider(player, entity.getCollidables())
+ *   - Game:   entity.addToPhysics(solidGroup)
  *
  * Subclass responsibilities:
  *   - Declare the rule properties (entityType, requiresPlatformBelow, playBehavior, ...)
  *   - Create the Phaser display object and expose it via `displayObject`
  *   - Implement `createGhost(scene)` to return a semi-transparent preview copy
- *   - Override `getCollidables()` if physics bodies are on child objects (e.g. Platform)
+ *   - Override `addToPhysics(group)` if the entity needs custom body setup (e.g. Platform)
  */
 
 import Phaser from 'phaser';
@@ -83,21 +83,18 @@ export default abstract class GameEntity {
     abstract get height(): number;
 
     // -----------------------------------------------------------------------
-    // Phaser display object
+    // Phaser display object & Physics
     // -----------------------------------------------------------------------
 
     /**
-     * Returns the Phaser game objects that should receive physics bodies.
-     * Defaults to `[this.displayObject]`.
+     * Adds the entity's display object to the given physics group.
+     * Default: adds `this.displayObject` to the group.
      *
-     * Platform overrides this to return its inner TileSprites directly, because
-     * Arcade physics on a Container does not composite child bodies.
-     *
-     * The play scene calls this method and never needs to know about
-     * Platform's internal structure.
+     * Subclasses with complex containers (like Platform) override this to
+     * correct the physics body's size/offset after registration.
      */
-    getCollidables(): Phaser.GameObjects.GameObject[] {
-        return [this.displayObject];
+    addToPhysics(group: Phaser.Physics.Arcade.StaticGroup | Phaser.Physics.Arcade.Group): void {
+        group.add(this.displayObject);
     }
 
     /**

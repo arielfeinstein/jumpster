@@ -46,7 +46,7 @@ export default class CoinManager {
     loadFromLevelData(coinEntities: CoinData[]): void {
         for (const data of coinEntities) {
             const coin = EntityRegistry.create(this.scene, data) as Coin;
-            this.collectibleGroup.add(coin.displayObject);
+            coin.addToPhysics(this.collectibleGroup);
             this.allCoins.set(data.id, data);
             this.coinEntities.set(data.id, coin);
         }

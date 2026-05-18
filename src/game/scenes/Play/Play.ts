@@ -55,7 +55,8 @@ export class Play extends Scene {
     }
 
     preload() {
-        // Explicitly load dev level inside Play for early development
+        // Bust cache so the latest saved file is always fetched during development.
+        this.cache.json.remove('level1');
         this.load.json('level1', 'dev_tmp/level1.json');
     }
 
@@ -180,13 +181,12 @@ export class Play extends Scene {
         for (const data of entities.filter(e => STATIC_ENTITY_TYPES.includes(e.entityType))) {
             const entity = EntityRegistry.create(this, data);
 
-            const collidables = entity.getCollidables();
+            // Determine target group based on entity's play behavior
+            const behavior = entity.playBehavior;
+            const group = this.groups[behavior as keyof PlayPhysicsGroups] as Phaser.Physics.Arcade.StaticGroup;
 
-            switch (data.entityType) {
-                case 'platform':   this.groups.solid.addMultiple(collidables);      break;
-                case 'spikes':     this.groups.hazard.addMultiple(collidables);     break;
-                case 'checkpoint': this.groups.checkpoint.addMultiple(collidables); break;
-                case 'end-flag':   this.groups.goal.addMultiple(collidables);       break;
+            if (group) {
+                entity.addToPhysics(group);
             }
         }
     }
