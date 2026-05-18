@@ -20,6 +20,16 @@ export interface EventBusRegistry {
     /** Emitted when the game is resumed from a pause. */
     'play-resume': Record<string, never>;
 
+    /** Emitted by React to ask Phaser to leave the Play scene and go to MainMenu. */
+    'play-go-to-main-menu': Record<string, never>;
+
+    /** Emitted by React to restart the current level from the beginning. */
+    'play-restart': Record<string, never>;
+
+    /** Emitted by React (PlayUI) on mount to ask Phaser to re-send play-ready.
+     * Needed because play-ready fires before React has mounted the HUD. */
+    'play-request-ready': Record<string, never>;
+
     /** Emitted once when the level is fully loaded and ready to play.
      * Use this to initialize the HUD state. */
     'play-ready': {

@@ -1,0 +1,98 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* ── HUD bar (top-left) ─────────────────────────────────────────────────── */
+
+.hud {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.healthBar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.heart {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+}
+
+
+.coinCounter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.coinIcon {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+}
+
+/* ── Pause menu ─────────────────────────────────────────────────────────── */
+
+.pauseOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    pointer-events: auto;
+}
+
+.pausePanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 40px 56px;
+    background: #1a1a2e;
+    border: 4px solid #fff;
+    /* Chunky pixel drop shadow */
+    box-shadow: 6px 6px 0 #000;
+}
+
+.pauseTitle {
+    margin: 0 0 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    color: #fff;
+    letter-spacing: 2px;
+}
+
+.menuButton {
+    width: 180px;
+    padding: 12px 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #fff;
+    background: #16213e;
+    border: 3px solid #fff;
+    box-shadow: 3px 3px 0 #000;
+    cursor: pointer;
+    /* Shift down on click to mimic a physical press */
+    transition: box-shadow 60ms, transform 60ms;
+}
+
+.menuButton:hover {
+    background: #0f3460;
+}
+
+.menuButton:active {
+    box-shadow: none;
+    transform: translate(3px, 3px);
+}

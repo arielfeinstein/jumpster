@@ -50,6 +50,10 @@ export class Play extends Scene {
     // Prefixed with _ because it is stored only to prevent GC — all work happens in its constructor.
     private _collisionController!: CollisionController;
 
+    // Stored so the same reference can be passed to EventBus.off on restart,
+    // preventing listener accumulation across scene restarts.
+    private onRequestReady = () => this.emitReady();
+
     constructor() {
         super('Play');
     }
@@ -100,11 +104,29 @@ export class Play extends Scene {
             this.scene.resume();
         });
 
-        if (this.load.isLoading()) {
-            this.load.once('complete', () => this.buildWorld());
-        } else {
-            this.buildWorld();
-        }
+        EventBus.on('play-go-to-main-menu', () => {
+            this.scene.start('MainMenu');
+        });
+
+        EventBus.on('play-restart', () => {
+            this.scene.restart();
+        });
+
+        // Build the world synchronously first so managers have valid state
+        // before we announce readiness to React.
+        this.buildWorld();
+
+        // On restart PlayUI is already mounted, so emit directly.
+        // On first load this fires into the void — PlayUI isn't mounted yet.
+        this.emitReady();
+
+        // Handles first load: PlayUI emits play-request-ready on mount (after
+        // current-scene-ready triggers its render) and we reply with current state.
+        // off() before on() prevents listener accumulation across scene restarts.
+        EventBus.off('play-request-ready', this.onRequestReady);
+        EventBus.on('play-request-ready', this.onRequestReady);
+
+        EventBus.emit('current-scene-ready', this);
     }
 
     private buildWorld() {
@@ -166,15 +188,6 @@ export class Play extends Scene {
             this.enemyManager,
         );
 
-        emitEvent('play-ready', {
-            levelName: levelData.name || 'Untitled Level',
-            hp: this.healthManager.getHp(),
-            maxHp: this.healthManager.getMaxHp(),
-            coinsCollected: this.coinManager.getCollectedCount(),
-            totalCoins: this.coinManager.getTotalCount(),
-        });
-
-        EventBus.emit('current-scene-ready', this);
     }
 
     /**
@@ -204,6 +217,16 @@ export class Play extends Scene {
 
         this.player.update(this.cursors);
         this.enemyManager.update(delta);
+    }
+
+    private emitReady(): void {
+        emitEvent('play-ready', {
+            levelName: (this.cache.json.get('level1') as { name?: string })?.name || 'Untitled Level',
+            hp: this.healthManager.getHp(),
+            maxHp: this.healthManager.getMaxHp(),
+            coinsCollected: this.coinManager.getCollectedCount(),
+            totalCoins: this.coinManager.getTotalCount(),
+        });
     }
 
     changeScene() {
