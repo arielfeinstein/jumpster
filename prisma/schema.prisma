@@ -1,36 +1,63 @@
 generator client {
-  provider = "prisma-client-js"                                                                                                                                  
-}                                                                                                                                                              
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
 }
-                                                                                                                                                                   
-model User {                                                                                                                                                   
-  id        String   @id
-  email     String   @unique
-  username  String   @unique
-  createdAt DateTime @default(now())                                                                                                                             
-  levels    Level[]
-  likes     Like[]                                                                                                                                               
-}                                                                                                                                                              
+
+model User {
+  id          String        @id
+  email       String        @unique
+  username    String        @unique
+  createdAt   DateTime      @default(now())
+  levels      Level[]
+  likes       Like[]
+  bookmarks   Bookmark[]
+  playHistory PlayHistory[]
+}
 
 model Level {
-  id        String   @id @default(cuid())
-  title     String                                                                                                                                               
-  data      Json
-  authorId  String                                                                                                                                               
-  author    User     @relation(fields: [authorId], references: [id])                                                                                           
-  createdAt DateTime @default(now())                                                                                                                             
-  views     Int      @default(0)
-  likes     Like[]                                                                                                                                               
-}                                                                                                                                                              
-                                                                                                                                                                  
+  id          String        @id @default(cuid())
+  title       String
+  data        Json?
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id])
+  createdAt   DateTime      @default(now())
+  views       Int           @default(0)
+  published    Boolean       @default(false)
+  publishedAt  DateTime?
+  deletedAt    DateTime?
+  likes       Like[]
+  bookmarks   Bookmark[]
+  playHistory PlayHistory[]
+}
+
 model Like {
-  userId  String                                                                                                                                                 
-  levelId String                                                                                                                                               
+  userId  String
+  levelId String
   user    User   @relation(fields: [userId], references: [id])
   level   Level  @relation(fields: [levelId], references: [id])
-                                                                                                                                                                  
+
   @@id([userId, levelId])
-}         
+}
+
+// Tracks every level a user has loaded into the play scene.
+model PlayHistory {
+  id       String   @id @default(cuid())
+  userId   String
+  levelId  String
+  playedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id])
+  level    Level    @relation(fields: [levelId], references: [id])
+}
+
+// Saves a level to the user's "Play Later" list.
+model Bookmark {
+  userId  String
+  levelId String
+  user    User   @relation(fields: [userId], references: [id])
+  level   Level  @relation(fields: [levelId], references: [id])
+
+  @@id([userId, levelId])
+}

@@ -48,5 +48,12 @@ dev_tmp/
 
 # ai
 .claude/
+CLAUDE.MD
+GEMINI.MD
 
 /src/generated/prisma
+
+# drafts
+plans/
+
+
