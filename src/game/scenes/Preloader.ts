@@ -24,6 +24,6 @@ export class Preloader extends Scene
     {
         AnimationManager.createAll(this);
 
-        this.scene.start('Play');
+        this.scene.start('MainMenu');
     }
 }

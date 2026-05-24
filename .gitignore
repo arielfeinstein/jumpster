@@ -28,6 +28,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
 
 # vercel
 .vercel
@@ -47,3 +48,5 @@ dev_tmp/
 
 # ai
 .claude/
+
+/src/generated/prisma
