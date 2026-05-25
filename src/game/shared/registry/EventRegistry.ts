@@ -69,8 +69,24 @@ export interface EventBusRegistry {
     };
 
     // ─── Editor Scene ───────────────────────────────────────────────────────────
-    
+
     // TODO: Migrate editor events here during refactor
+
+    // ─── Main Menu ──────────────────────────────────────────────────────────────
+
+    /**
+     * Emitted by React (MainMenu UI) when the user clicks Play on a level.
+     * TODO (wiring): Add listener in MainMenu.ts → scene.start('Play', { levelId, levelData }).
+     * Note: Play scene will need to accept both levelId and full level data JSON from scene data.
+     */
+    'main-menu-play-level': { levelId: string };
+
+    /**
+     * Emitted by React (MainMenu UI) when the user clicks Edit or creates a new level.
+     * Pass an empty string for levelId when creating a fresh level.
+     * TODO (wiring): Add listener in MainMenu.ts → scene.start('Editor', { levelId }).
+     */
+    'main-menu-edit-level': { levelId: string };
 }
 
 export type EventName = keyof EventBusRegistry;

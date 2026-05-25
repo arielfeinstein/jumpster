@@ -1,256 +1,424 @@
-.menuContainer {
-  position: absolute;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  z-index: 10;
-  min-width: 320px;
+/* ── Overlay ────────────────────────────────────────────────────────────────── */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
 }
 
-/* Inner wrapper when not needing absolute centering again */
-.menuInner {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* ── Home panel ─────────────────────────────────────────────────────────────── */
+
+.homePanel {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 56px;
+    width: 360px;
+    background: #1a1a2e;
+    border: 4px solid #fff;
+    box-shadow: 6px 6px 0 #000;
 }
+
+.logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    color: #fff;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+}
+
+.greeting {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #888;
+    margin-bottom: 36px;
+    letter-spacing: 1px;
+}
+
+.homeButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+/* ── Large menu button (home screen, create level) ──────────────────────────── */
 
 .menuButton {
-  position: relative;
-  display: block;
-  width: 100%;
-  padding: 14px 0 12px;
-  font-family: "Minecraftia", "Press Start 2P", monospace;
-  font-size: 18px;
-  letter-spacing: 1px;
-  color: #ffffff;
-  background: linear-gradient(#8b8b8b, #6b6b6b 45%, #5a5a5a 55%, #4a4a4a);
-  border: 2px solid #000;
-  outline: 2px solid #353535;
-  outline-offset: -4px;
-  cursor: pointer;
-  text-shadow: 2px 2px #3f3f3f;
-  user-select: none;
-  box-shadow:
-    0 0 0 2px #000,
-    inset 0 4px 0 0 rgba(255,255,255,0.18),
-    inset 0 -4px 0 0 rgba(0,0,0,0.35);
-  transition: transform 60ms ease, filter 120ms, background 140ms;
-}
-
-.menuButton::before {
-  content: "";
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 4px;
-  height: 2px;
-  background: rgba(255,255,255,0.55);
-  pointer-events: none;
-}
-
-.menuButton::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 4px;
-  height: 2px;
-  background: rgba(0,0,0,0.55);
-  pointer-events: none;
+    width: 100%;
+    padding: 16px 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #fff;
+    background: #16213e;
+    border: 3px solid #fff;
+    box-shadow: 4px 4px 0 #000;
+    cursor: pointer;
+    transition: box-shadow 60ms, transform 60ms, background 120ms;
 }
 
 .menuButton:hover {
-  filter: brightness(1.1);
+    background: #0f3460;
 }
 
 .menuButton:active {
-  transform: translateY(2px);
-  box-shadow:
-    0 0 0 2px #000,
-    inset 0 2px 0 0 rgba(255,255,255,0.12),
-    inset 0 -2px 0 0 rgba(0,0,0,0.45);
-  background: linear-gradient(#7b7b7b, #5f5f5f 50%, #4e4e4e);
+    box-shadow: none;
+    transform: translate(4px, 4px);
 }
 
 .menuButton:focus-visible {
-  outline: 2px solid #ffd700;
-  outline-offset: 2px;
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
 }
 
-/* Panel / list container */
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 18px 18px;
-  background: repeating-linear-gradient(
-      45deg,
-      #3a3a3a 0px,
-      #3a3a3a 6px,
-      #343434 6px,
-      #343434 12px
-    );
-  border: 2px solid #000;
-  outline: 2px solid #2b2b2b;
-  outline-offset: -4px;
-  box-shadow: 0 0 0 2px #000, inset 0 4px 0 0 rgba(255,255,255,0.05), inset 0 -4px 0 0 rgba(0,0,0,0.4);
+/* ── Content panel (browse, my levels, settings, create) ────────────────────── */
+
+.contentPanel {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    width: 700px;
+    max-height: 520px;
+    background: #1a1a2e;
+    border: 4px solid #fff;
+    box-shadow: 6px 6px 0 #000;
+    overflow: hidden;
 }
 
-.panelHeader {
-  font-family: "Minecraftia", "Press Start 2P", monospace;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: #fff;
-  text-shadow: 2px 2px #2c2c2c;
-  margin-bottom: 4px;
+.contentHeader {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 24px;
+    border-bottom: 2px solid #2a2a4a;
+    flex-shrink: 0;
 }
 
-.placeholderBody {
-  font-family: "Minecraftia", "Press Start 2P", monospace;
-  font-size: 12px;
-  color: #dcdcdc;
-  text-shadow: 1px 1px #2c2c2c;
-  padding: 12px 4px;
+.backButton {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #aaa;
+    background: transparent;
+    border: 2px solid #555;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: color 100ms, border-color 100ms;
+    white-space: nowrap;
 }
 
-.footerRow {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 4px;
+.backButton:hover {
+    color: #fff;
+    border-color: #fff;
 }
+
+.contentTitle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+/* ── Filter bar (search + dropdowns) ───────────────────────────────────────── */
+
+.filterBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border-bottom: 2px solid #2a2a4a;
+    flex-shrink: 0;
+}
+
+.searchInput {
+    flex: 1;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    padding: 8px 10px;
+    background: #0f0f1e;
+    color: #fff;
+    border: 2px solid #333;
+    outline: none;
+    letter-spacing: 0.5px;
+    min-width: 0;
+}
+
+.searchInput:focus {
+    border-color: #fff;
+}
+
+.searchInput::placeholder {
+    color: #444;
+}
+
+.select {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 8px 8px;
+    background: #0f0f1e;
+    color: #fff;
+    border: 2px solid #333;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.select:focus {
+    border-color: #fff;
+    outline: none;
+}
+
+/* ── Tab bar ────────────────────────────────────────────────────────────────── */
+
+.tabBar {
+    display: flex;
+    border-bottom: 2px solid #2a2a4a;
+    flex-shrink: 0;
+}
+
+.tab {
+    flex: 1;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #666;
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 100ms, background 100ms;
+    letter-spacing: 0.5px;
+}
+
+.tab:hover {
+    color: #ccc;
+    background: #1e1e3a;
+}
+
+.tabActive {
+    color: #fff;
+    box-shadow: inset 0 -3px 0 #fff;
+}
+
+/* ── History sub-filter chips ───────────────────────────────────────────────── */
+
+.historyFilters {
+    display: flex;
+    gap: 8px;
+    padding: 10px 24px;
+    border-bottom: 2px solid #2a2a4a;
+    flex-shrink: 0;
+}
+
+.chip {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 5px 10px;
+    background: transparent;
+    color: #666;
+    border: 1px solid #444;
+    cursor: pointer;
+    transition: color 100ms, border-color 100ms, background 100ms;
+}
+
+.chip:hover {
+    color: #ccc;
+    border-color: #888;
+}
+
+.chipActive {
+    color: #fff;
+    border-color: #fff;
+    background: #16213e;
+}
+
+/* ── Level list ─────────────────────────────────────────────────────────────── */
 
 .levelList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 260px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #5a5a5a #2c2c2c;
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    list-style: none;
+    margin: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #333 #0f0f1e;
 }
 
-.levelList::-webkit-scrollbar {
-  width: 10px;
-}
-.levelList::-webkit-scrollbar-track {
-  background: #2c2c2c;
-}
-.levelList::-webkit-scrollbar-thumb {
-  background: linear-gradient(#6b6b6b, #4d4d4d);
-  border: 2px solid #1e1e1e;
-}
-.levelList::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(#7b7b7b, #5c5c5c);
+.levelList::-webkit-scrollbar { width: 8px; }
+.levelList::-webkit-scrollbar-track { background: #0f0f1e; }
+.levelList::-webkit-scrollbar-thumb { background: #333; border: 2px solid #0f0f1e; }
+.levelList::-webkit-scrollbar-thumb:hover { background: #555; }
+
+.emptyMsg {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #444;
+    text-align: center;
+    padding: 40px 0;
 }
 
-.levelItem {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 10px 12px 8px;
-  background: linear-gradient(#5d5d5d, #4c4c4c 50%, #424242);
-  border: 2px solid #000;
-  outline: 2px solid #2f2f2f;
-  outline-offset: -4px;
-  cursor: pointer;
-  user-select: none;
-  box-shadow: 0 0 0 2px #000, inset 0 3px 0 0 rgba(255,255,255,0.15), inset 0 -3px 0 0 rgba(0,0,0,0.45);
-  transition: filter 120ms, transform 60ms ease;
+.levelRow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: #0f0f1e;
+    border: 2px solid #2a2a4a;
+    list-style: none;
 }
 
-.levelItem::before {
-  content: "";
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  top: 4px;
-  height: 2px;
-  background: rgba(255,255,255,0.35);
-  pointer-events: none;
+.levelInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.levelItem::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 4px;
-  height: 2px;
-  background: rgba(0,0,0,0.55);
-  pointer-events: none;
+.levelTitle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.levelItem:hover {
-  filter: brightness(1.1);
+.levelMeta {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.levelItem:active {
-  transform: translateY(2px);
-  box-shadow: 0 0 0 2px #000, inset 0 1px 0 0 rgba(255,255,255,0.1), inset 0 -2px 0 0 rgba(0,0,0,0.5);
+.levelStats {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+    align-items: center;
 }
 
-.levelItemPrimary {
-  font-family: "Minecraftia", "Press Start 2P", monospace;
-  font-size: 14px;
-  color: #fff;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px #303030;
-  line-height: 1.2;
+.stat {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #888;
+    white-space: nowrap;
 }
 
-.levelItemMeta {
-  font-family: "Minecraftia", "Press Start 2P", monospace;
-  font-size: 10px;
-  color: #d0d0d0;
-  margin-top: 4px;
-  text-shadow: 1px 1px #2c2c2c;
-  opacity: 0.85;
+.diffEasy   { color: #4caf50; }
+.diffMedium { color: #ff9800; }
+.diffHard   { color: #f44336; }
+
+.levelActions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    align-items: center;
 }
 
-/* Form styles */
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 4px 0 8px;
+/* ── Status badge ───────────────────────────────────────────────────────────── */
+
+.badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 4px 7px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.textLabel {
-  font-family: "Minecraftia", "Press Start 2P", monospace;
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: #fff;
-  text-shadow: 2px 2px #2d2d2d;
+.badgePublished { color: #4caf50; border-color: #4caf50; }
+.badgeDraft     { color: #ff9800; border-color: #ff9800; }
+
+/* ── Small action buttons (level row actions) ───────────────────────────────── */
+
+.actionButton {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 6px 9px;
+    background: #16213e;
+    color: #fff;
+    border: 2px solid #fff;
+    box-shadow: 2px 2px 0 #000;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: box-shadow 60ms, transform 60ms, background 120ms;
 }
 
-.textInput {
-  font-family: "Minecraftia", "Press Start 2P", monospace;
-  font-size: 14px;
-  padding: 10px 12px 8px;
-  background: linear-gradient(#4f4f4f, #3d3d3d 55%, #353535);
-  color: #fff;
-  border: 2px solid #000;
-  outline: 2px solid #262626;
-  outline-offset: -4px;
-  box-shadow: 0 0 0 2px #000, inset 0 3px 0 0 rgba(255,255,255,0.12), inset 0 -3px 0 0 rgba(0,0,0,0.5);
-  letter-spacing: 1px;
-  text-shadow: 1px 1px #2a2a2a;
+.actionButton:hover {
+    background: #0f3460;
 }
 
-.textInput:focus {
-  outline: 2px solid #ffd700;
-  outline-offset: 2px;
+.actionButton:active {
+    box-shadow: none;
+    transform: translate(2px, 2px);
 }
 
-.textInput::placeholder {
-  color: #bdbdbd;
-  opacity: 0.85;
+.actionButtonDanger {
+    border-color: #f44336;
+    color: #f44336;
+}
+
+.actionButtonDanger:hover {
+    background: #1a0808;
+}
+
+/* ── Placeholder action message ─────────────────────────────────────────────── */
+
+.actionMessage {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #ffd700;
+    padding: 10px 24px;
+    border-top: 2px solid #2a2a4a;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+
+/* ── Settings body ──────────────────────────────────────────────────────────── */
+
+.settingsBody {
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+}
+
+.settingsInfo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #aaa;
+    line-height: 2;
+}
+
+.settingsLabel {
+    color: #555;
+    font-size: 7px;
+}
+
+/* ── Create level body ──────────────────────────────────────────────────────── */
+
+.createBody {
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+}
+
+.createHint {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #555;
+    margin-bottom: 8px;
 }
