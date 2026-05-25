@@ -1,6 +1,7 @@
 import React, { forwardRef, useEffect, useLayoutEffect, useRef } from 'react';
 import StartGame from './game/main';
 import { EventBus } from './game/EventBus';
+import { usePlaySessionStats } from './hooks/usePlaySessionStats';
 
 export interface IRefPhaserGame
 {
@@ -16,6 +17,9 @@ interface IProps
 
 export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame({ currentActiveScene, children }, ref)
 {
+    // TODO: consider extracting the useLayoutEffect and useEffect hooks below to src/hooks/
+    usePlaySessionStats();
+
     const game = useRef<Phaser.Game | null>(null!);
 
     useLayoutEffect(() =>

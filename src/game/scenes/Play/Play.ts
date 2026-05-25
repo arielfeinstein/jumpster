@@ -26,6 +26,12 @@ import CheckpointManager from './managers/CheckpointManager';
 import EnemyManager from './managers/EnemyManager';
 import CollisionController from './controllers/CollisionController';
 
+/** Data injected via scene.start('Play', data) by the orchestrator. */
+interface PlaySceneData {
+    levelId: string;
+    levelData: LevelData;
+}
+
 const MAX_HP = 3;
 
 /** Entity types that are loaded as static physics bodies (no manager, no AI). */
@@ -50,18 +56,26 @@ export class Play extends Scene {
     // Prefixed with _ because it is stored only to prevent GC — all work happens in its constructor.
     private _collisionController!: CollisionController;
 
-    // Stored so the same reference can be passed to EventBus.off on restart,
-    // preventing listener accumulation across scene restarts.
+    private sceneData!: PlaySceneData;
+
+    // Stored references passed to EventBus.off on restart to prevent listener
+    // accumulation across scene restarts.
     private onRequestReady = () => this.emitReady();
+    private onLevelComplete = ({ collected, total }: { collected: number; total: number }) => {
+        emitEvent('play-session-ended', {
+            levelId: this.sceneData.levelId,
+            coinsCollected: collected,
+            totalCoins: total,
+        });
+        this.scene.start('MainMenu');
+    };
 
     constructor() {
         super('Play');
     }
 
-    preload() {
-        // Bust cache so the latest saved file is always fetched during development.
-        this.cache.json.remove('level1');
-        this.load.json('level1', 'dev_tmp/level1.json');
+    init(data: PlaySceneData): void {
+        this.sceneData = data;
     }
 
     create() {
@@ -109,7 +123,7 @@ export class Play extends Scene {
         });
 
         EventBus.on('play-restart', () => {
-            this.scene.restart();
+            this.scene.restart(this.sceneData);
         });
 
         // Build the world synchronously first so managers have valid state
@@ -120,23 +134,18 @@ export class Play extends Scene {
         // On first load this fires into the void — PlayUI isn't mounted yet.
         this.emitReady();
 
-        // Handles first load: PlayUI emits play-request-ready on mount (after
-        // current-scene-ready triggers its render) and we reply with current state.
         // off() before on() prevents listener accumulation across scene restarts.
         EventBus.off('play-request-ready', this.onRequestReady);
         EventBus.on('play-request-ready', this.onRequestReady);
+
+        EventBus.off('play-level-complete', this.onLevelComplete);
+        EventBus.on('play-level-complete', this.onLevelComplete);
 
         EventBus.emit('current-scene-ready', this);
     }
 
     private buildWorld() {
-        const levelData = this.cache.json.get('level1') as LevelData | undefined;
-
-        if (!levelData) {
-            console.error('Play Scene: levelData (level1.json) not found in cache. Returning to MainMenu.');
-            this.scene.start('MainMenu');
-            return;
-        }
+        const levelData = this.sceneData.levelData;
 
         // World bounds
         const vw = this.scale.width;
@@ -221,7 +230,7 @@ export class Play extends Scene {
 
     private emitReady(): void {
         emitEvent('play-ready', {
-            levelName: (this.cache.json.get('level1') as { name?: string })?.name || 'Untitled Level',
+            levelName: this.sceneData.levelData.name || 'Untitled Level',
             hp: this.healthManager.getHp(),
             maxHp: this.healthManager.getMaxHp(),
             coinsCollected: this.coinManager.getCollectedCount(),

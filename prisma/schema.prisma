@@ -25,7 +25,8 @@ model Level {
   author      User          @relation(fields: [authorId], references: [id])
   createdAt   DateTime      @default(now())
   views       Int           @default(0)
-  published    Boolean       @default(false)
+  completed   Int           @default(0)
+  published    Boolean      @default(false)
   publishedAt  DateTime?
   deletedAt    DateTime?
   likes       Like[]

@@ -35,6 +35,18 @@ export async function getLevel(id: string, userId: string) {
 }
 
 /**
+ * Increments the completion counter for a level.
+ * Called fire-and-forget when a player reaches the end-flag.
+ * TODO: accept userId and write to a UserLevelCompletion relation (same transaction) once per-user tracking is added
+ */
+export async function recordCompletion(levelId: string) {
+  return prisma.level.update({
+    where: { id: levelId },
+    data: { completed: { increment: 1 } },
+  });
+}
+
+/**
  * Updates a draft level's title and/or layout data.
  * Only the author may edit, and only while the level is unpublished and not deleted.
  */

@@ -50,6 +50,24 @@ export interface EventBusRegistry {
         coinsCollected: number;
     };
 
+    /**
+     * Emitted by Play only when the player completes the level (reaches the end-flag).
+     * Premature exits emit nothing — the event's existence implies completion.
+     *
+     * Listener must be a persistent React component (e.g. PhaserGame.tsx), NOT the
+     * MainMenu Phaser scene (which is dead at emit time). Safe: the EventBus is
+     * synchronous so the listener is called before scene.start('MainMenu') queues.
+     *
+     * The API call made by the listener is fire-and-forget — the scene transitions
+     * to MainMenu immediately without waiting for the response. We deliberately do
+     * not know the outcome; blocking the transition for a stat counter is not worth it.
+     */
+    'play-session-ended': {
+        levelId: string;
+        coinsCollected: number;
+        totalCoins: number;
+    };
+
     // ─── Editor Scene ───────────────────────────────────────────────────────────
     
     // TODO: Migrate editor events here during refactor

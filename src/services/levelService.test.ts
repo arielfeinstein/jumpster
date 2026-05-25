@@ -28,6 +28,7 @@ function makeLevel(overrides: Partial<Level> = {}): Level {
     authorId: "user-1",
     createdAt: new Date(),
     views: 0,
+    completed: 0,
     published: false,
     publishedAt: null,
     deletedAt: null,
