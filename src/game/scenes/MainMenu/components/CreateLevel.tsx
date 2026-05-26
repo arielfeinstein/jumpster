@@ -19,8 +19,9 @@ export default function CreateLevel({ onBack }: CreateLevelProps) {
     }
 
     function handleSelectTemplate(title: string) {
-        // TODO (wiring): POST /api/levels/:id/duplicate to clone the level,
-        //   then emitEvent('main-menu-edit-level', { levelId: newLevel.id })
+        // TODO (wiring): fetch source level data via GET /api/levels/:id,
+        //   then emitEvent('main-menu-edit-level', { levelId: '', templateData: data })
+        //   — no server-side duplicate; editor creates a new unrelated level via POST /api/levels on save
         setActionMsg(`Would use "${title}" as template`);
         setMode('choice');
     }

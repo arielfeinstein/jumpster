@@ -13,7 +13,7 @@ export default function MyLevels({ onBack }: MyLevelsProps) {
     const [actionMsg, setActionMsg] = useState<string | null>(null);
 
     function handlePublish(id: string) {
-        // TODO (wiring): call PATCH /api/levels/:id with { published: true } before updating state
+        // TODO (wiring): call POST /api/levels/:id/publish before updating state
         setLevels(prev => prev.map(l => l.id === id ? { ...l, published: true } : l));
         setActionMsg(null);
     }
@@ -30,7 +30,8 @@ export default function MyLevels({ onBack }: MyLevelsProps) {
     }
 
     function handleTemplate(level: Level) {
-        // TODO (wiring): Replace with POST /api/levels/:id/duplicate, then emitEvent('main-menu-edit-level', { levelId: newId })
+        // TODO (wiring): fetch source level data via GET /api/levels/:id, then emitEvent('main-menu-edit-level', { levelId: '', templateData: data })
+        // — no server-side duplicate; the editor receives the data as a starting point and POST /api/levels creates a new unrelated level on save
         setActionMsg(`Would use as template: "${level.title}"`);
     }
 

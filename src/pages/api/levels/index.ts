@@ -17,7 +17,7 @@ export default async function handler(
      * No server-side filtering — search, sort, and difficulty filtering happen client-side.
      */
     if (req.method === "GET") {
-      const levels = await levelService.listPublishedLevels();
+      const levels = await levelService.listPublishedLevels(user.id);
       return res.status(200).json({ levels });
     }
 

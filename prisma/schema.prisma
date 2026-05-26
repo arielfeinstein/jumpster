@@ -15,7 +15,6 @@ model User {
   likes       Like[]
   bookmarks   Bookmark[]
   playHistory PlayHistory[]
-  completions Completion[]
 }
 
 model Level {
@@ -27,7 +26,6 @@ model Level {
   authorId    String
   author      User          @relation(fields: [authorId], references: [id])
   createdAt   DateTime      @default(now())
-  views       Int           @default(0)
   published    Boolean      @default(false)
   publishedAt  DateTime?
   // Delete strategy:
@@ -43,7 +41,6 @@ model Level {
   likes       Like[]
   bookmarks   Bookmark[]
   playHistory PlayHistory[]
-  completions Completion[]
 }
 
 model Like {
@@ -55,26 +52,21 @@ model Like {
   @@id([userId, levelId])
 }
 
-// Records that a user has completed a level. A row existing = completed; no row = hasn't.
-// One record per user-level pair — completing the same level again is a no-op (upsert with empty update).
-model Completion {
+// Tracks a user's interaction with a level — one record per user-level pair.
+// playCount increments each time the user plays; lastPlayed refreshes each time.
+// completedAt is set on first completion and never overwritten.
+model PlayHistory {
+  id          String    @id @default(cuid())
   userId      String
   levelId     String
-  completedAt DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
-  level       Level    @relation(fields: [levelId], references: [id])
+  playCount   Int       @default(1)
+  lastPlayed  DateTime  @default(now())
+  completedAt DateTime?
 
-  @@id([userId, levelId])
-}
+  user  User  @relation(fields: [userId], references: [id])
+  level Level @relation(fields: [levelId], references: [id])
 
-// Tracks every level a user has loaded into the play scene.
-model PlayHistory {
-  id       String   @id @default(cuid())
-  userId   String
-  levelId  String
-  playedAt DateTime @default(now())
-  user     User     @relation(fields: [userId], references: [id])
-  level    Level    @relation(fields: [levelId], references: [id])
+  @@unique([userId, levelId])
 }
 
 // Saves a level to the user's "Play Later" list.

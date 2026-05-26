@@ -13,7 +13,7 @@ vi.mock("@/lib/db", () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
-    completion: {
+    playHistory: {
       upsert: vi.fn(),
       findMany: vi.fn(),
     },
@@ -23,7 +23,7 @@ vi.mock("@/lib/db", () => ({
 // Import after vi.mock so we get the mocked version.
 import { prisma } from "@/lib/db";
 import {
-  createLevel, getLevel, recordCompletion, updateLevel,
+  createLevel, getLevel, recordCompletion, recordPlay, updateLevel,
   listPublishedLevels, listMyLevels, deleteLevel, publishLevel,
   getCompletionHistory,
 } from "@/services/levelService";
@@ -38,7 +38,6 @@ function makeLevel(overrides: Partial<Level> = {}): Level {
     data: null,
     authorId: "user-1",
     createdAt: new Date(),
-    views: 0,
     published: false,
     publishedAt: null,
     deletedAt: null,
@@ -47,12 +46,11 @@ function makeLevel(overrides: Partial<Level> = {}): Level {
 }
 
 // Builds a level as returned by queries that spread levelWithMeta —
-// includes the joined author username and aggregated completion count.
+// includes the joined author username.
 function makeLevelWithMeta(overrides: Partial<Level> = {}) {
   return {
     ...makeLevel(overrides),
     author: { username: "testuser" },
-    _count: { completions: 0 },
   };
 }
 
@@ -183,61 +181,92 @@ describe("updateLevel", () => {
   });
 });
 
+// ─── recordPlay ──────────────────────────────────────────────────────────────
+
+describe("recordPlay", () => {
+  it("upserts a PlayHistory row, incrementing playCount on repeat plays", async () => {
+    vi.mocked((prisma as any).playHistory.upsert).mockResolvedValue({});
+
+    await recordPlay("level-1", "user-1");
+
+    expect((prisma as any).playHistory.upsert).toHaveBeenCalledWith({
+      where:  { userId_levelId: { userId: "user-1", levelId: "level-1" } },
+      create: { userId: "user-1", levelId: "level-1" },
+      update: { playCount: { increment: 1 }, lastPlayed: expect.any(Date) },
+    });
+  });
+});
+
 // ─── recordCompletion ────────────────────────────────────────────────────────
 
 describe("recordCompletion", () => {
-  it("upserts a Completion row with the correct userId and levelId", async () => {
-    vi.mocked(prisma.completion.upsert).mockResolvedValue({
-      userId: "user-1",
-      levelId: "level-1",
-      completedAt: new Date(),
-    });
+  it("upserts a PlayHistory row with completedAt set", async () => {
+    vi.mocked((prisma as any).playHistory.upsert).mockResolvedValue({});
 
     await recordCompletion("level-1", "user-1");
 
-    expect(prisma.completion.upsert).toHaveBeenCalledWith({
-      where: { userId_levelId: { userId: "user-1", levelId: "level-1" } },
-      create: { userId: "user-1", levelId: "level-1" },
-      update: {},
+    expect((prisma as any).playHistory.upsert).toHaveBeenCalledWith({
+      where:  { userId_levelId: { userId: "user-1", levelId: "level-1" } },
+      create: { userId: "user-1", levelId: "level-1", completedAt: expect.any(Date) },
+      update: { completedAt: expect.any(Date) },
     });
   });
 
   it("is idempotent — completing the same level twice issues the same upsert", async () => {
-    const row = { userId: "user-1", levelId: "level-1", completedAt: new Date() };
-    vi.mocked(prisma.completion.upsert).mockResolvedValue(row);
+    vi.mocked((prisma as any).playHistory.upsert).mockResolvedValue({});
 
     await recordCompletion("level-1", "user-1");
     await recordCompletion("level-1", "user-1");
 
-    expect(prisma.completion.upsert).toHaveBeenCalledTimes(2);
-    expect(prisma.completion.upsert).toHaveBeenNthCalledWith(2, {
-      where: { userId_levelId: { userId: "user-1", levelId: "level-1" } },
-      create: { userId: "user-1", levelId: "level-1" },
-      update: {},
-    });
+    expect((prisma as any).playHistory.upsert).toHaveBeenCalledTimes(2);
   });
 });
 
 // ─── listPublishedLevels ─────────────────────────────────────────────────────
 
 describe("listPublishedLevels", () => {
-  it("returns whatever findMany resolves with", async () => {
-    const levels = [makeLevelWithMeta(), makeLevelWithMeta({ id: "level-2" })];
-    vi.mocked(prisma.level.findMany).mockResolvedValue(levels as any);
-
-    const result = await listPublishedLevels();
-
-    expect(result).toEqual(levels);
-  });
-
   it("queries only published, non-deleted levels", async () => {
     vi.mocked(prisma.level.findMany).mockResolvedValue([]);
 
-    await listPublishedLevels();
+    await listPublishedLevels("user-1");
 
     expect(prisma.level.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { published: true, deletedAt: null } })
     );
+  });
+
+  it("maps playHistory to computed stat fields", async () => {
+    const raw = {
+      ...makeLevel({ published: true }),
+      author: { username: "testuser" },
+      playHistory: [
+        { userId: "user-2", playCount: 3, completedAt: new Date() },
+        { userId: "user-3", playCount: 1, completedAt: null },
+      ],
+    };
+    vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
+
+    const [result] = await listPublishedLevels("user-1");
+
+    expect(result.totalPlays).toBe(4);
+    expect(result.uniquePlayers).toBe(2);
+    expect(result.completedCount).toBe(1);
+    expect(result.playedByMe).toBe(false);
+    expect(result.completedByMe).toBe(false);
+  });
+
+  it("sets playedByMe and completedByMe when the requesting user has a history row", async () => {
+    const raw = {
+      ...makeLevel({ published: true }),
+      author: { username: "testuser" },
+      playHistory: [{ userId: "user-1", playCount: 2, completedAt: new Date() }],
+    };
+    vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
+
+    const [result] = await listPublishedLevels("user-1");
+
+    expect(result.playedByMe).toBe(true);
+    expect(result.completedByMe).toBe(true);
   });
 });
 
@@ -360,20 +389,20 @@ describe("publishLevel", () => {
 // ─── getCompletionHistory ────────────────────────────────────────────────────
 
 describe("getCompletionHistory", () => {
-  it("queries completions for the given user", async () => {
-    vi.mocked(prisma.completion.findMany).mockResolvedValue([]);
+  it("queries PlayHistory for completed levels by the given user", async () => {
+    vi.mocked((prisma as any).playHistory.findMany).mockResolvedValue([]);
 
     await getCompletionHistory("user-1");
 
-    expect(prisma.completion.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: "user-1" } })
+    expect((prisma as any).playHistory.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", completedAt: { not: null } } })
     );
   });
 
-  it("maps completion rows to their nested level objects", async () => {
+  it("maps records to their nested level objects", async () => {
     const level = makeLevelWithMeta();
-    vi.mocked(prisma.completion.findMany).mockResolvedValue([
-      { userId: "user-1", levelId: "level-1", completedAt: new Date(), level } as any,
+    vi.mocked((prisma as any).playHistory.findMany).mockResolvedValue([
+      { id: "ph-1", userId: "user-1", levelId: "level-1", playCount: 1, lastPlayed: new Date(), completedAt: new Date(), level } as any,
     ]);
 
     const result = await getCompletionHistory("user-1");
@@ -383,8 +412,8 @@ describe("getCompletionHistory", () => {
 
   it("includes ghost levels (those with deletedAt set)", async () => {
     const ghostLevel = makeLevelWithMeta({ deletedAt: new Date() });
-    vi.mocked(prisma.completion.findMany).mockResolvedValue([
-      { userId: "user-1", levelId: "level-1", completedAt: new Date(), level: ghostLevel } as any,
+    vi.mocked((prisma as any).playHistory.findMany).mockResolvedValue([
+      { id: "ph-1", userId: "user-1", levelId: "level-1", playCount: 1, lastPlayed: new Date(), completedAt: new Date(), level: ghostLevel } as any,
     ]);
 
     const result = await getCompletionHistory("user-1");

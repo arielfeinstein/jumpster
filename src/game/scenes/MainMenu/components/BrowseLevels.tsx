@@ -23,7 +23,9 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
 
     const filtered = useMemo(() => {
         let result = mockPublishedLevels;
-        // TODO (wiring): fetch from /api/levels?... and apply filters server-side instead
+        // TODO (wiring): fetch once from GET /api/levels (pass auth token); response includes
+        // totalPlays, uniquePlayers, completedCount, playedByMe, completedByMe per level.
+        // Replace mockPublishedLevels with fetched state and remove this mock import.
 
         if (tab === 'history') {
             result = result.filter(l => l.playedByMe);
@@ -89,7 +91,9 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                     onClick={() => setTab('history')}
                 >
                     History
-                    {/* TODO (wiring): fetch from /api/levels/history; replace playedByMe/completedByMe flags */}
+                    {/* TODO (wiring): history tab filters on playedByMe / completedByMe flags
+                        already returned by GET /api/levels — no separate history endpoint needed.
+                        Wire POST /api/levels/:id/play from the play scene on level load to populate playedByMe. */}
                 </button>
             </div>
 

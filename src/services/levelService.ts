@@ -2,12 +2,11 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 
-// Joins author username and completion count onto a level query result.
+// Joins author username onto a level query result.
 // Spread into any findMany/findUnique that needs these fields for display.
 const levelWithMeta = {
   include: {
     author: { select: { username: true } },
-    _count: { select: { completions: true } },
   },
 } as const;
 
@@ -44,26 +43,51 @@ export async function getLevel(id: string, userId: string) {
 }
 
 /**
- * Records that a user has completed a level.
- * Idempotent — completing the same level twice leaves exactly one Completion row.
+ * Records that a user has started playing a level.
+ * Increments playCount and refreshes lastPlayed each call — one row per user-level pair.
  */
-export async function recordCompletion(levelId: string, userId: string) {
-  return prisma.completion.upsert({
-    where: { userId_levelId: { userId, levelId } },
+export async function recordPlay(levelId: string, userId: string) {
+  await prisma.playHistory.upsert({
+    where:  { userId_levelId: { userId, levelId } },
     create: { userId, levelId },
-    update: {},
+    update: { playCount: { increment: 1 }, lastPlayed: new Date() },
   });
 }
 
 /**
- * Returns all published, non-deleted levels with author username and completion count.
- * No server-side filtering — search, sort, and difficulty filtering happen client-side.
+ * Records that a user has completed a level.
+ * Idempotent — sets completedAt on each call (preserving the value is acceptable since
+ * the key semantic is completedAt !== null, not the exact timestamp).
  */
-export async function listPublishedLevels() {
-  return prisma.level.findMany({
-    where: { published: true, deletedAt: null },
-    ...levelWithMeta,
+export async function recordCompletion(levelId: string, userId: string) {
+  await prisma.playHistory.upsert({
+    where:  { userId_levelId: { userId, levelId } },
+    create: { userId, levelId, completedAt: new Date() },
+    update: { completedAt: new Date() },
   });
+}
+
+/**
+ * Returns all published, non-deleted levels enriched with play/completion stats and
+ * per-user flags. All filtering and sorting happens client-side.
+ */
+export async function listPublishedLevels(userId: string) {
+  const levels = await prisma.level.findMany({
+    where: { published: true, deletedAt: null },
+    include: {
+      author:      { select: { username: true } },
+      playHistory: { select: { userId: true, playCount: true, completedAt: true } },
+    },
+  });
+
+  return levels.map(({ playHistory, ...level }) => ({
+    ...level,
+    totalPlays:     playHistory.reduce((sum, h) => sum + h.playCount, 0),
+    uniquePlayers:  playHistory.length,
+    completedCount: playHistory.filter(h => h.completedAt !== null).length,
+    playedByMe:     playHistory.some(h => h.userId === userId),
+    completedByMe:  playHistory.some(h => h.userId === userId && h.completedAt !== null),
+  }));
 }
 
 /**
@@ -95,7 +119,7 @@ export async function deleteLevel(id: string, userId: string) {
   }
   return prisma.level.update({
     where: { id },
-    data: { data: null, deletedAt: new Date() },
+    data: { data: Prisma.DbNull, deletedAt: new Date() },
   });
 }
 
@@ -122,13 +146,11 @@ export async function publishLevel(levelId: string, userId: string) {
  * levels). Ghost levels have deletedAt set — the frontend grays them out as "no longer available."
  */
 export async function getCompletionHistory(userId: string) {
-  const completions = await prisma.completion.findMany({
-    where: { userId },
-    include: {
-      level: { ...levelWithMeta },
-    },
+  const records = await prisma.playHistory.findMany({
+    where:   { userId, completedAt: { not: null } },
+    include: { level: { ...levelWithMeta } },
   });
-  return completions.map((c) => c.level);
+  return records.map(r => r.level);
 }
 
 /**
