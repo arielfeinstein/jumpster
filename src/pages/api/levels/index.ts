@@ -3,24 +3,36 @@ import { getAuthUser } from "@/lib/auth";
 import { handleError, UnauthorizedError, ValidationError } from "@/lib/errors";
 import * as levelService from "@/services/levelService";
 
-// Handles: POST /api/levels
+// Handles: GET /api/levels, POST /api/levels
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "POST") return res.status(405).end();
-
   try {
     const user = await getAuthUser(req);
     if (!user) throw new UnauthorizedError();
 
-    const { title, data } = req.body;
-    if (!title || typeof title !== "string" || title.trim() === "") {
-      throw new ValidationError("title is required");
+    /**
+     * Returns all published, non-deleted levels with author username and completion count.
+     * No server-side filtering — search, sort, and difficulty filtering happen client-side.
+     */
+    if (req.method === "GET") {
+      const levels = await levelService.listPublishedLevels();
+      return res.status(200).json({ levels });
     }
 
-    const level = await levelService.createLevel(user.id, { title: title.trim(), data });
-    return res.status(201).json({ level });
+    /** Creates a new draft level owned by the authenticated user. */
+    if (req.method === "POST") {
+      const { title, data } = req.body;
+      if (!title || typeof title !== "string" || title.trim() === "") {
+        throw new ValidationError("title is required");
+      }
+
+      const level = await levelService.createLevel(user.id, { title: title.trim(), data });
+      return res.status(201).json({ level });
+    }
+
+    return res.status(405).end();
   } catch (err) {
     handleError(err, res);
   }

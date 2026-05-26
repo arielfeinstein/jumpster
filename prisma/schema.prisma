@@ -15,23 +15,35 @@ model User {
   likes       Like[]
   bookmarks   Bookmark[]
   playHistory PlayHistory[]
+  completions Completion[]
 }
 
 model Level {
   id          String        @id @default(cuid())
   title       String
+  // TODO (wiring): expose a difficulty picker in the level editor UI so the creator can change this before publishing
+  difficulty  String        @default("medium")
   data        Json?
   authorId    String
   author      User          @relation(fields: [authorId], references: [id])
   createdAt   DateTime      @default(now())
   views       Int           @default(0)
-  completed   Int           @default(0)
   published    Boolean      @default(false)
   publishedAt  DateTime?
+  // Delete strategy:
+  // - Unpublished level → hard delete (row removed permanently).
+  // - Published level  → soft delete: data = null, deletedAt = now().
+  //   Ghost level behavior by caller:
+  //   | Caller                        | Behavior                                        |
+  //   | Browse / My Levels queries    | WHERE deletedAt IS NULL — ghost never appears   |
+  //   | History / Bookmarks queries   | Included; UI grays it out as "no longer available" |
+  //   | GET /api/levels/:id (play)    | deletedAt IS NOT NULL → 404, no new sessions    |
+  //   | POST /api/levels/:id/complete | Accepted regardless — in-flight sessions must finish |
   deletedAt    DateTime?
   likes       Like[]
   bookmarks   Bookmark[]
   playHistory PlayHistory[]
+  completions Completion[]
 }
 
 model Like {
@@ -39,6 +51,18 @@ model Like {
   levelId String
   user    User   @relation(fields: [userId], references: [id])
   level   Level  @relation(fields: [levelId], references: [id])
+
+  @@id([userId, levelId])
+}
+
+// Records that a user has completed a level. A row existing = completed; no row = hasn't.
+// One record per user-level pair — completing the same level again is a no-op (upsert with empty update).
+model Completion {
+  userId      String
+  levelId     String
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  level       Level    @relation(fields: [levelId], references: [id])
 
   @@id([userId, levelId])
 }
