@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 
 import { EventBus } from '../../EventBus';
+import { LevelData } from '../../shared/types/LevelData';
 
 export class MainMenu extends Scene
 {
@@ -22,17 +23,14 @@ export class MainMenu extends Scene
             .setDepth(-10);
 
         
-        const createLevelHandler = () => {
-            console.log('Create level requested');
-            this.scene.start('Editor');
+        const editLevelHandler = ({ levelId, levelData }: { levelId?: string; levelData?: LevelData }) => {
+            this.scene.start('Editor', { levelId: levelId ?? null, levelData });
         };
 
-        // EventBus listener
-        EventBus.on('create-level', createLevelHandler, this);
+        EventBus.on('main-menu-edit-level', editLevelHandler, this);
 
-        // Close EventBus listener
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            EventBus.off('create-level', createLevelHandler, this);
+            EventBus.off('main-menu-edit-level', editLevelHandler, this);
         });
 
         EventBus.emit('current-scene-ready', this);

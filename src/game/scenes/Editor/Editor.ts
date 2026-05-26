@@ -49,6 +49,9 @@ import { calcBoundingBox } from './utils/GeometryUtils';
 import { BackgroundKey } from '../../shared/types/BackgroundKey';
 import { depthConfig } from './types/EditorTypes';
 import LevelSerializer from '../../shared/serialization/LevelSerializer';
+import { LevelData } from '../../shared/types/LevelData';
+
+const DEFAULT_LEVEL_NAME = 'Untitled';
 
 export class Editor extends Scene {
 
@@ -81,6 +84,10 @@ export class Editor extends Scene {
     /** Number of viewport-height units the world spans (saved for serialisation). */
     worldHeightUnit = 1;
 
+    private levelId: string | null = null;
+    private levelTitle: string = DEFAULT_LEVEL_NAME;
+    private templateLevelData: LevelData | null = null;
+
     private grid!: Phaser.GameObjects.Grid;
 
     // -----------------------------------------------------------------------
@@ -89,6 +96,14 @@ export class Editor extends Scene {
 
     constructor() {
         super('Editor');
+    }
+
+    init(data: { levelId?: string; levelData?: LevelData }): void {
+        this.levelId = data.levelId ?? null;
+        if (data.levelData) {
+            this.templateLevelData = data.levelData;
+            this.levelTitle        = data.levelData.name;
+        }
     }
 
     create(): void {
@@ -175,6 +190,11 @@ export class Editor extends Scene {
         this.wireSelectionZoneEvents();
         this.wireEvents();
 
+        if (this.templateLevelData) {
+            LevelSerializer.deserialize(this.templateLevelData, this, this.entityManager, this.relManager, this.backgroundManager);
+            this.templateLevelData = null;
+        }
+
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -259,14 +279,19 @@ export class Editor extends Scene {
         EventBus.on('editor-undo', () => this.history.undo());
         EventBus.on('editor-redo', () => this.history.redo());
         EventBus.on('editor-save-level', ({ name }: { name: string }) => {
-            const data = LevelSerializer.serialize(
+            const levelData = LevelSerializer.serialize(
                 this.entityManager,
                 this.worldWidthUnit,
                 this.worldHeightUnit,
                 name,
                 this.backgroundManager.currentKey,
             );
-            EventBus.emit('editor-level-saved', data);
+            EventBus.emit('editor-level-saved', { levelId: this.levelId, title: name, levelData });
+            this.scene.start('MainMenu');
+        });
+
+        EventBus.on('editor-request-init', () => {
+            EventBus.emit('editor-initialized', { levelTitle: this.levelTitle });
         });
 
         // Delete button.
@@ -357,6 +382,7 @@ export class Editor extends Scene {
             EventBus.off('editor-set-background');
             EventBus.off('editor-save-level');
             EventBus.off('editor-level-saved');
+            EventBus.off('editor-request-init');
             this.backgroundManager.destroy();
             this.placementController.destroy();
             this.selectionController.destroy();

@@ -10,6 +10,13 @@ interface LevelListProps {
     emptyMessage?: string;
 }
 
+/**
+ * Presentational list of levels.
+ *
+ * Renders each level as a row showing its title, author, age, play/completion
+ * stats, and difficulty badge. Action buttons and optional status badges are
+ * injected by the parent via render props, keeping this component view-only.
+ */
 export default function LevelList({ levels, renderActions, renderBadge, emptyMessage = 'No levels found.' }: LevelListProps) {
     if (levels.length === 0) {
         return <div className={styles.emptyMsg}>{emptyMessage}</div>;
@@ -21,13 +28,13 @@ export default function LevelList({ levels, renderActions, renderBadge, emptyMes
                     <div className={styles.levelInfo}>
                         <span className={styles.levelTitle}>{level.title}</span>
                         <span className={styles.levelMeta}>
-                            by {level.authorName} · {timeAgo(new Date(level.createdAt))}
+                            by {level.author.username} · {timeAgo(new Date(level.createdAt))}
                         </span>
                     </div>
                     {renderBadge && renderBadge(level)}
                     <div className={styles.levelStats}>
-                        <span className={styles.stat}>👁 {level.views}</span>
-                        <span className={styles.stat}>✓ {level.completed}</span>
+                        <span className={styles.stat}>👁 {level.totalPlays}</span>
+                        <span className={styles.stat}>✓ {level.completedCount}</span>
                         <span className={`${styles.stat} ${diffClass(level.difficulty)}`}>
                             {level.difficulty}
                         </span>

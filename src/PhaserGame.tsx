@@ -2,6 +2,7 @@ import React, { forwardRef, useEffect, useLayoutEffect, useRef } from 'react';
 import StartGame from './game/main';
 import { EventBus } from './game/EventBus';
 import { usePlaySessionStats } from './hooks/usePlaySessionStats';
+import { useEditorSave } from './hooks/useEditorSave';
 
 export interface IRefPhaserGame
 {
@@ -19,6 +20,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
 {
     // TODO: consider extracting the useLayoutEffect and useEffect hooks below to src/hooks/
     usePlaySessionStats();
+    useEditorSave();
 
     const game = useRef<Phaser.Game | null>(null!);
 

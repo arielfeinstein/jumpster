@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
-import { mockPublishedLevels } from '@/mocks/levels';
+import { useEffect, useMemo, useState } from 'react';
+import type { Level } from '@/mocks/levels';
+import { apiFetch } from '@/lib/api';
+import { emitEvent } from '@/game/EventBus';
 import styles from '../MainMenuUI.module.css';
 import LevelList from './LevelList';
 
@@ -12,50 +14,82 @@ interface BrowseLevelsProps {
     onBack: () => void;
 }
 
+/**
+ * Full-screen panel that lets the player discover and launch community levels.
+ *
+ * Displays all published levels fetched from the server. The player can search
+ * by title, filter by difficulty, sort by recency or popularity, and switch to
+ * a History tab that shows only levels they have previously played.
+ *
+ * Clicking Play on a level emits a `main-menu-play-level` event so the Phaser
+ * MainMenu scene can transition into the Play scene.
+ */
 export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
-    const [search, setSearch] = useState('');
-    const [sort, setSort] = useState<SortOption>('newest');
-    const [difficulty, setDifficulty] = useState<DifficultyFilter>('all');
-    const [tab, setTab] = useState<Tab>('all');
+    // Remote data
+    const [levels, setLevels]   = useState<Level[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError]     = useState<string | null>(null);
+
+    // Filter / sort controls
+    const [search, setSearch]               = useState('');
+    const [sort, setSort]                   = useState<SortOption>('newest');
+    const [difficulty, setDifficulty]       = useState<DifficultyFilter>('all');
+    const [tab, setTab]                     = useState<Tab>('all');
     const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('all');
-    // TODO (wiring): Replace with emitEvent('main-menu-play-level', { levelId: level.id })
-    const [actionMsg, setActionMsg] = useState<string | null>(null);
 
+    // Fetch all published levels once on mount. The response already includes
+    // per-user flags (playedByMe, completedByMe) so no second request is needed.
+    useEffect(() => {
+        apiFetch('/api/levels')
+            .then(res => {
+                if (!res.ok) throw new Error(`Failed to load levels (${res.status})`);
+                return res.json() as Promise<{ levels: Level[] }>;
+            })
+            .then(({ levels }) => setLevels(levels))
+            .catch(err => setError((err as Error).message))
+            .finally(() => setLoading(false));
+    }, []);
+
+    // Apply tab, search, difficulty, and sort client-side on the full level list.
     const filtered = useMemo(() => {
-        let result = mockPublishedLevels;
-        // TODO (wiring): fetch once from GET /api/levels (pass auth token); response includes
-        // totalPlays, uniquePlayers, completedCount, playedByMe, completedByMe per level.
-        // Replace mockPublishedLevels with fetched state and remove this mock import.
+        let result = levels;
 
+        // History tab: narrow to levels the user has played, then optionally
+        // further narrow to completed or uncompleted.
         if (tab === 'history') {
             result = result.filter(l => l.playedByMe);
             if (historyFilter === 'completed')   result = result.filter(l => l.completedByMe);
             if (historyFilter === 'uncompleted') result = result.filter(l => !l.completedByMe);
         }
 
+        // Title search (case-insensitive substring match).
         if (search.trim()) {
             const q = search.toLowerCase();
             result = result.filter(l => l.title.toLowerCase().includes(q));
         }
 
+        // Difficulty filter.
         if (difficulty !== 'all') {
             result = result.filter(l => l.difficulty === difficulty);
         }
 
-        if (sort === 'mostPlayed')    result = [...result].sort((a, b) => b.views - a.views);
-        if (sort === 'mostCompleted') result = [...result].sort((a, b) => b.completed - a.completed);
+        // Sort — spreads to avoid mutating the filtered reference in place.
+        if (sort === 'mostPlayed')    result = [...result].sort((a, b) => b.totalPlays - a.totalPlays);
+        if (sort === 'mostCompleted') result = [...result].sort((a, b) => b.completedCount - a.completedCount);
         if (sort === 'newest')        result = [...result].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         return result;
-    }, [search, sort, difficulty, tab, historyFilter]);
+    }, [levels, search, sort, difficulty, tab, historyFilter]);
 
     return (
         <div className={styles.contentPanel}>
+            {/* Header */}
             <div className={styles.contentHeader}>
                 <button type="button" className={styles.backButton} onClick={onBack}>{'< Back'}</button>
                 <span className={styles.contentTitle}>BROWSE LEVELS</span>
             </div>
 
+            {/* Search, sort, and difficulty controls */}
             <div className={styles.filterBar}>
                 <input
                     className={styles.searchInput}
@@ -77,6 +111,7 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                 </select>
             </div>
 
+            {/* All / History tab switcher */}
             <div className={styles.tabBar}>
                 <button
                     type="button"
@@ -91,12 +126,13 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                     onClick={() => setTab('history')}
                 >
                     History
-                    {/* TODO (wiring): history tab filters on playedByMe / completedByMe flags
-                        already returned by GET /api/levels — no separate history endpoint needed.
+                    {/* History tab filters on playedByMe / completedByMe flags already returned by
+                        GET /api/levels — no separate history endpoint needed.
                         Wire POST /api/levels/:id/play from the play scene on level load to populate playedByMe. */}
                 </button>
             </div>
 
+            {/* Completed / uncompleted sub-filter — only visible on the History tab */}
             {tab === 'history' && (
                 <div className={styles.historyFilters}>
                     {(['all', 'completed', 'uncompleted'] as HistoryFilter[]).map(f => (
@@ -112,21 +148,24 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                 </div>
             )}
 
-            <LevelList
-                levels={filtered}
-                emptyMessage="No levels match your search."
-                renderActions={level => (
-                    <button
-                        type="button"
-                        className={styles.actionButton}
-                        onClick={() => setActionMsg(`Would play: "${level.title}"`)}
-                    >
-                        Play
-                    </button>
-                )}
-            />
-
-            {actionMsg && <div className={styles.actionMessage}>▶ {actionMsg}</div>}
+            {/* Level list — gated behind loading/error states */}
+            {loading && <div className={styles.emptyMsg}>Loading levels…</div>}
+            {error   && <div className={styles.emptyMsg}>Error: {error}</div>}
+            {!loading && !error && (
+                <LevelList
+                    levels={filtered}
+                    emptyMessage="No levels match your search."
+                    renderActions={level => (
+                        <button
+                            type="button"
+                            className={styles.actionButton}
+                            onClick={() => emitEvent('main-menu-play-level', { levelId: level.id })}
+                        >
+                            Play
+                        </button>
+                    )}
+                />
+            )}
         </div>
     );
 }

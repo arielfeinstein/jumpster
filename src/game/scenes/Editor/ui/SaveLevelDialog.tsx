@@ -19,11 +19,12 @@ const MAX_LENGTH = 50;
 
 interface SaveLevelDialogProps {
     open: boolean;
+    defaultTitle?: string;
     onSave: (name: string) => void;
     onCancel: () => void;
 }
 
-export default function SaveLevelDialog({ open, onSave, onCancel }: SaveLevelDialogProps) {
+export default function SaveLevelDialog({ open, defaultTitle, onSave, onCancel }: SaveLevelDialogProps) {
     const [name, setName] = useState('');
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +32,7 @@ export default function SaveLevelDialog({ open, onSave, onCancel }: SaveLevelDia
     // Focus input when dialog opens and reset state.
     useEffect(() => {
         if (open) {
-            setName('');
+            setName(defaultTitle ?? '');
             setError(null);
             // Delay focus so Radix has time to mount the content.
             setTimeout(() => inputRef.current?.focus(), 50);

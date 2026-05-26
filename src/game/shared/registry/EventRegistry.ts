@@ -1,10 +1,12 @@
 /**
  * EventBusRegistry
- * 
+ *
  * Central contract for all Phaser <-> React communication via the EventBus.
  * Keys are the exact string names of the events.
  * Values are the expected payload structures.
  */
+import { LevelData } from '../types/LevelData';
+
 export interface EventBusRegistry {
     // ─── Play Scene ─────────────────────────────────────────────────────────────
     
@@ -82,11 +84,30 @@ export interface EventBusRegistry {
     'main-menu-play-level': { levelId: string };
 
     /**
-     * Emitted by React (MainMenu UI) when the user clicks Edit or creates a new level.
-     * Pass an empty string for levelId when creating a fresh level.
-     * TODO (wiring): Add listener in MainMenu.ts → scene.start('Editor', { levelId }).
+     * Emitted by React (MainMenu UI) when the user clicks Edit or creates a new/template level.
+     * levelId present → edit existing draft. Absent → new level or template (Editor POSTs on save).
+     * levelData present → pre-load this data into the editor (template or existing level layout).
      */
-    'main-menu-edit-level': { levelId: string };
+    'main-menu-edit-level': { levelId?: string; levelData?: LevelData };
+
+    /**
+     * Emitted by EditorUI on mount to request init data from the Editor scene.
+     * Needed because editor-initialized fires during create() before React has mounted EditorUI.
+     */
+    'editor-request-init': Record<string, never>;
+
+    /**
+     * Emitted by Editor.ts in response to editor-request-init.
+     * Carries the level title so EditorUI can pre-fill the save dialog.
+     */
+    'editor-initialized': { levelTitle: string };
+
+    /**
+     * Emitted by Editor.ts after serializing the level, immediately before scene.start('MainMenu').
+     * The persistent useEditorSave hook catches this and fires the API call in the background.
+     * levelId null → POST new record. levelId set → PATCH existing record.
+     */
+    'editor-level-saved': { levelId: string | null; title: string; levelData: LevelData };
 }
 
 export type EventName = keyof EventBusRegistry;

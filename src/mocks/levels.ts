@@ -2,13 +2,12 @@ export type Level = {
     id: string;
     title: string;
     difficulty: 'easy' | 'medium' | 'hard';
-    views: number;
-    completed: number;
-    authorName: string;
+    totalPlays: number;
+    uniquePlayers: number;
+    completedCount: number;
+    author: { username: string };
     published: boolean;
     createdAt: string;
-    // Flags used to populate Browse → History tab until real API is wired.
-    // TODO (wiring): derive these from /api/levels/history response instead.
     playedByMe: boolean;
     completedByMe: boolean;
 };
@@ -18,15 +17,16 @@ const hoursAgo = (h: number) => new Date(now - h * 3600_000).toISOString();
 const daysAgo  = (d: number) => hoursAgo(d * 24);
 
 // Published levels shown in Browse view.
-// TODO (wiring): replace with apiFetch('/api/levels?...') in BrowseLevels.tsx.
+// TODO (wiring): replaced by apiFetch('/api/levels') in BrowseLevels.tsx — remove once MyLevels/CreateLevel are also wired.
 export const mockPublishedLevels: Level[] = [
     {
         id: 'pub-1',
         title: 'Grassland Beginnings',
         difficulty: 'easy',
-        views: 342,
-        completed: 280,
-        authorName: 'BlockBuster42',
+        totalPlays: 342,
+        uniquePlayers: 290,
+        completedCount: 280,
+        author: { username: 'BlockBuster42' },
         published: true,
         createdAt: daysAgo(14),
         playedByMe: true,
@@ -36,9 +36,10 @@ export const mockPublishedLevels: Level[] = [
         id: 'pub-2',
         title: 'Caverns of Echoes',
         difficulty: 'medium',
-        views: 93,
-        completed: 31,
-        authorName: 'BlockBuster42',
+        totalPlays: 93,
+        uniquePlayers: 40,
+        completedCount: 31,
+        author: { username: 'BlockBuster42' },
         published: true,
         createdAt: daysAgo(3),
         playedByMe: true,
@@ -48,9 +49,10 @@ export const mockPublishedLevels: Level[] = [
         id: 'pub-3',
         title: 'Skybridge Sprint',
         difficulty: 'hard',
-        views: 210,
-        completed: 18,
-        authorName: 'PixelAriel',
+        totalPlays: 210,
+        uniquePlayers: 25,
+        completedCount: 18,
+        author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(5),
         playedByMe: false,
@@ -60,9 +62,10 @@ export const mockPublishedLevels: Level[] = [
         id: 'pub-4',
         title: 'Nether Trial Alpha',
         difficulty: 'hard',
-        views: 55,
-        completed: 4,
-        authorName: 'BlockBuster42',
+        totalPlays: 55,
+        uniquePlayers: 6,
+        completedCount: 4,
+        author: { username: 'BlockBuster42' },
         published: true,
         createdAt: hoursAgo(2),
         playedByMe: false,
@@ -72,9 +75,10 @@ export const mockPublishedLevels: Level[] = [
         id: 'pub-5',
         title: 'Rolling Hills',
         difficulty: 'easy',
-        views: 128,
-        completed: 74,
-        authorName: 'BlockBuster42',
+        totalPlays: 128,
+        uniquePlayers: 80,
+        completedCount: 74,
+        author: { username: 'BlockBuster42' },
         published: true,
         createdAt: daysAgo(2),
         playedByMe: true,
@@ -84,9 +88,10 @@ export const mockPublishedLevels: Level[] = [
         id: 'pub-6',
         title: 'The Crystal Maze',
         difficulty: 'medium',
-        views: 167,
-        completed: 88,
-        authorName: 'PixelAriel',
+        totalPlays: 167,
+        uniquePlayers: 95,
+        completedCount: 88,
+        author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(2),
         playedByMe: false,
@@ -101,9 +106,10 @@ export const mockMyLevels: Level[] = [
         id: 'my-1',
         title: 'Skybridge Sprint',
         difficulty: 'hard',
-        views: 210,
-        completed: 18,
-        authorName: 'PixelAriel',
+        totalPlays: 210,
+        uniquePlayers: 25,
+        completedCount: 18,
+        author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(5),
         playedByMe: false,
@@ -113,9 +119,10 @@ export const mockMyLevels: Level[] = [
         id: 'my-2',
         title: 'The Crystal Maze',
         difficulty: 'medium',
-        views: 167,
-        completed: 88,
-        authorName: 'PixelAriel',
+        totalPlays: 167,
+        uniquePlayers: 95,
+        completedCount: 88,
+        author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(2),
         playedByMe: false,
@@ -125,9 +132,10 @@ export const mockMyLevels: Level[] = [
         id: 'my-3',
         title: 'Lava Labyrinth',
         difficulty: 'hard',
-        views: 0,
-        completed: 0,
-        authorName: 'PixelAriel',
+        totalPlays: 0,
+        uniquePlayers: 0,
+        completedCount: 0,
+        author: { username: 'PixelAriel' },
         published: false,
         createdAt: hoursAgo(0.5),
         playedByMe: false,
@@ -137,9 +145,10 @@ export const mockMyLevels: Level[] = [
         id: 'my-4',
         title: 'Bouncy Boulders WIP',
         difficulty: 'medium',
-        views: 0,
-        completed: 0,
-        authorName: 'PixelAriel',
+        totalPlays: 0,
+        uniquePlayers: 0,
+        completedCount: 0,
+        author: { username: 'PixelAriel' },
         published: false,
         createdAt: daysAgo(1),
         playedByMe: false,

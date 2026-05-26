@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { mockMyLevels, type Level } from '@/mocks/levels';
+import { EventBus } from '@/game/EventBus';
+import { apiFetch } from '@/lib/api';
+import type { LevelData } from '@/game/shared/types/LevelData';
 import styles from '../MainMenuUI.module.css';
 import LevelList from './LevelList';
 
@@ -24,15 +27,18 @@ export default function MyLevels({ onBack }: MyLevelsProps) {
         setActionMsg(`Deleted: "${title}"`);
     }
 
-    function handleEdit(level: Level) {
-        // TODO (wiring): Replace with emitEvent('main-menu-edit-level', { levelId: level.id })
-        setActionMsg(`Would edit: "${level.title}"`);
+    async function handleEdit(level: Level) {
+        const res = await apiFetch(`/api/levels/${level.id}`);
+        if (!res.ok) { console.error('[MyLevels] failed to load level'); return; }
+        const { level: loaded } = await res.json();
+        EventBus.emit('main-menu-edit-level', { levelId: level.id, levelData: loaded.data as LevelData });
     }
 
-    function handleTemplate(level: Level) {
-        // TODO (wiring): fetch source level data via GET /api/levels/:id, then emitEvent('main-menu-edit-level', { levelId: '', templateData: data })
-        // — no server-side duplicate; the editor receives the data as a starting point and POST /api/levels creates a new unrelated level on save
-        setActionMsg(`Would use as template: "${level.title}"`);
+    async function handleTemplate(level: Level) {
+        const res = await apiFetch(`/api/levels/${level.id}`);
+        if (!res.ok) { console.error('[MyLevels] failed to load template'); return; }
+        const { level: loaded } = await res.json();
+        EventBus.emit('main-menu-edit-level', { levelData: loaded.data as LevelData });
     }
 
     return (

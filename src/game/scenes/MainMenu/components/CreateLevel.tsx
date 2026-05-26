@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { mockMyLevels } from '@/mocks/levels';
+import { mockMyLevels, type Level } from '@/mocks/levels';
+import { EventBus } from '@/game/EventBus';
+import { apiFetch } from '@/lib/api';
+import type { LevelData } from '@/game/shared/types/LevelData';
 import styles from '../MainMenuUI.module.css';
 import LevelList from './LevelList';
 
@@ -11,19 +14,16 @@ type Mode = 'choice' | 'picker';
 
 export default function CreateLevel({ onBack }: CreateLevelProps) {
     const [mode, setMode] = useState<Mode>('choice');
-    const [actionMsg, setActionMsg] = useState<string | null>(null);
 
     function handleNewLevel() {
-        // TODO (wiring): Replace with emitEvent('main-menu-edit-level', { levelId: '' })
-        setActionMsg('Would open editor for a new level');
+        EventBus.emit('main-menu-edit-level', {});
     }
 
-    function handleSelectTemplate(title: string) {
-        // TODO (wiring): fetch source level data via GET /api/levels/:id,
-        //   then emitEvent('main-menu-edit-level', { levelId: '', templateData: data })
-        //   — no server-side duplicate; editor creates a new unrelated level via POST /api/levels on save
-        setActionMsg(`Would use "${title}" as template`);
-        setMode('choice');
+    async function handleSelectTemplate(level: Level) {
+        const res = await apiFetch(`/api/levels/${level.id}`);
+        if (!res.ok) { console.error('[CreateLevel] failed to load template'); return; }
+        const { level: loaded } = await res.json();
+        EventBus.emit('main-menu-edit-level', { levelData: loaded.data as LevelData });
     }
 
     if (mode === 'picker') {
@@ -45,13 +45,12 @@ export default function CreateLevel({ onBack }: CreateLevelProps) {
                         <button
                             type="button"
                             className={styles.actionButton}
-                            onClick={() => handleSelectTemplate(level.title)}
+                            onClick={() => handleSelectTemplate(level)}
                         >
                             Select
                         </button>
                     )}
                 />
-                {actionMsg && <div className={styles.actionMessage}>▶ {actionMsg}</div>}
             </div>
         );
     }
@@ -70,7 +69,6 @@ export default function CreateLevel({ onBack }: CreateLevelProps) {
                 <button type="button" className={styles.menuButton} onClick={() => setMode('picker')}>
                     Use as Template
                 </button>
-                {actionMsg && <div className={styles.actionMessage}>▶ {actionMsg}</div>}
             </div>
         </div>
     );

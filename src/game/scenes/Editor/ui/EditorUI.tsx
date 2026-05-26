@@ -28,8 +28,6 @@ import {
     StartPlacementPayload,
     SpriteFrame,
 } from '../types/DockTypes';
-import type { LevelData } from '../../../shared/types/LevelData';
-import { apiFetch } from '@/lib/api';
 import ConfirmationDialog from './ConfirmationDialog';
 import SaveLevelDialog from './SaveLevelDialog';
 import styles from './EditorUI.module.css';
@@ -42,10 +40,8 @@ export default function EditorUI() {
     const [dockPosition, setDockPosition] = useState<DockPosition>('bottom');
     const [placementActive, setPlacementActive] = useState(false);
 
-    // Tracks the persisted level so we know whether to POST (create) or PATCH (update).
-    // Using refs instead of state because the UI doesn't need to re-render on change.
-    const levelIdRef    = useRef<string | null>(null);
-    const levelTitleRef = useRef<string>('');
+    // Holds the default title to pre-fill the save dialog (set via editor-initialized handshake).
+    const defaultLevelTitleRef = useRef('');
 
     // Listen for placement state changes emitted by PlacementController.
     useEffect(() => {
@@ -59,34 +55,15 @@ export default function EditorUI() {
     // Save level dialog state.
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
-    // Listen for serialized level data emitted by Editor.ts, then persist to the API.
+    // Handshake: emit editor-request-init on mount so Editor.ts can send back the level title.
+    // Needed because editor-initialized fires during create() before EditorUI has mounted.
     useEffect(() => {
-        const handler = async (data: LevelData) => {
-            try {
-                if (!levelIdRef.current) {
-                    // First save — create the level and store the returned ID.
-                    const res = await apiFetch('/api/levels', {
-                        method: 'POST',
-                        body: JSON.stringify({ title: data.name, data }),
-                    });
-                    if (!res.ok) throw new Error(await res.text());
-                    const { level } = await res.json();
-                    levelIdRef.current    = level.id;
-                    levelTitleRef.current = data.name;
-                } else {
-                    // Subsequent save — update the existing level's layout data.
-                    const res = await apiFetch(`/api/levels/${levelIdRef.current}`, {
-                        method: 'PATCH',
-                        body: JSON.stringify({ data }),
-                    });
-                    if (!res.ok) throw new Error(await res.text());
-                }
-            } catch (err) {
-                console.error('Save failed:', err);
-            }
+        const handler = ({ levelTitle }: { levelTitle: string }) => {
+            defaultLevelTitleRef.current = levelTitle;
         };
-        EventBus.on('editor-level-saved', handler);
-        return () => { EventBus.off('editor-level-saved', handler); };
+        EventBus.on('editor-initialized', handler);
+        EventBus.emit('editor-request-init', {});
+        return () => { EventBus.off('editor-initialized', handler); };
     }, []);
 
     // Confirmation dialog state (driven by 'editor-confirm-dialog' events).
@@ -123,14 +100,8 @@ export default function EditorUI() {
         EventBus.emit('editor-save-level', { name });
     }, []);
 
-    // First save opens the naming dialog. Subsequent saves skip it — the level
-    // already has a title and we just PATCH the updated layout data silently.
     const handleOpenSaveDialog = useCallback(() => {
-        if (levelIdRef.current) {
-            EventBus.emit('editor-save-level', { name: levelTitleRef.current });
-        } else {
-            setSaveDialogOpen(true);
-        }
+        setSaveDialogOpen(true);
     }, []);
 
     const cycleDockPosition = useCallback(() => {
@@ -170,6 +141,7 @@ export default function EditorUI() {
             )}
             <SaveLevelDialog
                 open={saveDialogOpen}
+                defaultTitle={defaultLevelTitleRef.current}
                 onSave={handleSaveLevel}
                 onCancel={() => setSaveDialogOpen(false)}
             />
