@@ -10,6 +10,36 @@ const levelWithMeta = {
   },
 } as const;
 
+// Select clause for list queries that need per-user play/completion stats.
+// Uses select (not include) so only explicitly listed fields reach the caller —
+// prevents leaking authorId, data, publishedAt, deletedAt over the wire.
+const levelWithStatsSelect = {
+  select: {
+    id:          true,
+    title:       true,
+    difficulty:  true,
+    published:   true,
+    createdAt:   true,
+    author:      { select: { username: true } },
+    playHistory: { select: { userId: true, playCount: true, completedAt: true } },
+  },
+} as const;
+
+// Maps a raw DB row (with playHistory) to the display shape consumed by the frontend.
+function withStats<T extends { playHistory: Array<{ userId: string; playCount: number; completedAt: Date | null }> }>(
+  level: T,
+  userId: string
+) {
+  const { playHistory, ...rest } = level;
+  return {
+    ...rest,
+    totalPlays:     playHistory.reduce((sum, h) => sum + h.playCount, 0),
+    completedCount: playHistory.filter(h => h.completedAt !== null).length,
+    playedByMe:     playHistory.some(h => h.userId === userId),
+    completedByMe:  playHistory.some(h => h.userId === userId && h.completedAt !== null),
+  };
+}
+
 /**
  * Creates a new draft level owned by the given user.
  * Optionally persists the initial layout data so the first save is one round-trip.
@@ -74,20 +104,9 @@ export async function recordCompletion(levelId: string, userId: string) {
 export async function listPublishedLevels(userId: string) {
   const levels = await prisma.level.findMany({
     where: { published: true, deletedAt: null },
-    include: {
-      author:      { select: { username: true } },
-      playHistory: { select: { userId: true, playCount: true, completedAt: true } },
-    },
+    ...levelWithStatsSelect,
   });
-
-  return levels.map(({ playHistory, ...level }) => ({
-    ...level,
-    totalPlays:     playHistory.reduce((sum, h) => sum + h.playCount, 0),
-    uniquePlayers:  playHistory.length,
-    completedCount: playHistory.filter(h => h.completedAt !== null).length,
-    playedByMe:     playHistory.some(h => h.userId === userId),
-    completedByMe:  playHistory.some(h => h.userId === userId && h.completedAt !== null),
-  }));
+  return levels.map(l => withStats(l, userId));
 }
 
 /**
@@ -96,10 +115,11 @@ export async function listPublishedLevels(userId: string) {
  * DRAFT/PUBLISHED badges and show the correct action buttons.
  */
 export async function listMyLevels(userId: string) {
-  return prisma.level.findMany({
+  const levels = await prisma.level.findMany({
     where: { authorId: userId, deletedAt: null },
-    ...levelWithMeta,
+    ...levelWithStatsSelect,
   });
+  return levels.map(l => withStats(l, userId));
 }
 
 /**

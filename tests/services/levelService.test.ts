@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import { Prisma } from "@prisma/client";
 import type { Level } from "@prisma/client";
 
 // Replace the real Prisma client with a lightweight mock before any test runs.
@@ -51,6 +52,16 @@ function makeLevelWithMeta(overrides: Partial<Level> = {}) {
   return {
     ...makeLevel(overrides),
     author: { username: "testuser" },
+  };
+}
+
+// Builds a level as returned by queries that spread levelWithStatsSelect —
+// includes author username and an empty playHistory ready for withStats mapping.
+function makeLevelWithStats(overrides: Partial<Level> = {}) {
+  return {
+    ...makeLevel(overrides),
+    author: { username: "testuser" },
+    playHistory: [] as Array<{ userId: string; playCount: number; completedAt: Date | null }>,
   };
 }
 
@@ -249,7 +260,6 @@ describe("listPublishedLevels", () => {
     const [result] = await listPublishedLevels("user-1");
 
     expect(result.totalPlays).toBe(4);
-    expect(result.uniquePlayers).toBe(2);
     expect(result.completedCount).toBe(1);
     expect(result.playedByMe).toBe(false);
     expect(result.completedByMe).toBe(false);
@@ -273,15 +283,6 @@ describe("listPublishedLevels", () => {
 // ─── listMyLevels ────────────────────────────────────────────────────────────
 
 describe("listMyLevels", () => {
-  it("returns the user's levels", async () => {
-    const levels = [makeLevelWithMeta()];
-    vi.mocked(prisma.level.findMany).mockResolvedValue(levels as any);
-
-    const result = await listMyLevels("user-1");
-
-    expect(result).toEqual(levels);
-  });
-
   it("queries only the given user's non-deleted levels", async () => {
     vi.mocked(prisma.level.findMany).mockResolvedValue([]);
 
@@ -290,6 +291,36 @@ describe("listMyLevels", () => {
     expect(prisma.level.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { authorId: "user-1", deletedAt: null } })
     );
+  });
+
+  it("maps playHistory to computed stat fields", async () => {
+    const raw = {
+      ...makeLevelWithStats(),
+      playHistory: [
+        { userId: "user-2", playCount: 2, completedAt: new Date() },
+        { userId: "user-1", playCount: 1, completedAt: new Date() },
+      ],
+    };
+    vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
+
+    const [result] = await listMyLevels("user-1");
+
+    expect(result.totalPlays).toBe(3);
+    expect(result.completedCount).toBe(2);
+    expect(result.playedByMe).toBe(true);
+    expect(result.completedByMe).toBe(true);
+    expect(result).not.toHaveProperty("playHistory");
+  });
+
+  it("returns zero stats and false flags for a level with no plays", async () => {
+    vi.mocked(prisma.level.findMany).mockResolvedValue([makeLevelWithStats()] as any);
+
+    const [result] = await listMyLevels("user-1");
+
+    expect(result.totalPlays).toBe(0);
+    expect(result.completedCount).toBe(0);
+    expect(result.playedByMe).toBe(false);
+    expect(result.completedByMe).toBe(false);
   });
 });
 
@@ -332,7 +363,7 @@ describe("deleteLevel", () => {
 
     expect(prisma.level.update).toHaveBeenCalledWith({
       where: { id: "level-1" },
-      data: expect.objectContaining({ data: null, deletedAt: expect.any(Date) }),
+      data: expect.objectContaining({ data: Prisma.DbNull, deletedAt: expect.any(Date) }),
     });
     expect(prisma.level.delete).not.toHaveBeenCalled();
   });

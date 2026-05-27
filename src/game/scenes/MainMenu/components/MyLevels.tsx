@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { mockMyLevels, type Level } from '@/mocks/levels';
+import { useState, useEffect } from 'react';
+import { type Level } from '@/mocks/levels';
 import { EventBus } from '@/game/EventBus';
 import { apiFetch } from '@/lib/api';
 import type { LevelData } from '@/game/shared/types/LevelData';
@@ -11,18 +11,27 @@ interface MyLevelsProps {
 }
 
 export default function MyLevels({ onBack }: MyLevelsProps) {
-    // TODO (wiring): replace initial state with apiFetch('/api/levels/mine')
-    const [levels, setLevels] = useState<Level[]>(mockMyLevels);
+    const [levels, setLevels] = useState<Level[]>([]);
+    const [loading, setLoading] = useState(true);
     const [actionMsg, setActionMsg] = useState<string | null>(null);
 
-    function handlePublish(id: string) {
-        // TODO (wiring): call POST /api/levels/:id/publish before updating state
+    useEffect(() => {
+        apiFetch('/api/levels/mine')
+            .then(res => res.json())
+            .then(({ levels }) => setLevels(levels))
+            .finally(() => setLoading(false));
+    }, []);
+
+    async function handlePublish(id: string) {
+        const res = await apiFetch(`/api/levels/${id}/publish`, { method: 'POST' });
+        if (!res.ok) { setActionMsg('Failed to publish level.'); return; }
         setLevels(prev => prev.map(l => l.id === id ? { ...l, published: true } : l));
-        setActionMsg(null);
+        setActionMsg('Level published!');
     }
 
-    function handleDelete(id: string, title: string) {
-        // TODO (wiring): call DELETE /api/levels/:id before removing from state
+    async function handleDelete(id: string, title: string) {
+        const res = await apiFetch(`/api/levels/${id}`, { method: 'DELETE' });
+        if (!res.ok) { setActionMsg('Failed to delete level.'); return; }
         setLevels(prev => prev.filter(l => l.id !== id));
         setActionMsg(`Deleted: "${title}"`);
     }
@@ -48,7 +57,8 @@ export default function MyLevels({ onBack }: MyLevelsProps) {
                 <span className={styles.contentTitle}>MY LEVELS</span>
             </div>
 
-            <LevelList
+            {loading && <div className={styles.spinner} />}
+            {!loading && <LevelList
                 levels={levels}
                 emptyMessage="You have no levels yet."
                 renderBadge={level => (
@@ -80,7 +90,7 @@ export default function MyLevels({ onBack }: MyLevelsProps) {
                         </button>
                     </>
                 )}
-            />
+            />}
 
             {actionMsg && <div className={styles.actionMessage}>▶ {actionMsg}</div>}
         </div>
