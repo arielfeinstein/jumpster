@@ -1,5 +1,5 @@
-import { useReducer, useEffect, useState } from 'react';
-import { getCurrentUser } from '@/lib/supabase';
+import { useReducer } from 'react';
+import { useUser } from '@/hooks/useUser';
 import styles from './MainMenuUI.module.css';
 import BrowseLevels from './components/BrowseLevels';
 import MyLevels from './components/MyLevels';
@@ -20,14 +20,7 @@ function navReducer(stack: View[], action: NavAction): View[] {
 export default function MainMenuUI() {
     const [stack, dispatch] = useReducer(navReducer, ['home' as View]);
     const current = stack[stack.length - 1];
-    const [username, setUsername] = useState<string | null>(null);
-
-    useEffect(() => {
-        getCurrentUser().then((user) => {
-            if (user === null) console.error('MainMenuUI: no authenticated user');
-            setUsername(user?.username ?? null);
-        });
-    }, []);
+    const { user } = useUser();
 
     const push = (view: View) => dispatch({ type: 'push', view });
     const back = () => dispatch({ type: 'back' });
@@ -37,7 +30,7 @@ export default function MainMenuUI() {
             {current === 'home' && (
                 <div className={styles.homePanel}>
                     <div className={styles.logo}>JUMPSTER</div>
-                    <div className={styles.greeting}>Hello, {username ?? '...'}!</div>
+                    <div className={styles.greeting}>Hello, {user?.username ?? '...'}!</div>
                     <div className={styles.homeButtons}>
                         <button type="button" className={styles.menuButton} onClick={() => push('browse')}>
                             Browse Levels

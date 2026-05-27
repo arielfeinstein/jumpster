@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { supabase, getCurrentUser, type CurrentUser } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/hooks/useUser';
 import styles from '../MainMenuUI.module.css';
 
 interface SettingsProps {
@@ -7,11 +7,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ onBack }: SettingsProps) {
-    const [user, setUser] = useState<CurrentUser | null>(null);
-
-    useEffect(() => {
-        getCurrentUser().then(setUser);
-    }, []);
+    const { user } = useUser();
 
     async function handleLogout() {
         const { error } = await supabase.auth.signOut();
