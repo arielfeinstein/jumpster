@@ -1,5 +1,5 @@
-import { useReducer } from 'react';
-import { mockCurrentUser } from '@/mocks/users';
+import { useReducer, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import styles from './MainMenuUI.module.css';
 import BrowseLevels from './components/BrowseLevels';
 import MyLevels from './components/MyLevels';
@@ -20,6 +20,13 @@ function navReducer(stack: View[], action: NavAction): View[] {
 export default function MainMenuUI() {
     const [stack, dispatch] = useReducer(navReducer, ['home' as View]);
     const current = stack[stack.length - 1];
+    const [username, setUsername] = useState<string | null>(null);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUsername(session?.user.user_metadata.username ?? null);
+        });
+    }, []);
 
     const push = (view: View) => dispatch({ type: 'push', view });
     const back = () => dispatch({ type: 'back' });
@@ -29,8 +36,7 @@ export default function MainMenuUI() {
             {current === 'home' && (
                 <div className={styles.homePanel}>
                     <div className={styles.logo}>JUMPSTER</div>
-                    {/* TODO (wiring): replace with real username from supabase.auth.getSession() */}
-                    <div className={styles.greeting}>Hello, {mockCurrentUser.username}!</div>
+                    <div className={styles.greeting}>Hello, {username ?? '...'}!</div>
                     <div className={styles.homeButtons}>
                         <button type="button" className={styles.menuButton} onClick={() => push('browse')}>
                             Browse Levels
