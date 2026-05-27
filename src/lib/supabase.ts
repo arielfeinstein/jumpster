@@ -9,3 +9,9 @@ export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+/** Returns the username of the currently authenticated user, or null if not signed in. */
+export async function getCurrentUsername(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user.user_metadata.username ?? null;
+}
