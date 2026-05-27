@@ -1,4 +1,5 @@
-import { mockCurrentUser } from '@/mocks/users';
+import { useEffect, useState } from 'react';
+import { supabase, getCurrentUser, type CurrentUser } from '@/lib/supabase';
 import styles from '../MainMenuUI.module.css';
 
 interface SettingsProps {
@@ -6,9 +7,20 @@ interface SettingsProps {
 }
 
 export default function Settings({ onBack }: SettingsProps) {
-    function handleLogout() {
-        // TODO (wiring): call supabase.auth.signOut() then redirect to /login
-        console.log('Logout clicked — not wired yet');
+    const [user, setUser] = useState<CurrentUser | null>(null);
+
+    useEffect(() => {
+        getCurrentUser().then(setUser);
+    }, []);
+
+    async function handleLogout() {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Logout failed:', error.message);
+        } else {
+            console.log('Logout successful');
+        }
+        window.location.href = '/login';
     }
 
     return (
@@ -19,12 +31,11 @@ export default function Settings({ onBack }: SettingsProps) {
             </div>
             <div className={styles.settingsBody}>
                 <div className={styles.settingsInfo}>
-                    {/* TODO (wiring): replace mockCurrentUser with real session from supabase.auth.getSession() */}
                     <div><span className={styles.settingsLabel}>Username</span></div>
-                    <div>{mockCurrentUser.username}</div>
+                    <div>{user?.username ?? '...'}</div>
                     <br />
                     <div><span className={styles.settingsLabel}>Email</span></div>
-                    <div>{mockCurrentUser.email}</div>
+                    <div>{user?.email ?? '...'}</div>
                 </div>
                 <button type="button" className={styles.menuButton} onClick={handleLogout}>
                     Log Out

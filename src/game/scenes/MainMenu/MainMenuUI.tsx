@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useState } from 'react';
-import { getCurrentUsername } from '@/lib/supabase';
+import { getCurrentUser } from '@/lib/supabase';
 import styles from './MainMenuUI.module.css';
 import BrowseLevels from './components/BrowseLevels';
 import MyLevels from './components/MyLevels';
@@ -23,9 +23,9 @@ export default function MainMenuUI() {
     const [username, setUsername] = useState<string | null>(null);
 
     useEffect(() => {
-        getCurrentUsername().then((name) => {
-            if (name === null) console.error('MainMenuUI: no authenticated user');
-            setUsername(name);
+        getCurrentUser().then((user) => {
+            if (user === null) console.error('MainMenuUI: no authenticated user');
+            setUsername(user?.username ?? null);
         });
     }, []);
 
