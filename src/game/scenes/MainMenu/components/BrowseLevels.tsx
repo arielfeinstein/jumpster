@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Level } from '@/mocks/levels';
 import { apiFetch } from '@/lib/api';
 import { emitEvent } from '@/game/EventBus';
+import type { LevelData } from '@/game/shared/types/LevelData';
 import styles from '../MainMenuUI.module.css';
 import LevelList from './LevelList';
 
@@ -81,6 +82,13 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
         return result;
     }, [levels, search, sort, difficulty, tab, historyFilter]);
 
+    async function handlePlay(levelId: string) {
+        const res = await apiFetch(`/api/levels/${levelId}`);
+        if (!res.ok) { console.error('[BrowseLevels] failed to load level'); return; }
+        const { level } = await res.json();
+        emitEvent('main-menu-play-level', { levelId, levelData: level.data as LevelData });
+    }
+
     return (
         <div className={styles.contentPanel}>
             {/* Header */}
@@ -159,7 +167,7 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                         <button
                             type="button"
                             className={styles.actionButton}
-                            onClick={() => emitEvent('main-menu-play-level', { levelId: level.id })}
+                            onClick={() => handlePlay(level.id)}
                         >
                             Play
                         </button>

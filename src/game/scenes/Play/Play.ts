@@ -230,6 +230,7 @@ export class Play extends Scene {
 
     private emitReady(): void {
         emitEvent('play-ready', {
+            levelId: this.sceneData.levelId,
             levelName: this.sceneData.levelData.name || 'Untitled Level',
             hp: this.healthManager.getHp(),
             maxHp: this.healthManager.getMaxHp(),

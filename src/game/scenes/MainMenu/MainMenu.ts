@@ -29,8 +29,15 @@ export class MainMenu extends Scene
 
         EventBus.on('main-menu-edit-level', editLevelHandler, this);
 
+        const playLevelHandler = ({ levelId, levelData }: { levelId: string; levelData: LevelData }) => {
+            this.scene.start('Play', { levelId, levelData });
+        };
+
+        EventBus.on('main-menu-play-level', playLevelHandler, this);
+
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('main-menu-edit-level', editLevelHandler, this);
+            EventBus.off('main-menu-play-level', playLevelHandler, this);
         });
 
         EventBus.emit('current-scene-ready', this);

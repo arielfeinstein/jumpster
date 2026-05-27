@@ -35,6 +35,7 @@ export interface EventBusRegistry {
     /** Emitted once when the level is fully loaded and ready to play.
      * Use this to initialize the HUD state. */
     'play-ready': {
+        levelId: string;
         levelName: string;
         hp: number;
         maxHp: number;
@@ -78,10 +79,9 @@ export interface EventBusRegistry {
 
     /**
      * Emitted by React (MainMenu UI) when the user clicks Play on a level.
-     * TODO (wiring): Add listener in MainMenu.ts → scene.start('Play', { levelId, levelData }).
-     * Note: Play scene will need to accept both levelId and full level data JSON from scene data.
+     * Carries the full levelData so MainMenu.ts can pass it directly to the Play scene.
      */
-    'main-menu-play-level': { levelId: string };
+    'main-menu-play-level': { levelId: string; levelData: LevelData };
 
     /**
      * Emitted by React (MainMenu UI) when the user clicks Edit or creates a new/template level.
