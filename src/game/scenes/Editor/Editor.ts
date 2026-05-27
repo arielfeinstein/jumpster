@@ -381,7 +381,6 @@ export class Editor extends Scene {
             EventBus.off('editor-change-dimensions');
             EventBus.off('editor-set-background');
             EventBus.off('editor-save-level');
-            EventBus.off('editor-level-saved');
             EventBus.off('editor-request-init');
             this.backgroundManager.destroy();
             this.placementController.destroy();
