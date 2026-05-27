@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { mockMyLevels, type Level } from '@/mocks/levels';
+import { useState, useEffect } from 'react';
+import { type Level } from '@/mocks/levels';
 import { EventBus } from '@/game/EventBus';
 import { apiFetch } from '@/lib/api';
 import type { LevelData } from '@/game/shared/types/LevelData';
@@ -14,6 +14,17 @@ type Mode = 'choice' | 'picker';
 
 export default function CreateLevel({ onBack }: CreateLevelProps) {
     const [mode, setMode] = useState<Mode>('choice');
+    const [myLevels, setMyLevels] = useState<Level[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (mode !== 'picker') return;
+        setLoading(true);
+        apiFetch('/api/levels/mine')
+            .then(res => res.json())
+            .then(({ levels }) => setMyLevels(levels))
+            .finally(() => setLoading(false));
+    }, [mode]);
 
     function handleNewLevel() {
         EventBus.emit('main-menu-edit-level', {});
@@ -33,24 +44,28 @@ export default function CreateLevel({ onBack }: CreateLevelProps) {
                     <button type="button" className={styles.backButton} onClick={() => setMode('choice')}>{'< Back'}</button>
                     <span className={styles.contentTitle}>USE AS TEMPLATE</span>
                 </div>
-                <LevelList
-                    levels={mockMyLevels}
-                    emptyMessage="You have no levels to use as a template."
-                    renderBadge={level => (
-                        <span className={`${styles.badge} ${level.published ? styles.badgePublished : styles.badgeDraft}`}>
-                            {level.published ? 'PUBLISHED' : 'DRAFT'}
-                        </span>
-                    )}
-                    renderActions={level => (
-                        <button
-                            type="button"
-                            className={styles.actionButton}
-                            onClick={() => handleSelectTemplate(level)}
-                        >
-                            Select
-                        </button>
-                    )}
-                />
+                {loading ? (
+                    <p className={styles.emptyMessage}>Loading…</p>
+                ) : (
+                    <LevelList
+                        levels={myLevels}
+                        emptyMessage="You have no levels to use as a template."
+                        renderBadge={level => (
+                            <span className={`${styles.badge} ${level.published ? styles.badgePublished : styles.badgeDraft}`}>
+                                {level.published ? 'PUBLISHED' : 'DRAFT'}
+                            </span>
+                        )}
+                        renderActions={level => (
+                            <button
+                                type="button"
+                                className={styles.actionButton}
+                                onClick={() => handleSelectTemplate(level)}
+                            >
+                                Select
+                            </button>
+                        )}
+                    />
+                )}
             </div>
         );
     }

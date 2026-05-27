@@ -1,9 +1,8 @@
 export type Level = {
     id: string;
     title: string;
-    difficulty: 'easy' | 'medium' | 'hard';
+    difficulty: string;
     totalPlays: number;
-    uniquePlayers: number;
     completedCount: number;
     author: { username: string };
     published: boolean;
@@ -24,7 +23,6 @@ export const mockPublishedLevels: Level[] = [
         title: 'Grassland Beginnings',
         difficulty: 'easy',
         totalPlays: 342,
-        uniquePlayers: 290,
         completedCount: 280,
         author: { username: 'BlockBuster42' },
         published: true,
@@ -37,7 +35,6 @@ export const mockPublishedLevels: Level[] = [
         title: 'Caverns of Echoes',
         difficulty: 'medium',
         totalPlays: 93,
-        uniquePlayers: 40,
         completedCount: 31,
         author: { username: 'BlockBuster42' },
         published: true,
@@ -50,7 +47,6 @@ export const mockPublishedLevels: Level[] = [
         title: 'Skybridge Sprint',
         difficulty: 'hard',
         totalPlays: 210,
-        uniquePlayers: 25,
         completedCount: 18,
         author: { username: 'PixelAriel' },
         published: true,
@@ -63,7 +59,6 @@ export const mockPublishedLevels: Level[] = [
         title: 'Nether Trial Alpha',
         difficulty: 'hard',
         totalPlays: 55,
-        uniquePlayers: 6,
         completedCount: 4,
         author: { username: 'BlockBuster42' },
         published: true,
@@ -76,7 +71,6 @@ export const mockPublishedLevels: Level[] = [
         title: 'Rolling Hills',
         difficulty: 'easy',
         totalPlays: 128,
-        uniquePlayers: 80,
         completedCount: 74,
         author: { username: 'BlockBuster42' },
         published: true,
@@ -89,7 +83,6 @@ export const mockPublishedLevels: Level[] = [
         title: 'The Crystal Maze',
         difficulty: 'medium',
         totalPlays: 167,
-        uniquePlayers: 95,
         completedCount: 88,
         author: { username: 'PixelAriel' },
         published: true,
@@ -107,7 +100,6 @@ export const mockMyLevels: Level[] = [
         title: 'Skybridge Sprint',
         difficulty: 'hard',
         totalPlays: 210,
-        uniquePlayers: 25,
         completedCount: 18,
         author: { username: 'PixelAriel' },
         published: true,
@@ -120,7 +112,6 @@ export const mockMyLevels: Level[] = [
         title: 'The Crystal Maze',
         difficulty: 'medium',
         totalPlays: 167,
-        uniquePlayers: 95,
         completedCount: 88,
         author: { username: 'PixelAriel' },
         published: true,
@@ -133,7 +124,6 @@ export const mockMyLevels: Level[] = [
         title: 'Lava Labyrinth',
         difficulty: 'hard',
         totalPlays: 0,
-        uniquePlayers: 0,
         completedCount: 0,
         author: { username: 'PixelAriel' },
         published: false,
@@ -146,7 +136,6 @@ export const mockMyLevels: Level[] = [
         title: 'Bouncy Boulders WIP',
         difficulty: 'medium',
         totalPlays: 0,
-        uniquePlayers: 0,
         completedCount: 0,
         author: { username: 'PixelAriel' },
         published: false,
