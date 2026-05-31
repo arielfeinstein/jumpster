@@ -96,3 +96,17 @@
     box-shadow: none;
     transform: translate(3px, 3px);
 }
+
+/* ── Level complete overlay ─────────────────────────────────────────────── */
+
+.winTitle {
+    margin: 0 0 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: #fff;
+}
+
+.allCoins {
+    color: #ffd700;
+}

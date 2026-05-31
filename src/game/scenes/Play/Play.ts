@@ -62,12 +62,14 @@ export class Play extends Scene {
     // accumulation across scene restarts.
     private onRequestReady = () => this.emitReady();
     private onLevelComplete = ({ collected, total }: { collected: number; total: number }) => {
+        // Pause so the player can't keep moving while the overlay is shown.
+        // React drives navigation from the overlay buttons via existing events.
+        this.scene.pause();
         emitEvent('play-session-ended', {
             levelId: this.sceneData.levelId,
             coinsCollected: collected,
             totalCoins: total,
         });
-        this.scene.start('MainMenu');
     };
 
     constructor() {

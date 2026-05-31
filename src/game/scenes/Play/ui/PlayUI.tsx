@@ -28,6 +28,7 @@ export default function PlayUI() {
     const [coinsCollected, setCoinsCollected] = useState(0);
     const [totalCoins, setTotalCoins] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
+    const [levelComplete, setLevelComplete] = useState<{ coinsCollected: number; totalCoins: number } | null>(null);
 
     /**
      * isReady gates the entire HUD. It stays false until 'play-ready' fires,
@@ -59,6 +60,11 @@ export default function PlayUI() {
         const onRestart = () => {
             setIsPaused(false);
             setIsReady(false);
+            setLevelComplete(null);
+        };
+
+        const onSessionEnded = ({ coinsCollected, totalCoins }: EventBusRegistry['play-session-ended']) => {
+            setLevelComplete({ coinsCollected, totalCoins });
         };
 
         EventBus.on('play-ready', onReady);
@@ -67,6 +73,7 @@ export default function PlayUI() {
         EventBus.on('play-pause', onPause);
         EventBus.on('play-resume', onResume);
         EventBus.on('play-restart', onRestart);
+        EventBus.on('play-session-ended', onSessionEnded);
 
         // Listeners are registered — ask Phaser for current state.
         // play-ready may have already fired before this component mounted.
@@ -79,6 +86,7 @@ export default function PlayUI() {
             EventBus.off('play-pause', onPause);
             EventBus.off('play-resume', onResume);
             EventBus.off('play-restart', onRestart);
+            EventBus.off('play-session-ended', onSessionEnded);
         };
     }, []);
 
@@ -91,6 +99,12 @@ export default function PlayUI() {
                 <CoinCounter collected={coinsCollected} total={totalCoins} />
             </div>
             {isPaused && <PauseMenu />}
+            {levelComplete && (
+                <LevelCompleteOverlay
+                    coinsCollected={levelComplete.coinsCollected}
+                    totalCoins={levelComplete.totalCoins}
+                />
+            )}
         </div>
     );
 }
@@ -149,6 +163,41 @@ function PauseMenu() {
                     onClick={() => emitEvent('play-restart', {})}
                 >
                     Restart
+                </button>
+                <button
+                    type="button"
+                    className={styles.menuButton}
+                    onClick={() => emitEvent('play-go-to-main-menu', {})}
+                >
+                    Main Menu
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// LevelCompleteOverlay
+// ---------------------------------------------------------------------------
+
+function LevelCompleteOverlay({ coinsCollected, totalCoins }: { coinsCollected: number; totalCoins: number }) {
+    const allCoins = coinsCollected === totalCoins;
+    return (
+        <div className={styles.pauseOverlay}>
+            <div className={styles.pausePanel}>
+                <h2 className={`${styles.winTitle}${allCoins ? ` ${styles.allCoins}` : ''}`}>
+                    YOU WIN!
+                </h2>
+                <div className={styles.coinCounter}>
+                    <img src="/assets/phaser/coin.png" alt="coin" className={styles.coinIcon} />
+                    <span>{coinsCollected} / {totalCoins}</span>
+                </div>
+                <button
+                    type="button"
+                    className={styles.menuButton}
+                    onClick={() => emitEvent('play-restart', {})}
+                >
+                    Play Again
                 </button>
                 <button
                     type="button"
