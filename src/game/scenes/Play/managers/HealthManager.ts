@@ -11,6 +11,8 @@
  * the player (e.g. standing in spikes).
  */
 
+import { IFRAME_DURATION_MS } from '../../../config/GameConstants';
+
 export default class HealthManager {
 
     private hp: number;
@@ -23,6 +25,9 @@ export default class HealthManager {
 
     /** Wired by Play.ts → triggers CheckpointManager.respawn(). */
     onDied?: () => void;
+
+    /** Wired by Play.ts → triggers Player.startHurtFlash() for iframe visual feedback. */
+    onHit?: () => void;
 
     constructor(maxHp: number) {
         this.maxHp = maxHp;
@@ -47,6 +52,7 @@ export default class HealthManager {
             return;
         }
 
+        this.onHit?.();
         this.startIframes();
     }
 
@@ -70,8 +76,6 @@ export default class HealthManager {
     }
 
     private startIframes(): void {
-        // TODO: tune iframe duration (ms), consider exposing as a constant
-        const IFRAME_DURATION_MS = 1000;
         this.invincible = true;
         this.iframeTimer = setTimeout(() => {
             this.invincible = false;

@@ -103,7 +103,6 @@ export default class CollisionController {
 
     private onHazardContact(): void {
         this.healthManager.takeDamage(1);
-        this.player.takeDamage();
     }
 
     private onCoinCollected(coinObject: Phaser.GameObjects.GameObject): void {
@@ -144,7 +143,6 @@ export default class CollisionController {
                 break;
             case 'player-damaged':
                 this.healthManager.takeDamage(1);
-                this.player.takeDamage()
                 break;
             case 'none':
                 break;

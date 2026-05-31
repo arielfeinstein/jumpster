@@ -170,6 +170,7 @@ export class Play extends Scene {
         // CheckpointManager created here (once) with the real spawn position
         this.checkpointManager = new CheckpointManager(spawnX, spawnY, this.healthManager, this.coinManager);
         this.healthManager.onDied = () => this.checkpointManager.respawn();
+        this.healthManager.onHit = () => this.player.startHurtFlash();
 
         // Load entities — each system handles its own types
         this.loadStaticEntities(entities);

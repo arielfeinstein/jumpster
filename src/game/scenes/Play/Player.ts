@@ -1,8 +1,13 @@
 import Phaser from 'phaser';
 import { ANIMATION_KEYS } from '../../config/AnimationCatalog';
+import { IFRAME_DURATION_MS } from '../../config/GameConstants';
+
+// Each blink = BLINK_HALF_CYCLE_MS fade-out + same fade-in (yoyo).
+const BLINK_HALF_CYCLE_MS = 100;
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     private isHittingGround: boolean = false;
+    private blinkTween: Phaser.Tweens.Tween | null = null;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         super(scene, x, y, 'fox');
@@ -34,21 +39,39 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * Called by CheckpointManager during the respawn sequence.
      */
     respawn(x: number, y: number): void {
+        this.stopBlink();
         this.setPosition(x, y);
         const body = this.body as Phaser.Physics.Arcade.Body;
         body.setVelocity(0, 0);
         body.setAcceleration(0, 0);
         this.isHittingGround = false;
         this.play(ANIMATION_KEYS.FOX_IDLE, true);
-        // TODO: play respawn animation / brief invincibility flash
     }
 
     /**
      * Triggers the player's hit visual feedback (flash, knockback, etc.).
      * HP reduction is handled by HealthManager — this is purely cosmetic.
      */
-    takeDamage(): void {
-        // TODO: play hit animation, flash sprite for iframe duration
+    startHurtFlash(): void {
+        this.stopBlink();
+        const repeats = Math.round(IFRAME_DURATION_MS / (BLINK_HALF_CYCLE_MS * 2)) - 1;
+        this.blinkTween = this.scene.tweens.add({
+            targets: this,
+            alpha: 0,
+            duration: BLINK_HALF_CYCLE_MS,
+            yoyo: true,
+            repeat: repeats,
+            onComplete: () => {
+                this.setAlpha(1);
+                this.blinkTween = null;
+            },
+        });
+    }
+
+    private stopBlink(): void {
+        this.blinkTween?.stop();
+        this.blinkTween = null;
+        this.setAlpha(1);
     }
 
     /**
