@@ -69,7 +69,6 @@ export default abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
      */
     kill(): void {
         this.onKill();
-        this.destroy();
     }
 
     /**
@@ -80,8 +79,12 @@ export default abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
         // Default: no-op
     }
 
-    /** Override in subclasses for type-specific death feedback (particles, sound, etc.). */
+    /**
+     * Override in subclasses for type-specific death feedback (particles, sound, etc.).
+     * Responsible for eventually calling this.destroy() — either immediately (default)
+     * or deferred (e.g. after a death animation completes).
+     */
     protected onKill(): void {
-        // Default: no-op
+        this.destroy();
     }
 }

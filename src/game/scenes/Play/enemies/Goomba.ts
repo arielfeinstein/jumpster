@@ -87,6 +87,7 @@ export default class Goomba extends Enemy {
 
     protected onKill(): void {
         this.play(ANIMATION_KEYS.GOOMBA_STOMP);
+        this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.destroy());
     }
 
     private turn(): void {

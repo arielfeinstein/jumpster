@@ -69,7 +69,7 @@ export default class EnemyManager {
      */
     killEnemy(enemy: Enemy): void {
         this.enemies.delete(enemy);
-        this.enemyGroup.remove(enemy, true, false); // keep in scene for death animation
+        this.enemyGroup.remove(enemy, false, false); // keep in scene for death animation
         enemy.kill(); // handles animation + destroy
     }
 

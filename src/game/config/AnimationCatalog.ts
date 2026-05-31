@@ -64,8 +64,8 @@ export const ENEMY_ANIMATIONS: AnimationConfig[] = [
     {
         key: ANIMATION_KEYS.GOOMBA_STOMP,
         textureKey: 'enemy',
-        startFrame: 4,
-        endFrame: 4,
+        startFrame: 3,
+        endFrame: 3,
         frameRate: 10,
     },
     {

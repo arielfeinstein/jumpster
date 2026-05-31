@@ -1,10 +1,10 @@
 import { Scene } from 'phaser';
-import { PLAYER_ANIMATIONS, type AnimationConfig } from '../../config/AnimationCatalog';
+import { PLAYER_ANIMATIONS, ENEMY_ANIMATIONS, FLAG_ANIMATIONS, type AnimationConfig } from '../../config/AnimationCatalog';
 
 export default class AnimationManager {
 
     static createAll(scene: Scene): void {
-        PLAYER_ANIMATIONS.forEach((animation) => {
+        [...PLAYER_ANIMATIONS, ...ENEMY_ANIMATIONS, ...FLAG_ANIMATIONS].forEach((animation) => {
             this.createAnimation(scene, animation);
         });
     }
