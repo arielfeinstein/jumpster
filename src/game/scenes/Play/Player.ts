@@ -108,11 +108,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         }
 
         // Cap max speed
-        body.setMaxVelocity(maxSpeed, 600);
+        body.setMaxVelocity(maxSpeed, 1000);
 
         // Jumping
         if (isOnGround && (cursors.up.isDown || cursors.space.isDown)) {
-            body.setVelocityY(-350);
+            body.setVelocityY(-750);
             this.isHittingGround = false;
             this.play(ANIMATION_KEYS.FOX_JUMP, true);
         }
