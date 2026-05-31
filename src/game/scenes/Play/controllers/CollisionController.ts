@@ -68,6 +68,9 @@ export default class CollisionController {
         // Player stands on / bumps platforms
         scene.physics.add.collider(player, groups.solid);
 
+        // Enemies stand on platforms
+        scene.physics.add.collider(groups.enemy, groups.solid);
+
         // Hazards (spikes) — any contact = damage
         scene.physics.add.overlap(player, groups.hazard, () => {
             this.onHazardContact();

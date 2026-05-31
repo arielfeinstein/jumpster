@@ -54,11 +54,12 @@ export default class Goomba extends Enemy {
         this.setOrigin(0, 0);
         this.setCollideWorldBounds(true);
 
-        // Start walking right
-        this.setVelocityX(WALK_SPEED * this.direction);
-
         // Start walk animation (loops forever due to repeat: -1)
         this.play(ANIMATION_KEYS.GOOMBA_WALK);
+    }
+
+    override onReady(): void {
+        this.setVelocityX(WALK_SPEED * this.direction);
     }
 
     update(_delta: number): void {
@@ -73,9 +74,9 @@ export default class Goomba extends Enemy {
         }
 
         // Turn around at patrol bounds (platform edges without a blocking body)
-        if (this.x <= this.patrolLeft && this.direction === -1) {
+        if (this.body.left <= this.patrolLeft && this.direction === -1) {
             this.turn();
-        } else if (this.x >= this.patrolRight && this.direction === 1) {
+        } else if (this.body.right >= this.patrolRight && this.direction === 1) {
             this.turn();
         }
     }

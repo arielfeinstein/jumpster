@@ -52,6 +52,7 @@ export default class EnemyManager {
 
             this.enemies.add(enemy);
             this.enemyGroup.add(enemy);
+            enemy.onReady();
         }
     }
 

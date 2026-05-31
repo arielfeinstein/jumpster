@@ -72,6 +72,14 @@ export default abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.destroy();
     }
 
+    /**
+     * Called by EnemyManager immediately after the enemy is added to the physics group.
+     * Override to apply any setup that must happen after group registration (e.g. initial velocity).
+     */
+    onReady(): void {
+        // Default: no-op
+    }
+
     /** Override in subclasses for type-specific death feedback (particles, sound, etc.). */
     protected onKill(): void {
         // Default: no-op
