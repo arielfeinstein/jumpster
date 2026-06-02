@@ -19,6 +19,7 @@ import { Scene } from 'phaser';
 import Phaser from 'phaser';
 import { EventBus } from '../../EventBus';
 import { TILE_SIZE } from '../../config/GameConfig';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 
 // Managers
 import EntityManager from './managers/EntityManager';
@@ -173,7 +174,7 @@ export class Editor extends Scene {
         this.deleteButtonView = new DeleteButtonView();
 
         this.deleteButton = this.add
-            .image(0, 0, 'red-cross')
+            .image(0, 0, ASSET_KEYS.RED_CROSS)
             .setOrigin(0, 0)
             .setDepth(depthConfig.DELETE_BUTTON)
             .setVisible(false);

@@ -11,6 +11,7 @@ import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { CheckpointData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 
 export default class Checkpoint extends GameEntity {
 
@@ -31,7 +32,7 @@ export default class Checkpoint extends GameEntity {
      */
     constructor(scene: Phaser.Scene, x: number, y: number, id?: string) {
         // Frame 4 is the closed/idle frame used in the editor palette.
-        const displayObject = scene.add.image(x, y, 'checkpoint-flag', 4).setOrigin(0, 0);
+        const displayObject = scene.add.image(x, y, ASSET_KEYS.CHECKPOINT_FLAG, 4).setOrigin(0, 0);
         super(displayObject, id);
     }
 

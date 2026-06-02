@@ -23,6 +23,7 @@ import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { PlatformData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 
 export type PlatformVariant = 'grass-1' | 'grass-2' | 'grass-3';
 
@@ -79,12 +80,12 @@ export default class Platform extends GameEntity {
 
         // Top grass layer (no physics body — set up externally by the scene).
         const topLayer = scene.add
-            .tileSprite(0, 0, width, TILE_SIZE, 'platform', frames.top)
+            .tileSprite(0, 0, width, TILE_SIZE, ASSET_KEYS.PLATFORM, frames.top)
             .setOrigin(0, 0);
 
         // Dirt fill layer (no physics body — set up externally by the scene).
         const fillLayer = scene.add
-            .tileSprite(0, TILE_SIZE, width, Math.max(height - TILE_SIZE, 0), 'platform', frames.fill)
+            .tileSprite(0, TILE_SIZE, width, Math.max(height - TILE_SIZE, 0), ASSET_KEYS.PLATFORM, frames.fill)
             .setOrigin(0, 0);
 
         container.add([topLayer, fillLayer]);
@@ -208,7 +209,7 @@ export default class Platform extends GameEntity {
 
     serialize(): PlatformData {
         return {
-            entityType: 'platform',
+            entityType: ASSET_KEYS.PLATFORM,
             id: this.id,
             x: this.x,
             y: this.y,

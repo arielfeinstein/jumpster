@@ -15,6 +15,7 @@ import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { EnemyData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 
 export default class EnemyEntity extends GameEntity {
 
@@ -40,7 +41,7 @@ export default class EnemyEntity extends GameEntity {
      */
     constructor(scene: Phaser.Scene, x: number, y: number, enemyType = 'goomba', variant?: string, id?: string) {
         // Frame 1 is the standing pose used as the palette / editor icon.
-        const displayObject = scene.add.image(x, y, 'enemy', 1).setOrigin(0, 0);
+        const displayObject = scene.add.image(x, y, ASSET_KEYS.ENEMY, 1).setOrigin(0, 0);
         super(displayObject, id, variant);
         this.enemyType = enemyType;
     }

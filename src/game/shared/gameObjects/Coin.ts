@@ -11,6 +11,7 @@ import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { CoinData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 
 export default class Coin extends GameEntity {
 
@@ -35,7 +36,7 @@ export default class Coin extends GameEntity {
      * @param id     Optional stable UUID — supply when deserialising.
      */
     constructor(scene: Phaser.Scene, x: number, y: number, id?: string) {
-        super(scene.add.image(x, y, 'coin').setOrigin(0, 0), id);
+        super(scene.add.image(x, y, ASSET_KEYS.COIN).setOrigin(0, 0), id);
         this.scene = scene;
     }
 

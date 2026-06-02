@@ -1,3 +1,5 @@
+import { ASSET_KEYS, type AssetKey } from './AssetCatalog';
+
 export const ANIMATION_KEYS = {
     FOX_IDLE: 'fox-idle',
     FOX_JUMP: 'fox-jump',
@@ -13,7 +15,7 @@ export type AnimationKey = typeof ANIMATION_KEYS[keyof typeof ANIMATION_KEYS];
 
 export type AnimationConfig = {
     key: AnimationKey;
-    textureKey: string;
+    textureKey: AssetKey;
     startFrame: number;
     endFrame: number;
     frameRate: number;
@@ -23,7 +25,7 @@ export type AnimationConfig = {
 export const PLAYER_ANIMATIONS: AnimationConfig[] = [
     {
         key: ANIMATION_KEYS.FOX_IDLE,
-        textureKey: 'fox',
+        textureKey: ASSET_KEYS.FOX,
         startFrame: 0,
         endFrame: 10,
         frameRate: 20,
@@ -31,28 +33,28 @@ export const PLAYER_ANIMATIONS: AnimationConfig[] = [
     },
     {
         key: ANIMATION_KEYS.FOX_JUMP,
-        textureKey: 'fox',
+        textureKey: ASSET_KEYS.FOX,
         startFrame: 11,
         endFrame: 11,
         frameRate: 10,
     },
     {
         key: ANIMATION_KEYS.FOX_FALL,
-        textureKey: 'fox',
+        textureKey: ASSET_KEYS.FOX,
         startFrame: 12,
         endFrame: 12,
         frameRate: 10,
     },
     {
         key: ANIMATION_KEYS.FOX_HIT_GROUND,
-        textureKey: 'fox',
+        textureKey: ASSET_KEYS.FOX,
         startFrame: 13,
         endFrame: 17,
         frameRate: 20,
     },
     {
         key: ANIMATION_KEYS.FOX_RUN,
-        textureKey: 'fox',
+        textureKey: ASSET_KEYS.FOX,
         startFrame: 18,
         endFrame: 29,
         frameRate: 20,
@@ -63,14 +65,14 @@ export const PLAYER_ANIMATIONS: AnimationConfig[] = [
 export const ENEMY_ANIMATIONS: AnimationConfig[] = [
     {
         key: ANIMATION_KEYS.GOOMBA_STOMP,
-        textureKey: 'enemy',
+        textureKey: ASSET_KEYS.ENEMY,
         startFrame: 3,
         endFrame: 3,
         frameRate: 10,
     },
     {
         key: ANIMATION_KEYS.GOOMBA_WALK,
-        textureKey: 'enemy',
+        textureKey: ASSET_KEYS.ENEMY,
         startFrame: 0,
         endFrame: 2,
         frameRate: 10,
@@ -81,7 +83,7 @@ export const ENEMY_ANIMATIONS: AnimationConfig[] = [
 export const FLAG_ANIMATIONS: AnimationConfig[] = [
     {
         key: ANIMATION_KEYS.FLAG_RAISE,
-        textureKey: 'checkpoint-flag',
+        textureKey: ASSET_KEYS.CHECKPOINT_FLAG,
         startFrame: 0,
         endFrame: 4,
         frameRate: 10,

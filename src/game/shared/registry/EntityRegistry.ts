@@ -17,6 +17,7 @@
  */
 
 import Phaser from 'phaser';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 import { EntityType } from '../types/EntityType';
 import { EntityData } from '../types/LevelData';
 import { ResizeConfig } from '../../scenes/Editor/types/EditorTypes';
@@ -60,10 +61,10 @@ export default class EntityRegistry {
                 return new Checkpoint(scene, data.x, data.y, data.id);
 
             case 'start-flag':
-                return new Flag(scene, data.x, data.y, 'start-flag', data.id);
+                return new Flag(scene, data.x, data.y, ASSET_KEYS.START_FLAG, data.id);
 
             case 'end-flag':
-                return new Flag(scene, data.x, data.y, 'end-flag', data.id);
+                return new Flag(scene, data.x, data.y, ASSET_KEYS.END_FLAG, data.id);
 
             case 'spikes':
                 return new Spikes(scene, data.x, data.y, data.width, data.id);

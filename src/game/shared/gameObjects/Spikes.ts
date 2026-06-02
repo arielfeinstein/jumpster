@@ -14,6 +14,7 @@ import Phaser from 'phaser';
 import GameEntity from './GameEntity';
 import { SpikesData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 
 export default class Spikes extends GameEntity {
 
@@ -37,7 +38,7 @@ export default class Spikes extends GameEntity {
      */
     constructor(scene: Phaser.Scene, x: number, y: number, width: number = TILE_SIZE, id?: string) {
         const displayObject = scene.add
-            .tileSprite(x, y, width, TILE_SIZE, 'spikes', 2)
+            .tileSprite(x, y, width, TILE_SIZE, ASSET_KEYS.SPIKES, 2)
             .setOrigin(0, 0);
         super(displayObject, id);
         this._width = width;

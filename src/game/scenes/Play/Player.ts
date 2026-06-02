@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ANIMATION_KEYS } from '../../config/AnimationCatalog';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 import { IFRAME_DURATION_MS } from '../../config/GameConstants';
 
 // Each blink = BLINK_HALF_CYCLE_MS fade-out + same fade-in (yoyo).
@@ -10,7 +11,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     private blinkTween: Phaser.Tweens.Tween | null = null;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
-        super(scene, x, y, 'fox');
+        super(scene, x, y, ASSET_KEYS.FOX);
         
         // Add this sprite to the scene and enable physics on it
         scene.add.existing(this);

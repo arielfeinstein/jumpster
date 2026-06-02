@@ -7,6 +7,7 @@
 
 import Phaser from 'phaser';
 import { BackgroundKey } from '../types/BackgroundKey';
+import { ASSET_KEYS } from '../../config/AssetCatalog';
 
 /**
  * Creates a screen-pinned TileSprite that fills the viewport with the
@@ -20,7 +21,7 @@ export function createBackground(scene: Phaser.Scene, key: BackgroundKey): Phase
     const vh = scene.scale.height;
 
     return scene.add
-        .tileSprite(0, 0, vw, vh, 'bg-tilesheet', key)
+        .tileSprite(0, 0, vw, vh, ASSET_KEYS.BG_TILESHEET, key)
         .setOrigin(0, 0)
         .setScrollFactor(0)
         .setDepth(-10);

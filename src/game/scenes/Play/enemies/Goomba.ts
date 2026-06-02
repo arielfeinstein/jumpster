@@ -19,6 +19,7 @@
 import Phaser from 'phaser';
 import Enemy, { PatrolBounds, ContactInfo, EnemyContactResult } from './Enemy';
 import { ANIMATION_KEYS } from '@/game/config/AnimationCatalog';
+import { ASSET_KEYS } from '@/game/config/AssetCatalog';
 import { TILE_SIZE } from '@/game/config/GameConfig';
 import { EnemyData } from '../../../shared/types/LevelData';
 import { PlayPhysicsGroups } from '../../../shared/types/PlayPhysicsGroups';
@@ -36,7 +37,7 @@ export default class Goomba extends Enemy {
         data: EnemyData,
         groups: PlayPhysicsGroups,
     ) {
-        super(scene, data.x, data.y, 'enemy', data.variant ?? 'default');
+        super(scene, data.x, data.y, ASSET_KEYS.ENEMY, data.variant ?? 'default');
 
         const patrolBounds = Goomba.computePatrolBounds(data, groups);
         this.patrolLeft = patrolBounds.left;
