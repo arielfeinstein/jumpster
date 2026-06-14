@@ -127,6 +127,13 @@ export interface EventBusRegistry {
 
     /** Emitted by React (EditorUI) when the user confirms exiting without saving. */
     'editor-exit': Record<string, never>;
+
+    /**
+     * Emitted by EditorUI when any modal dialog opens or closes.
+     * Phaser uses this to toggle space-key capture so React inputs can receive spaces
+     * while a dialog is open, then restores normal capture when dismissed.
+     */
+    'editor-ui-dialog-active': { active: boolean };
 }
 
 export type EventName = keyof EventBusRegistry;

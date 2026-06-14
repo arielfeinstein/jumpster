@@ -91,6 +91,12 @@ export default function EditorUI() {
         return () => { EventBus.off('editor-confirm-dialog', handler); };
     }, []);
 
+    // Notify Phaser when any dialog opens/closes so it can toggle space-key capture.
+    const anyDialogOpen = saveDialogOpen || exitConfirmOpen || !!dialogState?.open;
+    useEffect(() => {
+        EventBus.emit('editor-ui-dialog-active', { active: anyDialogOpen });
+    }, [anyDialogOpen]);
+
     const handleEntitySelect = useCallback(({ entityType, variant }: StartPlacementPayload) => {
         EventBus.emit('editor-start-placement', { entityType, variant });
     }, []);
