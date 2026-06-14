@@ -317,4 +317,10 @@ export const DOCK_SLOTS: DockSlotConfig[] = [
         action: 'cycle-dock-position',
         visibleDuringPlacement: 'always',
     },
+    {
+        kind: 'action-button',
+        label: 'Exit Editor',
+        action: 'exit-editor',
+        visibleDuringPlacement: 'always',
+    },
 ];

@@ -124,6 +124,9 @@ export interface EventBusRegistry {
      * levelId null → POST new record. levelId set → PATCH existing record.
      */
     'editor-level-saved': { levelId: string | null; title: string; levelData: LevelData };
+
+    /** Emitted by React (EditorUI) when the user confirms exiting without saving. */
+    'editor-exit': Record<string, never>;
 }
 
 export type EventName = keyof EventBusRegistry;

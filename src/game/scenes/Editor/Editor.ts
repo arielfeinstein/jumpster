@@ -295,6 +295,8 @@ export class Editor extends Scene {
             EventBus.emit('editor-initialized', { levelTitle: this.levelTitle });
         });
 
+        EventBus.on('editor-exit', () => this.scene.start('MainMenu'));
+
         // Delete button.
         this.deleteButton.on('pointerdown', (_p: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
             this.handleDelete();
@@ -383,6 +385,7 @@ export class Editor extends Scene {
             EventBus.off('editor-set-background');
             EventBus.off('editor-save-level');
             EventBus.off('editor-request-init');
+            EventBus.off('editor-exit');
             this.backgroundManager.destroy();
             this.placementController.destroy();
             this.selectionController.destroy();

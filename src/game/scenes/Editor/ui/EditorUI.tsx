@@ -18,7 +18,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DropdownMenu, Popover } from 'radix-ui';
 import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
-import { Save, Undo2, Redo2 } from 'lucide-react';
+import { Save, Undo2, Redo2, LogOut } from 'lucide-react';
 import { EventBus } from '../../../EventBus';
 import {
     DOCK_SLOTS,
@@ -29,6 +29,7 @@ import {
     SpriteFrame,
 } from '../types/DockTypes';
 import ConfirmationDialog from './ConfirmationDialog';
+import ExitConfirmationDialog from './ExitConfirmationDialog';
 import SaveLevelDialog from './SaveLevelDialog';
 import styles from './EditorUI.module.css';
 
@@ -54,6 +55,9 @@ export default function EditorUI() {
 
     // Save level dialog state.
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+
+    // Exit confirmation dialog state.
+    const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
 
     // Handshake: emit editor-request-init on mount so Editor.ts can send back the level title.
     // Needed because editor-initialized fires during create() before EditorUI has mounted.
@@ -104,6 +108,11 @@ export default function EditorUI() {
         setSaveDialogOpen(true);
     }, []);
 
+    const handleExitConfirm = useCallback(() => {
+        setExitConfirmOpen(false);
+        EventBus.emit('editor-exit', {});
+    }, []);
+
     const cycleDockPosition = useCallback(() => {
         const order: DockPosition[] = ['bottom', 'right', 'top', 'left'];
         setDockPosition(prev => order[(order.indexOf(prev) + 1) % order.length]);
@@ -128,6 +137,7 @@ export default function EditorUI() {
                         onCancelPlacement={handleCancelPlacement}
                         onCycleDockPosition={cycleDockPosition}
                         onOpenSaveDialog={handleOpenSaveDialog}
+                        onOpenExitConfirm={() => setExitConfirmOpen(true)}
                     />
                 ))}
             </div>
@@ -145,6 +155,11 @@ export default function EditorUI() {
                 onSave={handleSaveLevel}
                 onCancel={() => setSaveDialogOpen(false)}
             />
+            <ExitConfirmationDialog
+                open={exitConfirmOpen}
+                onConfirm={handleExitConfirm}
+                onCancel={() => setExitConfirmOpen(false)}
+            />
         </div>
     );
 }
@@ -160,9 +175,10 @@ interface DockSlotProps {
     onCancelPlacement: () => void;
     onCycleDockPosition: () => void;
     onOpenSaveDialog: () => void;
+    onOpenExitConfirm: () => void;
 }
 
-function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, onCycleDockPosition, onOpenSaveDialog }: DockSlotProps) {
+function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, onCycleDockPosition, onOpenSaveDialog, onOpenExitConfirm }: DockSlotProps) {
     switch (config.kind) {
         case 'entity-dropdown':
             return (
@@ -189,6 +205,7 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
             else if (config.action === 'undo')        onClick = () => EventBus.emit('editor-undo');
             else if (config.action === 'redo')        onClick = () => EventBus.emit('editor-redo');
             else if (config.action === 'save-level')  onClick = onOpenSaveDialog;
+            else if (config.action === 'exit-editor') onClick = onOpenExitConfirm;
             else                                      onClick = onCycleDockPosition;
 
             let icon: React.ReactNode;
@@ -196,6 +213,7 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
             else if (config.action === 'redo')        icon = <Redo2 size={18} />;
             else if (isCancel)                        icon = <Cross1Icon width={18} height={18} />;
             else if (config.action === 'save-level')  icon = <Save size={18} />;
+            else if (config.action === 'exit-editor') icon = <LogOut size={18} />;
             else                                      icon = <DotFilledIcon width={18} height={18} />;
 
             return (
