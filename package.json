@@ -23,10 +23,13 @@
     ],
     "scripts": {
         "dev": "node log.js dev & NODE_OPTIONS='--inspect' next dev -p 8080",
+        "dev:local": "npx supabase start && npm run dev",
         "build": "node log.js build & next build",
         "dev-nolog": "next dev -p 8080",
         "build-nolog": "next build",
-        "test": "vitest run"
+        "test": "vitest run",
+        "build:prod": "prisma generate && next build",
+        "start": "next start"
     },
     "dependencies": {
         "@prisma/adapter-pg": "^7.8.0",
