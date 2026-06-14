@@ -48,8 +48,14 @@ dev_tmp/
 
 # ai
 .claude/
+CLAUDE.md
 CLAUDE.MD
 GEMINI.MD
+
+# supabase local state (auto-managed by CLI, not repo config)
+supabase/.temp/
+supabase/.branches/
+supabase/snippets/
 
 /src/generated/prisma
 
