@@ -96,6 +96,16 @@ export interface EventBusRegistry {
      */
     'main-menu-edit-level': { levelId?: string; levelData?: LevelData };
 
+    // ─── Preloader Scene ────────────────────────────────────────────────────────
+
+    /** Emitted by Preloader during asset loading. value is 0–1. */
+    'preloader-progress': { value: number };
+
+    /** Emitted by Preloader when all assets have finished loading. */
+    'preloader-complete': Record<string, never>;
+
+    // ─── Editor Scene ───────────────────────────────────────────────────────────
+
     /**
      * Emitted by EditorUI on mount to request init data from the Editor scene.
      * Needed because editor-initialized fires during create() before React has mounted EditorUI.

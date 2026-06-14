@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { Boot } from '../scenes/Boot';
-import { Preloader } from '../scenes/Preloader';
+import { Preloader } from '../scenes/Preloader/Preloader';
 import { Play } from '../scenes/Play/Play';
 import { GameOver } from '../scenes/GameOver';
 import { MainMenu } from '../scenes/MainMenu/MainMenu';

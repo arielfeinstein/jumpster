@@ -1,8 +1,9 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
 import { IRefPhaserGame, PhaserGame } from './PhaserGame';
 import MainMenuUI from './game/scenes/MainMenu/MainMenuUI'
 import EditorUI from './game/scenes/Editor/ui/EditorUI';
 import PlayUI from './game/scenes/Play/ui/PlayUI';
+import PreloaderUI from './game/scenes/Preloader/PreloaderUI';
 
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
 
     return (
         <PhaserGame ref={phaserRef} currentActiveScene={scene => setCurrentScene(scene.scene.key)}>
+            <PreloaderUI visible={currentScene === null} />
             {currentScene === 'MainMenu' && <MainMenuUI /> }
             {currentScene === 'Editor' && <EditorUI />}
             {currentScene === 'Play' && <PlayUI />}
