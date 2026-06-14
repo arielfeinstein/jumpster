@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import styles from "./auth.module.css";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,17 +35,20 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 400, margin: "100px auto", fontFamily: "sans-serif" }}>
-      <h1>Log in</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input name="email" type="email" placeholder="Email" required />
-        <input name="password" type="password" placeholder="Password" required />
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Log in"}
-        </button>
-      </form>
-      <p>No account? <Link href="/register">Register</Link></p>
-    </main>
+    <div className={styles.wrapper}>
+      <div className={styles.card}>
+        <img src="/logo.png" alt="Jumpster" className={styles.logo} />
+        <h1 className={styles.title}>Log in</h1>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <input className={styles.input} name="email" type="email" placeholder="Email" required />
+          <input className={styles.input} name="password" type="password" placeholder="Password" required />
+          {error && <p className={styles.error}>{error}</p>}
+          <button className={styles.button} type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Log in"}
+          </button>
+        </form>
+        <p className={styles.footer}>No account? <Link href="/register">Register</Link></p>
+      </div>
+    </div>
   );
 }

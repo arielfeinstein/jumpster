@@ -65,6 +65,6 @@ export const config = {
   matcher: [
     // Run on all paths except Next.js internals, static assets, and the
     // register API route (which must be reachable without a session).
-    "/((?!_next/static|_next/image|favicon\\.ico|api/auth).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|api/auth|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|otf)$).*)",
   ],
 };

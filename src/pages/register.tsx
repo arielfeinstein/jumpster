@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import styles from "./auth.module.css";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -52,18 +53,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <main style={{ maxWidth: 400, margin: "100px auto", fontFamily: "sans-serif" }}>
-      <h1>Create account</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input name="username" type="text" placeholder="Username" required />
-        <input name="email" type="email" placeholder="Email" required />
-        <input name="password" type="password" placeholder="Password" minLength={6} required />
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? "Creating account..." : "Register"}
-        </button>
-      </form>
-      <p>Already have an account? <Link href="/login">Log in</Link></p>
-    </main>
+    <div className={styles.wrapper}>
+      <div className={styles.card}>
+        <img src="/logo.png" alt="Jumpster" className={styles.logo} />
+        <h1 className={styles.title}>Create account</h1>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <input className={styles.input} name="username" type="text" placeholder="Username" required />
+          <input className={styles.input} name="email" type="email" placeholder="Email" required />
+          <input className={styles.input} name="password" type="password" placeholder="Password" minLength={6} required />
+          {error && <p className={styles.error}>{error}</p>}
+          <button className={styles.button} type="submit" disabled={loading}>
+            {loading ? "Creating account..." : "Register"}
+          </button>
+        </form>
+        <p className={styles.footer}>Already have an account? <Link href="/login">Log in</Link></p>
+      </div>
+    </div>
   );
 }
