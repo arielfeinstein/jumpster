@@ -12,6 +12,7 @@ import GameEntity from './GameEntity';
 import { CheckpointData } from '../types/LevelData';
 import { TILE_SIZE } from '../../config/GameConfig';
 import { ASSET_KEYS } from '../../config/AssetCatalog';
+import { ANIMATION_KEYS } from '../../config/AnimationCatalog';
 
 export default class Checkpoint extends GameEntity {
 
@@ -31,8 +32,9 @@ export default class Checkpoint extends GameEntity {
      * @param id     Optional stable UUID — supply when deserialising.
      */
     constructor(scene: Phaser.Scene, x: number, y: number, id?: string) {
-        // Frame 4 is the closed/idle frame used in the editor palette.
-        const displayObject = scene.add.image(x, y, ASSET_KEYS.CHECKPOINT_FLAG, 4).setOrigin(0, 0);
+        // Sprite (not Image) so we can play the FLAG_RAISE animation on activation.
+        // Frame 0 is the default idle frame; frame 4 is the activated state.
+        const displayObject = scene.add.sprite(x, y, ASSET_KEYS.CHECKPOINT_FLAG, 0).setOrigin(0, 0);
         super(displayObject, id);
     }
 
@@ -46,8 +48,7 @@ export default class Checkpoint extends GameEntity {
             (this.displayObject as Phaser.Physics.Arcade.Image).body!.enable = false;
         }
 
-        // TODO: play checkpoint activation animation (change frame to open flag)
-        // TODO: play checkpoint activation sound
+        (this.displayObject as Phaser.GameObjects.Sprite).play(ANIMATION_KEYS.FLAG_RAISE);
     }
 
     createGhost(scene: Phaser.Scene): Checkpoint {
