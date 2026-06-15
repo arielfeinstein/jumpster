@@ -49,9 +49,6 @@ export default class Coin extends GameEntity {
         if (this.displayObject.body) {
             (this.displayObject as Phaser.Physics.Arcade.Image).body!.enable = false;
         }
-
-        // TODO: play coin collect animation (tween)
-        // TODO: play coin collect sound
         
         this.displayObject.setVisible(false);
     }

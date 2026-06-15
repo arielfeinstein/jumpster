@@ -80,7 +80,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      */
     bounceOffEnemy(): void {
         const body = this.body as Phaser.Physics.Arcade.Body;
-        // TODO: tune bounce force
         body.setVelocityY(-200);
     }
 
@@ -88,7 +87,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * Triggers the player's level completion sequence.
      */
     onLevelCompleted(): void {
-        // TODO: trigger win sequence — play animation, sound, etc...
+        // Here you can triggere a win sequence:
+        //   — play animation, sound, etc...
+        // Currently empty
     }
 
     update(cursors: Phaser.Types.Input.Keyboard.CursorKeys) {

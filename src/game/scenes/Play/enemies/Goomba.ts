@@ -43,15 +43,7 @@ export default class Goomba extends Enemy {
         this.patrolLeft = patrolBounds.left;
         this.patrolRight = patrolBounds.right;
 
-        // Apply variant-specific appearance
-        // TODO: add texture variants once the spritesheet supports them
-        // switch (variant) {
-        //     case 'red': this.setTint(0xff6666); break;
-        //     default: break;
-        // }
-
         // Physics setup
-        // TODO: tune body size/offset to match enemy spritesheet
         this.setOrigin(0, 0);
         this.setCollideWorldBounds(true);
 
