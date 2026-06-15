@@ -19,7 +19,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DropdownMenu, Popover } from 'radix-ui';
 import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
 import { Save, Undo2, Redo2, LogOut } from 'lucide-react';
-import { EventBus } from '../../../EventBus';
+import { EventBus, onEvent } from '../../../EventBus';
 import type { Difficulty } from '../../../shared/types/Difficulty';
 import {
     DOCK_SLOTS,
@@ -51,7 +51,7 @@ export default function EditorUI() {
         const handler = ({ active }: PlacementActivePayload) => {
             setPlacementActive(active);
         };
-        EventBus.on('editor-placement-active', handler);
+        onEvent('editor-placement-active', handler);
         return () => { EventBus.off('editor-placement-active', handler); };
     }, []);
 
@@ -68,7 +68,7 @@ export default function EditorUI() {
             defaultLevelTitleRef.current = levelTitle;
             defaultDifficultyRef.current = levelDifficulty;
         };
-        EventBus.on('editor-initialized', handler);
+        onEvent('editor-initialized', handler);
         EventBus.emit('editor-request-init', {});
         return () => { EventBus.off('editor-initialized', handler); };
     }, []);
@@ -82,15 +82,15 @@ export default function EditorUI() {
     } | null>(null);
 
     useEffect(() => {
-        const handler = (payload: { message: string; onConfirm: () => void; onCancel: () => void }) => {
+        const handler = ({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) => {
             setDialogState({
                 open: true,
-                message: payload.message,
-                onConfirm: () => { payload.onConfirm(); setDialogState(null); },
-                onCancel: () => { payload.onCancel(); setDialogState(null); },
+                message,
+                onConfirm: () => { onConfirm(); setDialogState(null); },
+                onCancel: () => { onCancel(); setDialogState(null); },
             });
         };
-        EventBus.on('editor-confirm-dialog', handler);
+        onEvent('editor-confirm-dialog', handler);
         return () => { EventBus.off('editor-confirm-dialog', handler); };
     }, []);
 

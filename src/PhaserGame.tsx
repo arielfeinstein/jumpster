@@ -1,6 +1,6 @@
 import React, { forwardRef, useEffect, useLayoutEffect, useRef } from 'react';
 import StartGame from './game/main';
-import { EventBus } from './game/EventBus';
+import { EventBus, onEvent } from './game/EventBus';
 import { usePlaySessionStats } from './hooks/usePlaySessionStats';
 import { useEditorSave } from './hooks/useEditorSave';
 
@@ -56,7 +56,7 @@ export const PhaserGame = forwardRef<IRefPhaserGame, IProps>(function PhaserGame
 
     useEffect(() =>
     {
-        EventBus.on('current-scene-ready', ({ scene }: { scene: Phaser.Scene }) =>
+        onEvent('current-scene-ready', ({ scene }) =>
         {
             if (currentActiveScene && typeof currentActiveScene === 'function')
             {

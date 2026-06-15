@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { EventBus, emitEvent } from '../../../EventBus';
+import { EventBus, emitEvent, onEvent } from '../../../EventBus';
 import { EventBusRegistry } from '../../../shared/registry/EventRegistry';
 import styles from './PlayUI.module.css';
 
@@ -67,13 +67,13 @@ export default function PlayUI() {
             setLevelComplete({ coinsCollected, totalCoins });
         };
 
-        EventBus.on('play-ready', onReady);
-        EventBus.on('play-health-changed', onHealthChanged);
-        EventBus.on('play-coins-changed', onCoinsChanged);
-        EventBus.on('play-pause', onPause);
-        EventBus.on('play-resume', onResume);
-        EventBus.on('play-restart', onRestart);
-        EventBus.on('play-session-ended', onSessionEnded);
+        onEvent('play-ready', onReady);
+        onEvent('play-health-changed', onHealthChanged);
+        onEvent('play-coins-changed', onCoinsChanged);
+        onEvent('play-pause', onPause);
+        onEvent('play-resume', onResume);
+        onEvent('play-restart', onRestart);
+        onEvent('play-session-ended', onSessionEnded);
 
         // Listeners are registered — ask Phaser for current state.
         // play-ready may have already fired before this component mounted.

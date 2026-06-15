@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { EventBus } from '../game/EventBus';
+import { EventBus, onEvent } from '../game/EventBus';
 import { apiFetch } from '@/lib/api';
 import type { LevelData } from '../game/shared/types/LevelData';
 import type { Difficulty } from '../game/shared/types/Difficulty';
@@ -32,7 +32,7 @@ export function useEditorSave() {
             }
         };
 
-        EventBus.on('editor-level-saved', handler);
+        onEvent('editor-level-saved', handler);
         return () => { EventBus.off('editor-level-saved', handler); };
     }, []);
 }

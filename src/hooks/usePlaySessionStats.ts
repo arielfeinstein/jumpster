@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { EventBus } from '../game/EventBus';
+import { EventBus, onEvent } from '../game/EventBus';
 import { EventBusRegistry } from '../game/shared/registry/EventRegistry';
 import { apiFetch } from '@/lib/api';
 
@@ -32,8 +32,8 @@ export function usePlaySessionStats() {
             }
         };
 
-        EventBus.on('main-menu-play-level', onPlayLevel);
-        EventBus.on('play-session-ended', onEnded);
+        onEvent('main-menu-play-level', onPlayLevel);
+        onEvent('play-session-ended', onEnded);
         return () => {
             EventBus.off('main-menu-play-level', onPlayLevel);
             EventBus.off('play-session-ended', onEnded);

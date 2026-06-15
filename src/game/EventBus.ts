@@ -12,12 +12,12 @@ export function emitEvent<T extends EventName>(event: T, payload: EventBusRegist
     EventBus.emit(event, payload);
 }
 
-// TODO: migrate all EventBus.on(...) call sites throughout the project to use onEvent
-//       so that handler payload types are enforced by the registry on the receiving side too.
 /**
  * Type-safe wrapper for subscribing to EventBus events.
  * Infers the payload type from EventBusRegistry so handlers are fully typed.
+ * Pass context as the optional third argument to bind `this` inside the handler,
+ * matching Phaser's EventEmitter.on() convention.
  */
-export function onEvent<T extends EventName>(event: T, handler: (payload: EventBusRegistry[T]) => void): void {
-    EventBus.on(event, handler);
+export function onEvent<T extends EventName>(event: T, handler: (payload: EventBusRegistry[T]) => void, context?: object): void {
+    EventBus.on(event, handler, context);
 }

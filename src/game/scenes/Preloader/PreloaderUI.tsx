@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { EventBus } from '../../EventBus';
+import { EventBus, onEvent } from '../../EventBus';
 import { EventBusRegistry } from '../../shared/registry/EventRegistry';
 import styles from './PreloaderUI.module.css';
 
@@ -16,7 +16,7 @@ export default function PreloaderUI({ visible }: Props) {
             setProgress(payload.value);
         };
 
-        EventBus.on('preloader-progress', onProgress);
+        onEvent('preloader-progress', onProgress);
         return () => {
             EventBus.off('preloader-progress', onProgress);
         };

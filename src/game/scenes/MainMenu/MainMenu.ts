@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 
-import { EventBus, emitEvent } from '../../EventBus';
+import { EventBus, emitEvent, onEvent } from '../../EventBus';
 import { LevelData } from '../../shared/types/LevelData';
 import { Difficulty } from '../../shared/types/Difficulty';
 
@@ -28,13 +28,13 @@ export class MainMenu extends Scene
             this.scene.start('Editor', { levelId: levelId ?? null, levelData, difficulty });
         };
 
-        EventBus.on('main-menu-edit-level', editLevelHandler, this);
+        onEvent('main-menu-edit-level', editLevelHandler, this);
 
         const playLevelHandler = ({ levelId, levelData }: { levelId: string; levelData: LevelData }) => {
             this.scene.start('Play', { levelId, levelData });
         };
 
-        EventBus.on('main-menu-play-level', playLevelHandler, this);
+        onEvent('main-menu-play-level', playLevelHandler, this);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             EventBus.off('main-menu-edit-level', editLevelHandler, this);

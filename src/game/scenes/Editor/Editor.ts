@@ -276,13 +276,13 @@ export class Editor extends Scene {
 
     private wireEvents(): void {
         // React UI → Phaser.
-        EventBus.on('editor-start-placement', this.placementController.startPlacement, this.placementController);
-        EventBus.on('editor-cancel-placement', this.placementController.cancelPlacement, this.placementController);
-        EventBus.on('editor-change-dimensions', this.worldManager.handleChangeDimensions, this.worldManager);
-        EventBus.on('editor-set-background', this.handleSetBackground, this);
-        EventBus.on('editor-undo', () => this.history.undo());
-        EventBus.on('editor-redo', () => this.history.redo());
-        EventBus.on('editor-save-level', ({ name, difficulty }: { name: string; difficulty: Difficulty }) => {
+        onEvent('editor-start-placement', this.placementController.startPlacement, this.placementController);
+        onEvent('editor-cancel-placement', this.placementController.cancelPlacement, this.placementController);
+        onEvent('editor-change-dimensions', this.worldManager.handleChangeDimensions, this.worldManager);
+        onEvent('editor-set-background', this.handleSetBackground, this);
+        onEvent('editor-undo', () => this.history.undo());
+        onEvent('editor-redo', () => this.history.redo());
+        onEvent('editor-save-level', ({ name, difficulty }) => {
             const levelData = LevelSerializer.serialize(
                 this.entityManager,
                 this.worldWidthUnit,
@@ -294,11 +294,11 @@ export class Editor extends Scene {
             this.scene.start('MainMenu');
         });
 
-        EventBus.on('editor-request-init', () => {
+        onEvent('editor-request-init', () => {
             EventBus.emit('editor-initialized', { levelTitle: this.levelTitle, levelDifficulty: this.levelDifficulty });
         });
 
-        EventBus.on('editor-exit', () => this.scene.start('MainMenu'));
+        onEvent('editor-exit', () => this.scene.start('MainMenu'));
 
         onEvent('editor-ui-dialog-active', ({ active }) => {
             if (active) {

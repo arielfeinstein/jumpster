@@ -11,7 +11,7 @@
  * This scene stays thin — all gameplay logic lives in the managers and controllers.
  */
 
-import { EventBus, emitEvent } from '../../EventBus';
+import { EventBus, emitEvent, onEvent } from '../../EventBus';
 import { Scene } from 'phaser';
 import Player from './Player';
 import { LevelData, EntityData, EnemyData, CoinData } from '../../shared/types/LevelData';
@@ -116,15 +116,15 @@ export class Play extends Scene {
             this.scene.pause();
         });
 
-        EventBus.on('play-resume', () => {
+        onEvent('play-resume', () => {
             this.scene.resume();
         });
 
-        EventBus.on('play-go-to-main-menu', () => {
+        onEvent('play-go-to-main-menu', () => {
             this.scene.start('MainMenu');
         });
 
-        EventBus.on('play-restart', () => {
+        onEvent('play-restart', () => {
             this.scene.restart(this.sceneData);
         });
 
@@ -138,10 +138,10 @@ export class Play extends Scene {
 
         // off() before on() prevents listener accumulation across scene restarts.
         EventBus.off('play-request-ready', this.onRequestReady);
-        EventBus.on('play-request-ready', this.onRequestReady);
+        onEvent('play-request-ready', this.onRequestReady);
 
         EventBus.off('play-level-complete', this.onLevelComplete);
-        EventBus.on('play-level-complete', this.onLevelComplete);
+        onEvent('play-level-complete', this.onLevelComplete);
 
         emitEvent('current-scene-ready', { scene: this });
     }
