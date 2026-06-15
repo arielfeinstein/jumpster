@@ -50,12 +50,12 @@ export default class WorldManager {
         const maxUnitsH = MAX_WORLD_HEIGHT / DESIGN_HEIGHT;
 
         if (worldWidthUnit > maxUnitsW) {
-            // TODO: handle rejection or specific clamp message
+            console.warn(`World width ${worldWidthUnit} exceeds the maximum of ${maxUnitsW} units. Clamping to ${maxUnitsW}.`);
             worldWidthUnit = maxUnitsW;
         }
 
         if (worldHeightUnit > maxUnitsH) {
-            // TODO: handle rejection or specific clamp message
+            console.warn(`World height ${worldHeightUnit} exceeds the maximum of ${maxUnitsH} units. Clamping to ${maxUnitsH}.`);
             worldHeightUnit = maxUnitsH;
         }
 
