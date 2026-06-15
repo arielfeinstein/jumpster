@@ -17,7 +17,7 @@
 
 import { Scene } from 'phaser';
 import Phaser from 'phaser';
-import { EventBus, emitEvent } from '../../EventBus';
+import { EventBus, emitEvent, onEvent } from '../../EventBus';
 import { TILE_SIZE } from '../../config/GameConfig';
 import { ASSET_KEYS } from '../../config/AssetCatalog';
 
@@ -300,7 +300,7 @@ export class Editor extends Scene {
 
         EventBus.on('editor-exit', () => this.scene.start('MainMenu'));
 
-        EventBus.on('editor-ui-dialog-active', ({ active }) => {
+        onEvent('editor-ui-dialog-active', ({ active }) => {
             if (active) {
                 this.input.keyboard!.removeCapture(Phaser.Input.Keyboard.KeyCodes.SPACE);
             } else {

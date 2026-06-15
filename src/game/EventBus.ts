@@ -11,3 +11,13 @@ export const EventBus = new Events.EventEmitter();
 export function emitEvent<T extends EventName>(event: T, payload: EventBusRegistry[T]): void {
     EventBus.emit(event, payload);
 }
+
+// TODO: migrate all EventBus.on(...) call sites throughout the project to use onEvent
+//       so that handler payload types are enforced by the registry on the receiving side too.
+/**
+ * Type-safe wrapper for subscribing to EventBus events.
+ * Infers the payload type from EventBusRegistry so handlers are fully typed.
+ */
+export function onEvent<T extends EventName>(event: T, handler: (payload: EventBusRegistry[T]) => void): void {
+    EventBus.on(event, handler);
+}
