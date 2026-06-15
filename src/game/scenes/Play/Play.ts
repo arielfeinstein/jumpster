@@ -143,7 +143,7 @@ export class Play extends Scene {
         EventBus.off('play-level-complete', this.onLevelComplete);
         EventBus.on('play-level-complete', this.onLevelComplete);
 
-        EventBus.emit('current-scene-ready', this);
+        emitEvent('current-scene-ready', { scene: this });
     }
 
     private buildWorld() {

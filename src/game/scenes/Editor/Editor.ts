@@ -17,7 +17,7 @@
 
 import { Scene } from 'phaser';
 import Phaser from 'phaser';
-import { EventBus } from '../../EventBus';
+import { EventBus, emitEvent } from '../../EventBus';
 import { TILE_SIZE } from '../../config/GameConfig';
 import { ASSET_KEYS } from '../../config/AssetCatalog';
 
@@ -199,7 +199,7 @@ export class Editor extends Scene {
             this.templateLevelData = null;
         }
 
-        EventBus.emit('current-scene-ready', this);
+        emitEvent('current-scene-ready', { scene: this });
     }
 
     update(): void {

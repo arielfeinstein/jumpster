@@ -1,6 +1,6 @@
 import { Scene } from 'phaser';
 
-import { EventBus } from '../../EventBus';
+import { EventBus, emitEvent } from '../../EventBus';
 import { LevelData } from '../../shared/types/LevelData';
 import { Difficulty } from '../../shared/types/Difficulty';
 
@@ -41,6 +41,6 @@ export class MainMenu extends Scene
             EventBus.off('main-menu-play-level', playLevelHandler, this);
         });
 
-        EventBus.emit('current-scene-ready', this);
+        emitEvent('current-scene-ready', { scene: this });
     }
 }

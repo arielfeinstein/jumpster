@@ -5,6 +5,7 @@
  * Keys are the exact string names of the events.
  * Values are the expected payload structures.
  */
+import type { Scene } from 'phaser';
 import { LevelData } from '../types/LevelData';
 import { Difficulty } from '../types/Difficulty';
 
@@ -72,11 +73,10 @@ export interface EventBusRegistry {
         totalCoins: number;
     };
 
-    // TODO: current-scene-ready is emitted directly via EventBus.emit (bypassing emitEvent) in
-    // Editor.ts and Play.ts, and consumed via EventBus.on in PhaserGame.tsx. Migrate it here so
-    // it gets the same compile-time payload contract as every other event. The payload is a
-    // Phaser.Scene instance, so the type would be `{ scene: Phaser.Scene }` or a discriminated
-    // union keyed by scene name.
+    // ─── Cross-Scene ────────────────────────────────────────────────────────────
+
+    /** Emitted by every Phaser scene at the end of create(). Signals PhaserGame.tsx to update its active-scene ref. */
+    'current-scene-ready': { scene: Scene };
 
     // ─── Editor Scene ───────────────────────────────────────────────────────────
 
