@@ -16,7 +16,6 @@ const hoursAgo = (h: number) => new Date(now - h * 3600_000).toISOString();
 const daysAgo  = (d: number) => hoursAgo(d * 24);
 
 // Published levels shown in Browse view.
-// TODO (wiring): replaced by apiFetch('/api/levels') in BrowseLevels.tsx — remove once MyLevels/CreateLevel are also wired.
 export const mockPublishedLevels: Level[] = [
     {
         id: 'pub-1',
@@ -93,7 +92,6 @@ export const mockPublishedLevels: Level[] = [
 ];
 
 // Current user's own levels shown in My Levels view.
-// TODO (wiring): replace with apiFetch('/api/levels/mine') in MyLevels.tsx.
 export const mockMyLevels: Level[] = [
     {
         id: 'my-1',
