@@ -8,6 +8,8 @@
 import type { Scene } from 'phaser';
 import { LevelData } from '../types/LevelData';
 import { Difficulty } from '../types/Difficulty';
+import { BackgroundKey } from '../types/BackgroundKey';
+import { StartPlacementPayload, PlacementActivePayload } from '../../scenes/Editor/types/DockTypes';
 
 export interface EventBusRegistry {
     // ─── Play Scene ─────────────────────────────────────────────────────────────
@@ -80,7 +82,69 @@ export interface EventBusRegistry {
 
     // ─── Editor Scene ───────────────────────────────────────────────────────────
 
-    // TODO: Migrate editor events here during refactor
+    // React → Phaser
+
+    /** Emitted by EditorUI when the user selects an entity from the dock dropdown. */
+    'editor-start-placement': StartPlacementPayload;
+
+    /** Emitted by EditorUI when the user cancels the current placement (cancel button or Escape). */
+    'editor-cancel-placement': Record<string, never>;
+
+    /** Emitted by EditorUI (LevelSizePopover) when the user applies new world dimensions. */
+    'editor-change-dimensions': { worldWidthUnit: number; worldHeightUnit: number };
+
+    /** Emitted by EditorUI when the user selects a background tile from the dock dropdown. */
+    'editor-set-background': BackgroundKey;
+
+    /** Emitted by EditorUI when the user triggers undo (button or Ctrl+Z). */
+    'editor-undo': Record<string, never>;
+
+    /** Emitted by EditorUI when the user triggers redo (button or Ctrl+Y). */
+    'editor-redo': Record<string, never>;
+
+    /** Emitted by EditorUI (SaveLevelDialog) when the user confirms saving. */
+    'editor-save-level': { name: string; difficulty: Difficulty };
+
+    /**
+     * Emitted by EditorUI when any modal dialog opens or closes.
+     * Phaser uses this to toggle space-key capture so React inputs can receive spaces
+     * while a dialog is open, then restores normal capture when dismissed.
+     */
+    'editor-ui-dialog-active': { active: boolean };
+
+    /** Emitted by React (EditorUI) when the user confirms exiting without saving. */
+    'editor-exit': Record<string, never>;
+
+    /**
+     * Emitted by EditorUI on mount to request init data from the Editor scene.
+     * Needed because editor-initialized fires during create() before React has mounted EditorUI.
+     */
+    'editor-request-init': Record<string, never>;
+
+    // Phaser → React
+
+    /** Emitted by PlacementController while a placement ghost is active or cancelled. */
+    'editor-placement-active': PlacementActivePayload;
+
+    /**
+     * Emitted by Editor.ts in response to editor-request-init.
+     * Carries the level title so EditorUI can pre-fill the save dialog.
+     */
+    'editor-initialized': { levelTitle: string; levelDifficulty: Difficulty };
+
+    /**
+     * Emitted by Editor.ts or WorldManager.ts to show a confirmation dialog in React.
+     * onConfirm / onCancel are callbacks passed directly through the bus; the
+     * EventBus is synchronous so they are captured before any scene transition.
+     */
+    'editor-confirm-dialog': { message: string; onConfirm: () => void; onCancel: () => void };
+
+    /**
+     * Emitted by Editor.ts after serializing the level, immediately before scene.start('MainMenu').
+     * The persistent useEditorSave hook catches this and fires the API call in the background.
+     * levelId null → POST new record. levelId set → PATCH existing record.
+     */
+    'editor-level-saved': { levelId: string | null; title: string; levelData: LevelData; difficulty: Difficulty };
 
     // ─── Main Menu ──────────────────────────────────────────────────────────────
 
@@ -105,36 +169,6 @@ export interface EventBusRegistry {
     /** Emitted by Preloader when all assets have finished loading. */
     'preloader-complete': Record<string, never>;
 
-    // ─── Editor Scene ───────────────────────────────────────────────────────────
-
-    /**
-     * Emitted by EditorUI on mount to request init data from the Editor scene.
-     * Needed because editor-initialized fires during create() before React has mounted EditorUI.
-     */
-    'editor-request-init': Record<string, never>;
-
-    /**
-     * Emitted by Editor.ts in response to editor-request-init.
-     * Carries the level title so EditorUI can pre-fill the save dialog.
-     */
-    'editor-initialized': { levelTitle: string; levelDifficulty: Difficulty };
-
-    /**
-     * Emitted by Editor.ts after serializing the level, immediately before scene.start('MainMenu').
-     * The persistent useEditorSave hook catches this and fires the API call in the background.
-     * levelId null → POST new record. levelId set → PATCH existing record.
-     */
-    'editor-level-saved': { levelId: string | null; title: string; levelData: LevelData; difficulty: Difficulty };
-
-    /** Emitted by React (EditorUI) when the user confirms exiting without saving. */
-    'editor-exit': Record<string, never>;
-
-    /**
-     * Emitted by EditorUI when any modal dialog opens or closes.
-     * Phaser uses this to toggle space-key capture so React inputs can receive spaces
-     * while a dialog is open, then restores normal capture when dismissed.
-     */
-    'editor-ui-dialog-active': { active: boolean };
 }
 
 export type EventName = keyof EventBusRegistry;
