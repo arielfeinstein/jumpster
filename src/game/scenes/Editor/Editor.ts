@@ -51,6 +51,7 @@ import { BackgroundKey } from '../../shared/types/BackgroundKey';
 import { depthConfig } from './types/EditorTypes';
 import LevelSerializer from '../../shared/serialization/LevelSerializer';
 import { LevelData } from '../../shared/types/LevelData';
+import { Difficulty } from '../../shared/types/Difficulty';
 
 const DEFAULT_LEVEL_NAME = 'Untitled';
 
@@ -87,6 +88,7 @@ export class Editor extends Scene {
 
     private levelId: string | null = null;
     private levelTitle: string = DEFAULT_LEVEL_NAME;
+    private levelDifficulty: Difficulty = 'medium';
     private templateLevelData: LevelData | null = null;
 
     private grid!: Phaser.GameObjects.Grid;
@@ -99,8 +101,9 @@ export class Editor extends Scene {
         super('Editor');
     }
 
-    init(data: { levelId?: string; levelData?: LevelData }): void {
+    init(data: { levelId?: string; levelData?: LevelData; difficulty?: Difficulty }): void {
         this.levelId = data.levelId ?? null;
+        this.levelDifficulty = data.difficulty ?? 'medium';
         if (data.levelData) {
             this.templateLevelData = data.levelData;
             this.levelTitle        = data.levelData.name;
@@ -279,7 +282,7 @@ export class Editor extends Scene {
         EventBus.on('editor-set-background', this.handleSetBackground, this);
         EventBus.on('editor-undo', () => this.history.undo());
         EventBus.on('editor-redo', () => this.history.redo());
-        EventBus.on('editor-save-level', ({ name }: { name: string }) => {
+        EventBus.on('editor-save-level', ({ name, difficulty }: { name: string; difficulty: Difficulty }) => {
             const levelData = LevelSerializer.serialize(
                 this.entityManager,
                 this.worldWidthUnit,
@@ -287,12 +290,12 @@ export class Editor extends Scene {
                 name,
                 this.backgroundManager.currentKey,
             );
-            EventBus.emit('editor-level-saved', { levelId: this.levelId, title: name, levelData });
+            EventBus.emit('editor-level-saved', { levelId: this.levelId, title: name, levelData, difficulty });
             this.scene.start('MainMenu');
         });
 
         EventBus.on('editor-request-init', () => {
-            EventBus.emit('editor-initialized', { levelTitle: this.levelTitle });
+            EventBus.emit('editor-initialized', { levelTitle: this.levelTitle, levelDifficulty: this.levelDifficulty });
         });
 
         EventBus.on('editor-exit', () => this.scene.start('MainMenu'));

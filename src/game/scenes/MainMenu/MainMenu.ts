@@ -2,6 +2,7 @@ import { Scene } from 'phaser';
 
 import { EventBus } from '../../EventBus';
 import { LevelData } from '../../shared/types/LevelData';
+import { Difficulty } from '../../shared/types/Difficulty';
 
 export class MainMenu extends Scene
 {
@@ -23,8 +24,8 @@ export class MainMenu extends Scene
             .setDepth(-10);
 
         
-        const editLevelHandler = ({ levelId, levelData }: { levelId?: string; levelData?: LevelData }) => {
-            this.scene.start('Editor', { levelId: levelId ?? null, levelData });
+        const editLevelHandler = ({ levelId, levelData, difficulty }: { levelId?: string; levelData?: LevelData; difficulty?: Difficulty }) => {
+            this.scene.start('Editor', { levelId: levelId ?? null, levelData, difficulty });
         };
 
         EventBus.on('main-menu-edit-level', editLevelHandler, this);

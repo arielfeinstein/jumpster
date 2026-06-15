@@ -68,6 +68,24 @@
     margin: 6px 0 0;
 }
 
+/* ---- Difficulty radio group -------------------------------------------- */
+
+.difficultyGroup {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.difficultyOption {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+}
+
 /* ---- Action buttons ---------------------------------------------------- */
 
 .actions {

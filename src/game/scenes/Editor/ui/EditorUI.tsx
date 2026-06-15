@@ -20,6 +20,7 @@ import { DropdownMenu, Popover } from 'radix-ui';
 import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
 import { Save, Undo2, Redo2, LogOut } from 'lucide-react';
 import { EventBus } from '../../../EventBus';
+import type { Difficulty } from '../../../shared/types/Difficulty';
 import {
     DOCK_SLOTS,
     DockPosition,
@@ -41,8 +42,9 @@ export default function EditorUI() {
     const [dockPosition, setDockPosition] = useState<DockPosition>('bottom');
     const [placementActive, setPlacementActive] = useState(false);
 
-    // Holds the default title to pre-fill the save dialog (set via editor-initialized handshake).
+    // Holds the default title and difficulty to pre-fill the save dialog (set via editor-initialized handshake).
     const defaultLevelTitleRef = useRef('');
+    const defaultDifficultyRef = useRef<Difficulty>('medium');
 
     // Listen for placement state changes emitted by PlacementController.
     useEffect(() => {
@@ -62,8 +64,9 @@ export default function EditorUI() {
     // Handshake: emit editor-request-init on mount so Editor.ts can send back the level title.
     // Needed because editor-initialized fires during create() before EditorUI has mounted.
     useEffect(() => {
-        const handler = ({ levelTitle }: { levelTitle: string }) => {
+        const handler = ({ levelTitle, levelDifficulty }: { levelTitle: string; levelDifficulty: Difficulty }) => {
             defaultLevelTitleRef.current = levelTitle;
+            defaultDifficultyRef.current = levelDifficulty;
         };
         EventBus.on('editor-initialized', handler);
         EventBus.emit('editor-request-init', {});
@@ -105,9 +108,9 @@ export default function EditorUI() {
         EventBus.emit('editor-cancel-placement');
     }, []);
 
-    const handleSaveLevel = useCallback((name: string) => {
+    const handleSaveLevel = useCallback((name: string, difficulty: Difficulty) => {
         setSaveDialogOpen(false);
-        EventBus.emit('editor-save-level', { name });
+        EventBus.emit('editor-save-level', { name, difficulty });
     }, []);
 
     const handleOpenSaveDialog = useCallback(() => {
@@ -158,6 +161,7 @@ export default function EditorUI() {
             <SaveLevelDialog
                 open={saveDialogOpen}
                 defaultTitle={defaultLevelTitleRef.current}
+                defaultDifficulty={defaultDifficultyRef.current}
                 onSave={handleSaveLevel}
                 onCancel={() => setSaveDialogOpen(false)}
             />

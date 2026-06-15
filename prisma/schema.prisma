@@ -20,7 +20,6 @@ model User {
 model Level {
   id          String        @id @default(cuid())
   title       String
-  // TODO (wiring): expose a difficulty picker in the level editor UI so the creator can change this before publishing
   difficulty  String        @default("medium")
   data        Json?
   authorId    String

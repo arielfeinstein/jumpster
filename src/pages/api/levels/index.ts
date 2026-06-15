@@ -23,12 +23,12 @@ export default async function handler(
 
     /** Creates a new draft level owned by the authenticated user. */
     if (req.method === "POST") {
-      const { title, data } = req.body;
+      const { title, data, difficulty } = req.body;
       if (!title || typeof title !== "string" || title.trim() === "") {
         throw new ValidationError("title is required");
       }
 
-      const level = await levelService.createLevel(user.id, { title: title.trim(), data });
+      const level = await levelService.createLevel(user.id, { title: title.trim(), data, difficulty });
       return res.status(201).json({ level });
     }
 

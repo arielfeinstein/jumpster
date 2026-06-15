@@ -6,6 +6,7 @@
  * Values are the expected payload structures.
  */
 import { LevelData } from '../types/LevelData';
+import { Difficulty } from '../types/Difficulty';
 
 export interface EventBusRegistry {
     // ─── Play Scene ─────────────────────────────────────────────────────────────
@@ -94,7 +95,7 @@ export interface EventBusRegistry {
      * levelId present → edit existing draft. Absent → new level or template (Editor POSTs on save).
      * levelData present → pre-load this data into the editor (template or existing level layout).
      */
-    'main-menu-edit-level': { levelId?: string; levelData?: LevelData };
+    'main-menu-edit-level': { levelId?: string; levelData?: LevelData; difficulty?: Difficulty };
 
     // ─── Preloader Scene ────────────────────────────────────────────────────────
 
@@ -116,14 +117,14 @@ export interface EventBusRegistry {
      * Emitted by Editor.ts in response to editor-request-init.
      * Carries the level title so EditorUI can pre-fill the save dialog.
      */
-    'editor-initialized': { levelTitle: string };
+    'editor-initialized': { levelTitle: string; levelDifficulty: Difficulty };
 
     /**
      * Emitted by Editor.ts after serializing the level, immediately before scene.start('MainMenu').
      * The persistent useEditorSave hook catches this and fires the API call in the background.
      * levelId null → POST new record. levelId set → PATCH existing record.
      */
-    'editor-level-saved': { levelId: string | null; title: string; levelData: LevelData };
+    'editor-level-saved': { levelId: string | null; title: string; levelData: LevelData; difficulty: Difficulty };
 
     /** Emitted by React (EditorUI) when the user confirms exiting without saving. */
     'editor-exit': Record<string, never>;

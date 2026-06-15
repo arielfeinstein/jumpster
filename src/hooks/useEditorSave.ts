@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { EventBus } from '../game/EventBus';
 import { apiFetch } from '@/lib/api';
 import type { LevelData } from '../game/shared/types/LevelData';
+import type { Difficulty } from '../game/shared/types/Difficulty';
 
 /**
  * Listens for editor-level-saved and persists the level to the API.
@@ -11,18 +12,18 @@ import type { LevelData } from '../game/shared/types/LevelData';
  */
 export function useEditorSave() {
     useEffect(() => {
-        const handler = async ({ levelId, title, levelData }: { levelId: string | null; title: string; levelData: LevelData }) => {
+        const handler = async ({ levelId, title, levelData, difficulty }: { levelId: string | null; title: string; levelData: LevelData; difficulty: Difficulty }) => {
             try {
                 if (!levelId) {
                     const res = await apiFetch('/api/levels', {
                         method: 'POST',
-                        body: JSON.stringify({ title, data: levelData }),
+                        body: JSON.stringify({ title, data: levelData, difficulty }),
                     });
                     if (!res.ok) console.error('[useEditorSave] failed:', res.status);
                 } else {
                     const res = await apiFetch(`/api/levels/${levelId}`, {
                         method: 'PATCH',
-                        body: JSON.stringify({ title, data: levelData }),
+                        body: JSON.stringify({ title, data: levelData, difficulty }),
                     });
                     if (!res.ok) console.error('[useEditorSave] failed:', res.status);
                 }

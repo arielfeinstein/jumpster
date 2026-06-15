@@ -1,7 +1,7 @@
 /**
  * SaveLevelDialog.tsx
  *
- * Dialog for naming a level before saving it.
+ * Dialog for naming a level and choosing its difficulty before saving.
  * Uses the same Radix Dialog + Portal pattern as ConfirmationDialog.
  *
  * Validation rules:
@@ -12,20 +12,29 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Dialog } from 'radix-ui';
+import type { Difficulty } from '../../../shared/types/Difficulty';
 import styles from './SaveLevelDialog.module.css';
 
 const NAME_PATTERN = /^[a-zA-Z0-9 _-]+$/;
 const MAX_LENGTH = 50;
 
+const DIFFICULTIES: { value: Difficulty; label: string }[] = [
+    { value: 'easy',   label: 'Easy'   },
+    { value: 'medium', label: 'Medium' },
+    { value: 'hard',   label: 'Hard'   },
+];
+
 interface SaveLevelDialogProps {
     open: boolean;
     defaultTitle?: string;
-    onSave: (name: string) => void;
+    defaultDifficulty?: Difficulty;
+    onSave: (name: string, difficulty: Difficulty) => void;
     onCancel: () => void;
 }
 
-export default function SaveLevelDialog({ open, defaultTitle, onSave, onCancel }: SaveLevelDialogProps) {
+export default function SaveLevelDialog({ open, defaultTitle, defaultDifficulty, onSave, onCancel }: SaveLevelDialogProps) {
     const [name, setName] = useState('');
+    const [difficulty, setDifficulty] = useState<Difficulty>('medium');
     const [error, setError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,6 +42,7 @@ export default function SaveLevelDialog({ open, defaultTitle, onSave, onCancel }
     useEffect(() => {
         if (open) {
             setName(defaultTitle ?? '');
+            setDifficulty(defaultDifficulty ?? 'medium');
             setError(null);
             // Delay focus so Radix has time to mount the content.
             setTimeout(() => inputRef.current?.focus(), 50);
@@ -49,7 +59,7 @@ export default function SaveLevelDialog({ open, defaultTitle, onSave, onCancel }
     function handleSave() {
         const err = validate(name);
         if (err) { setError(err); return; }
-        onSave(name.trim());
+        onSave(name.trim(), difficulty);
     }
 
     function handleKeyDown(e: React.KeyboardEvent) {
@@ -63,7 +73,7 @@ export default function SaveLevelDialog({ open, defaultTitle, onSave, onCancel }
                 <Dialog.Content className={styles.content}>
                     <Dialog.Title className={styles.title}>Save Level</Dialog.Title>
                     <Dialog.Description className={styles.description}>
-                        Enter a name for your level.
+                        Enter a name and choose a difficulty for your level.
                     </Dialog.Description>
                     <input
                         ref={inputRef}
@@ -76,6 +86,20 @@ export default function SaveLevelDialog({ open, defaultTitle, onSave, onCancel }
                         onKeyDown={handleKeyDown}
                     />
                     {error && <p className={styles.error}>{error}</p>}
+                    <div className={styles.difficultyGroup}>
+                        {DIFFICULTIES.map(({ value, label }) => (
+                            <label key={value} className={styles.difficultyOption}>
+                                <input
+                                    type="radio"
+                                    name="difficulty"
+                                    value={value}
+                                    checked={difficulty === value}
+                                    onChange={() => setDifficulty(value)}
+                                />
+                                {label}
+                            </label>
+                        ))}
+                    </div>
                     <div className={styles.actions}>
                         <button className={styles.cancelButton} onClick={onCancel}>Cancel</button>
                         <button className={styles.saveButton} onClick={handleSave}>Save</button>

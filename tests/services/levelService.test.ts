@@ -95,6 +95,27 @@ describe("createLevel", () => {
       data: { title: "My Level", authorId: "user-1", data: layoutData },
     });
   });
+
+  it("includes difficulty when provided", async () => {
+    const expected = makeLevel({ title: "My Level", difficulty: "hard" });
+    vi.mocked(prisma.level.create).mockResolvedValue(expected);
+
+    await createLevel("user-1", { title: "My Level", difficulty: "hard" });
+
+    expect(prisma.level.create).toHaveBeenCalledWith({
+      data: { title: "My Level", authorId: "user-1", difficulty: "hard" },
+    });
+  });
+
+  it("omits difficulty from create payload when not provided", async () => {
+    const expected = makeLevel({ title: "My Level" });
+    vi.mocked(prisma.level.create).mockResolvedValue(expected);
+
+    await createLevel("user-1", { title: "My Level" });
+
+    const callArg = vi.mocked(prisma.level.create).mock.calls[0][0];
+    expect(callArg.data).not.toHaveProperty("difficulty");
+  });
 });
 
 // ─── getLevel ───────────────────────────────────────────────────────────────
@@ -188,6 +209,20 @@ describe("updateLevel", () => {
     expect(prisma.level.update).toHaveBeenCalledWith({
       where: { id: "level-1" },
       data: { title: "Updated Title" },
+    });
+  });
+
+  it("includes difficulty in the patch when provided", async () => {
+    const existing = makeLevel({ authorId: "user-1" });
+    const updated = makeLevel({ authorId: "user-1", difficulty: "easy" });
+    vi.mocked(prisma.level.findUnique).mockResolvedValue(existing);
+    vi.mocked(prisma.level.update).mockResolvedValue(updated);
+
+    await updateLevel("level-1", "user-1", { difficulty: "easy" });
+
+    expect(prisma.level.update).toHaveBeenCalledWith({
+      where: { id: "level-1" },
+      data: { difficulty: "easy" },
     });
   });
 });

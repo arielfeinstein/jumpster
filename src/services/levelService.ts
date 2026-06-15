@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import type { Difficulty } from "@/game/shared/types/Difficulty";
 
 // Joins author username onto a level query result.
 // Spread into any findMany/findUnique that needs these fields for display.
@@ -46,14 +47,16 @@ function withStats<T extends { playHistory: Array<{ userId: string; playCount: n
  */
 export async function createLevel(
   userId: string,
-  input: { title: string; data?: unknown }
+  input: { title: string; data?: unknown; difficulty?: Difficulty }
 ) {
-  const createData: { title: string; authorId: string; data?: Prisma.InputJsonValue } = {
+  const createData: { title: string; authorId: string; data?: Prisma.InputJsonValue; difficulty?: string } = {
     title: input.title,
     authorId: userId,
   };
   if (input.data !== undefined)
     createData.data = input.data as Prisma.InputJsonValue;
+  if (input.difficulty !== undefined)
+    createData.difficulty = input.difficulty;
 
   return prisma.level.create({ data: createData });
 }
@@ -180,7 +183,7 @@ export async function getCompletionHistory(userId: string) {
 export async function updateLevel(
   id: string,
   userId: string,
-  patch: { title?: string; data?: unknown }
+  patch: { title?: string; data?: unknown; difficulty?: Difficulty }
 ) {
   const level = await prisma.level.findUnique({ where: { id } });
 
@@ -189,10 +192,12 @@ export async function updateLevel(
   if (level.published) throw new ForbiddenError("Cannot edit a published level");
   if (level.deletedAt !== null) throw new ForbiddenError("Cannot edit a deleted level");
 
-  const updateData: { title?: string; data?: Prisma.InputJsonValue } = {};
+  const updateData: { title?: string; data?: Prisma.InputJsonValue; difficulty?: string } = {};
   if (patch.title !== undefined) updateData.title = patch.title;
   if (patch.data !== undefined)
     updateData.data = patch.data as Prisma.InputJsonValue;
+  if (patch.difficulty !== undefined)
+    updateData.difficulty = patch.difficulty;
 
   return prisma.level.update({ where: { id }, data: updateData });
 }

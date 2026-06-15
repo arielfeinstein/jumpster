@@ -20,8 +20,8 @@ export default async function handler(
     }
 
     if (req.method === "PATCH") {
-      const { title, data } = req.body;
-      const level = await levelService.updateLevel(id, user.id, { title, data });
+      const { title, data, difficulty } = req.body;
+      const level = await levelService.updateLevel(id, user.id, { title, data, difficulty });
       return res.status(200).json({ level });
     }
 
