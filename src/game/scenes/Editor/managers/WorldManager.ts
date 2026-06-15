@@ -4,7 +4,7 @@
  * Manages the logic for resizing the game world, including checking for out-of-bound
  * entities and invoking the confirmation dialog when shrinking the world.
  */
-import { EventBus } from '../../../EventBus';
+import { emitEvent } from '../../../EventBus';
 import GameEntity from '../../../shared/gameObjects/GameEntity';
 import { MAX_WORLD_WIDTH, MAX_WORLD_HEIGHT, DESIGN_WIDTH, DESIGN_HEIGHT } from '../../../config/GameConfig';
 import { IEntityManager, IPlatformRelManager } from '../types/ManagerInterfaces';
@@ -87,7 +87,7 @@ export default class WorldManager {
 
         if (entitiesToDelete.length > 0) {
             const confirmed = await new Promise<boolean>((resolve) => {
-                EventBus.emit('editor-confirm-dialog', {
+                emitEvent('editor-confirm-dialog', {
                     message: `Resizing to a smaller level will delete ${entitiesToDelete.length} entities that are out of bounds. Are you sure you want to continue?`,
                     onConfirm: () => resolve(true),
                     onCancel: () => resolve(false),

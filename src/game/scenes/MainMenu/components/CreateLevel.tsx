@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { type Level } from '@/mocks/levels';
-import { EventBus } from '@/game/EventBus';
+import { emitEvent } from '@/game/EventBus';
 import { apiFetch } from '@/lib/api';
 import type { LevelData } from '@/game/shared/types/LevelData';
 import type { Difficulty } from '@/game/shared/types/Difficulty';
@@ -28,14 +28,14 @@ export default function CreateLevel({ onBack }: CreateLevelProps) {
     }, [mode]);
 
     function handleNewLevel() {
-        EventBus.emit('main-menu-edit-level', {});
+        emitEvent('main-menu-edit-level', {});
     }
 
     async function handleSelectTemplate(level: Level) {
         const res = await apiFetch(`/api/levels/${level.id}`);
         if (!res.ok) { console.error('[CreateLevel] failed to load template'); return; }
         const { level: loaded } = await res.json();
-        EventBus.emit('main-menu-edit-level', { levelData: loaded.data as LevelData, difficulty: level.difficulty as Difficulty });
+        emitEvent('main-menu-edit-level', { levelData: loaded.data as LevelData, difficulty: level.difficulty as Difficulty });
     }
 
     if (mode === 'picker') {

@@ -19,7 +19,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DropdownMenu, Popover } from 'radix-ui';
 import { Component2Icon, Cross1Icon, DotFilledIcon } from '@radix-ui/react-icons';
 import { Save, Undo2, Redo2, LogOut } from 'lucide-react';
-import { EventBus, onEvent } from '../../../EventBus';
+import { EventBus, emitEvent, onEvent } from '../../../EventBus';
 import type { Difficulty } from '../../../shared/types/Difficulty';
 import {
     DOCK_SLOTS,
@@ -69,7 +69,7 @@ export default function EditorUI() {
             defaultDifficultyRef.current = levelDifficulty;
         };
         onEvent('editor-initialized', handler);
-        EventBus.emit('editor-request-init', {});
+        emitEvent('editor-request-init', {});
         return () => { EventBus.off('editor-initialized', handler); };
     }, []);
 
@@ -97,20 +97,20 @@ export default function EditorUI() {
     // Notify Phaser when any dialog opens/closes so it can toggle space-key capture.
     const anyDialogOpen = saveDialogOpen || exitConfirmOpen || !!dialogState?.open;
     useEffect(() => {
-        EventBus.emit('editor-ui-dialog-active', { active: anyDialogOpen });
+        emitEvent('editor-ui-dialog-active', { active: anyDialogOpen });
     }, [anyDialogOpen]);
 
     const handleEntitySelect = useCallback(({ entityType, variant }: StartPlacementPayload) => {
-        EventBus.emit('editor-start-placement', { entityType, variant });
+        emitEvent('editor-start-placement', { entityType, variant });
     }, []);
 
     const handleCancelPlacement = useCallback(() => {
-        EventBus.emit('editor-cancel-placement');
+        emitEvent('editor-cancel-placement', {});
     }, []);
 
     const handleSaveLevel = useCallback((name: string, difficulty: Difficulty) => {
         setSaveDialogOpen(false);
-        EventBus.emit('editor-save-level', { name, difficulty });
+        emitEvent('editor-save-level', { name, difficulty });
     }, []);
 
     const handleOpenSaveDialog = useCallback(() => {
@@ -119,7 +119,7 @@ export default function EditorUI() {
 
     const handleExitConfirm = useCallback(() => {
         setExitConfirmOpen(false);
-        EventBus.emit('editor-exit', {});
+        emitEvent('editor-exit', {});
     }, []);
 
     const cycleDockPosition = useCallback(() => {
@@ -212,8 +212,8 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
             const isCancel = config.action === 'cancel-placement';
             let onClick: () => void;
             if (config.action === 'cancel-placement') onClick = onCancelPlacement;
-            else if (config.action === 'undo')        onClick = () => EventBus.emit('editor-undo');
-            else if (config.action === 'redo')        onClick = () => EventBus.emit('editor-redo');
+            else if (config.action === 'undo')        onClick = () => emitEvent('editor-undo', {});
+            else if (config.action === 'redo')        onClick = () => emitEvent('editor-redo', {});
             else if (config.action === 'save-level')  onClick = onOpenSaveDialog;
             else if (config.action === 'exit-editor') onClick = onOpenExitConfirm;
             else                                      onClick = onCycleDockPosition;
@@ -247,7 +247,7 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
                         label: o.label,
                         assetSrc: o.assetSrc,
                         spriteFrame: o.spriteFrame,
-                        onSelect: () => EventBus.emit('editor-set-background', o.backgroundKey),
+                        onSelect: () => emitEvent('editor-set-background', o.backgroundKey),
                     }))}
                 />
             );
@@ -359,7 +359,7 @@ function LevelSizePopoverSlot() {
     const handleApply = useCallback(() => {
         const worldWidthUnit  = parseInt(widthRef.current?.value  ?? '0', 10);
         const worldHeightUnit = parseInt(heightRef.current?.value ?? '0', 10);
-        EventBus.emit('editor-change-dimensions', { worldWidthUnit, worldHeightUnit });
+        emitEvent('editor-change-dimensions', { worldWidthUnit, worldHeightUnit });
     }, []);
 
     return (

@@ -29,7 +29,7 @@ import PlatformRelationshipManager from '../managers/PlatformRelationshipManager
 import CommandHistory from '../commands/CommandHistory';
 import PlaceCommand from '../commands/PlaceCommand';
 import GridManager from '../../../shared/managers/GridManager';
-import { EventBus } from '../../../EventBus';
+import { emitEvent } from '../../../EventBus';
 import { RED_TINT } from '../types/EditorTypes';
 import { StartPlacementPayload, PlacementActivePayload } from '../types/DockTypes';
 import { EntityType } from '../../../shared/types/EntityType';
@@ -254,6 +254,6 @@ export default class PlacementController {
             active,
             ...(entityType ? { entityType: entityType as PlacementActivePayload['entityType'] } : {}),
         };
-        EventBus.emit('editor-placement-active', payload);
+        emitEvent('editor-placement-active', payload);
     }
 }

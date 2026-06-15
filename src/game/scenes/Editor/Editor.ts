@@ -290,12 +290,12 @@ export class Editor extends Scene {
                 name,
                 this.backgroundManager.currentKey,
             );
-            EventBus.emit('editor-level-saved', { levelId: this.levelId, title: name, levelData, difficulty });
+            emitEvent('editor-level-saved', { levelId: this.levelId, title: name, levelData, difficulty });
             this.scene.start('MainMenu');
         });
 
         onEvent('editor-request-init', () => {
-            EventBus.emit('editor-initialized', { levelTitle: this.levelTitle, levelDifficulty: this.levelDifficulty });
+            emitEvent('editor-initialized', { levelTitle: this.levelTitle, levelDifficulty: this.levelDifficulty });
         });
 
         onEvent('editor-exit', () => this.scene.start('MainMenu'));
@@ -419,7 +419,7 @@ export class Editor extends Scene {
 
         if (stranded.length > 0) {
             const confirmed = await new Promise<boolean>((resolve) => {
-                EventBus.emit('editor-confirm-dialog', {
+                emitEvent('editor-confirm-dialog', {
                     message: 'Deleting will also remove entities that require platform support. Are you sure you want to continue?',
                     onConfirm: () => resolve(true),
                     onCancel: () => resolve(false),
