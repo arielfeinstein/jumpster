@@ -41,6 +41,7 @@ function makeLevelWithStats(overrides: Partial<Level> = {}) {
     author: { username: "testuser" },
     playHistory: [] as Array<{ userId: string; playCount: number; completedAt: Date | null }>,
     likes: [] as Array<{ userId: string }>,
+    bookmarks: [] as Array<{ userId: string }>,
   };
 }
 

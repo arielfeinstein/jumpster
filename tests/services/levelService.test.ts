@@ -63,6 +63,7 @@ function makeLevelWithStats(overrides: Partial<Level> = {}) {
     author: { username: "testuser" },
     playHistory: [] as Array<{ userId: string; playCount: number; completedAt: Date | null }>,
     likes: [] as Array<{ userId: string }>,
+    bookmarks: [] as Array<{ userId: string }>,
   };
 }
 
@@ -291,6 +292,7 @@ describe("listPublishedLevels", () => {
         { userId: "user-3", playCount: 1, completedAt: null },
       ],
       likes: [] as Array<{ userId: string }>,
+    bookmarks: [] as Array<{ userId: string }>,
     };
     vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
 
@@ -308,6 +310,7 @@ describe("listPublishedLevels", () => {
       author: { username: "testuser" },
       playHistory: [{ userId: "user-1", playCount: 2, completedAt: new Date() }],
       likes: [] as Array<{ userId: string }>,
+    bookmarks: [] as Array<{ userId: string }>,
     };
     vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
 
@@ -339,6 +342,7 @@ describe("listMyLevels", () => {
         { userId: "user-1", playCount: 1, completedAt: new Date() },
       ],
       likes: [] as Array<{ userId: string }>,
+    bookmarks: [] as Array<{ userId: string }>,
     };
     vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
 

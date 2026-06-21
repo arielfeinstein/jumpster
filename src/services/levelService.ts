@@ -24,6 +24,7 @@ export const levelWithStatsSelect = {
     author:      { select: { username: true } },
     playHistory: { select: { userId: true, playCount: true, completedAt: true } },
     likes:       { select: { userId: true } },
+    bookmarks:   { select: { userId: true } },
   },
 } as const;
 
@@ -32,11 +33,12 @@ export const levelWithStatsSelect = {
 export function withStats<T extends {
   playHistory: Array<{ userId: string; playCount: number; completedAt: Date | null }>;
   likes: Array<{ userId: string }>;
+  bookmarks: Array<{ userId: string }>;
 }>(
   level: T,
   userId: string
 ) {
-  const { playHistory, likes, ...rest } = level;
+  const { playHistory, likes, bookmarks, ...rest } = level;
   return {
     ...rest,
     totalPlays:     playHistory.reduce((sum, h) => sum + h.playCount, 0),
@@ -45,7 +47,7 @@ export function withStats<T extends {
     completedByMe:  playHistory.some(h => h.userId === userId && h.completedAt !== null),
     likeCount:      likes.length,
     likedByMe:      likes.some(l => l.userId === userId),
-    bookmarkedByMe: false,
+    bookmarkedByMe: bookmarks.some(b => b.userId === userId),
   };
 }
 
