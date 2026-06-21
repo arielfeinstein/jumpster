@@ -5,8 +5,9 @@ import BrowseLevels from './components/BrowseLevels';
 import MyLevels from './components/MyLevels';
 import CreateLevel from './components/CreateLevel';
 import Settings from './components/Settings';
+import Help from './components/Help';
 
-type View = 'home' | 'browse' | 'myLevels' | 'create' | 'settings';
+type View = 'home' | 'browse' | 'myLevels' | 'create' | 'settings' | 'help';
 
 type NavAction = { type: 'push'; view: View } | { type: 'back' };
 
@@ -45,6 +46,9 @@ export default function MainMenuUI() {
                         <button type="button" className={styles.menuButton} onClick={() => push('settings')}>
                             Settings
                         </button>
+                        <button type="button" className={styles.menuButton} onClick={() => push('help')}>
+                            How to Play
+                        </button>
                     </div>
                 </div>
             )}
@@ -52,6 +56,7 @@ export default function MainMenuUI() {
             {current === 'myLevels' && <MyLevels onBack={back} />}
             {current === 'create'   && <CreateLevel onBack={back} />}
             {current === 'settings' && <Settings onBack={back} />}
+            {current === 'help'     && <Help onBack={back} />}
         </div>
     );
 }
