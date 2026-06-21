@@ -170,7 +170,7 @@ export class Play extends Scene {
         const spawnY = spawnEntity?.y ?? 300;
 
         // CheckpointManager created here (once) with the real spawn position
-        this.checkpointManager = new CheckpointManager(spawnX, spawnY, this.healthManager, this.coinManager);
+        this.checkpointManager = new CheckpointManager(spawnX, spawnY, this.healthManager, this.coinManager, this.enemyManager);
         this.healthManager.onDied = () => this.checkpointManager.respawn();
         this.healthManager.onHit = () => this.player.startHurtFlash();
 

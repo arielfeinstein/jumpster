@@ -23,6 +23,7 @@
 import Player from '../Player';
 import HealthManager from './HealthManager';
 import CoinManager from './CoinManager';
+import EnemyManager from './EnemyManager';
 import Checkpoint from '../../../shared/gameObjects/Checkpoint';
 
 interface CheckpointSnapshot {
@@ -30,6 +31,8 @@ interface CheckpointSnapshot {
     spawnY: number;
     health: number;
     collectedCoinIds: Set<string>;
+    /** IDs of enemies that were alive when this snapshot was taken. */
+    liveEnemyIds: Set<string>;
 }
 
 export default class CheckpointManager {
@@ -39,22 +42,26 @@ export default class CheckpointManager {
 
     private readonly healthManager: HealthManager;
     private readonly coinManager: CoinManager;
+    private readonly enemyManager: EnemyManager;
 
     constructor(
         spawnX: number,
         spawnY: number,
         healthManager: HealthManager,
         coinManager: CoinManager,
+        enemyManager: EnemyManager,
     ) {
         this.healthManager = healthManager;
         this.coinManager = coinManager;
+        this.enemyManager = enemyManager;
 
-        // Initial snapshot = the level's spawn point with full health and no coins collected
+        // Initial snapshot = the level's spawn point with full health, no coins, and all enemies alive
         this.snapshot = {
             spawnX,
             spawnY,
             health: healthManager.getHp(),
             collectedCoinIds: new Set(),
+            liveEnemyIds: this.enemyManager.getLiveEnemyIds(),
         };
     }
 
@@ -75,6 +82,7 @@ export default class CheckpointManager {
             spawnY: checkpoint.y,
             health: this.healthManager.getHp(),
             collectedCoinIds: this.coinManager.getCollectedIds(),
+            liveEnemyIds: this.enemyManager.getLiveEnemyIds(),
         };
 
         checkpoint.onReached();
@@ -90,10 +98,11 @@ export default class CheckpointManager {
             return;
         }
 
-        const { spawnX, spawnY, health, collectedCoinIds } = this.snapshot;
+        const { spawnX, spawnY, health, collectedCoinIds, liveEnemyIds } = this.snapshot;
 
         this.healthManager.setHealth(health);
         this.coinManager.restoreToSnapshot(collectedCoinIds);
+        this.enemyManager.respawnEnemies(liveEnemyIds);
         this.player.respawn(spawnX, spawnY);
         this.healthManager.clearIframes();
     }

@@ -33,11 +33,15 @@ export interface ContactInfo {
 
 export default abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
 
+    /** Stable entity ID from level data — used by CheckpointManager to track live/dead state. */
+    readonly id: string;
+
     /** Visual variant — drives texture / tint selection in the subclass constructor. */
     readonly variant: string;
 
-    constructor(scene: Phaser.Scene, x: number, y: number, textureKey: string, variant: string) {
+    constructor(scene: Phaser.Scene, id: string, x: number, y: number, textureKey: string, variant: string) {
         super(scene, x, y, textureKey);
+        this.id = id;
         this.variant = variant;
 
         // Register with scene and enable Arcade physics

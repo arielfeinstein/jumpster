@@ -37,7 +37,7 @@ export default class Goomba extends Enemy {
         data: EnemyData,
         groups: PlayPhysicsGroups,
     ) {
-        super(scene, data.x, data.y, ASSET_KEYS.ENEMY, data.variant ?? 'default');
+        super(scene, data.id, data.x, data.y, ASSET_KEYS.ENEMY, data.variant ?? 'default');
 
         const patrolBounds = Goomba.computePatrolBounds(data, groups);
         this.patrolLeft = patrolBounds.left;
