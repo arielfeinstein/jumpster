@@ -372,6 +372,60 @@
     background: #1a0808;
 }
 
+/* ── Icon-only action buttons (like, bookmark) ──────────────────────────────── */
+
+/* Small square button that holds a single lucide icon.
+   Shares the same border/font style as .actionButton but with tighter padding
+   so it does not visually dominate the row. */
+.iconButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 6px;
+    background: #16213e;
+    color: #888;
+    border: 2px solid #444;
+    box-shadow: 2px 2px 0 #000;
+    cursor: pointer;
+    transition: box-shadow 60ms, transform 60ms, color 120ms, border-color 120ms, background 120ms;
+    flex-shrink: 0;
+}
+
+.iconButton:hover {
+    color: #fff;
+    border-color: #888;
+    background: #0f3460;
+}
+
+.iconButton:active {
+    box-shadow: none;
+    transform: translate(2px, 2px);
+}
+
+/* Liked state — warm red accent so the heart reads as "active" */
+.iconButtonActive {
+    color: #f44336;
+    border-color: #f44336;
+}
+
+.iconButtonActive:hover {
+    background: #1a0808;
+    border-color: #f44336;
+    color: #f44336;
+}
+
+/* Bookmarked state — blue accent to distinguish from like */
+.iconButtonBookmarkActive {
+    color: #4fa3e0;
+    border-color: #4fa3e0;
+}
+
+.iconButtonBookmarkActive:hover {
+    background: #071826;
+    border-color: #4fa3e0;
+    color: #4fa3e0;
+}
+
 /* ── Placeholder action message ─────────────────────────────────────────────── */
 
 .actionMessage {

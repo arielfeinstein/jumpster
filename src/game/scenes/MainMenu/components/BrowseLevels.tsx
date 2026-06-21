@@ -8,7 +8,7 @@ import LevelList from './LevelList';
 
 type SortOption = 'newest' | 'mostPlayed' | 'mostCompleted';
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
-type Tab = 'all' | 'history';
+type Tab = 'all' | 'history' | 'bookmarks';
 type HistoryFilter = 'all' | 'completed' | 'uncompleted';
 
 interface BrowseLevelsProps {
@@ -19,8 +19,11 @@ interface BrowseLevelsProps {
  * Full-screen panel that lets the player discover and launch community levels.
  *
  * Displays all published levels fetched from the server. The player can search
- * by title, filter by difficulty, sort by recency or popularity, and switch to
- * a History tab that shows only levels they have previously played.
+ * by title, filter by difficulty, sort by recency or popularity, and switch between
+ * tabs for All levels, History (levels they've played), and Bookmarks.
+ *
+ * Like and bookmark toggles update the level list state optimistically so the UI
+ * responds immediately without waiting for a round-trip.
  *
  * Clicking Play on a level emits a `main-menu-play-level` event so the Phaser
  * MainMenu scene can transition into the Play scene.
@@ -39,7 +42,8 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
     const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('all');
 
     // Fetch all published levels once on mount. The response already includes
-    // per-user flags (playedByMe, completedByMe) so no second request is needed.
+    // per-user flags (playedByMe, completedByMe, likedByMe, bookmarkedByMe) so
+    // no second request is needed to populate tab state.
     useEffect(() => {
         apiFetch('/api/levels')
             .then(res => {
@@ -61,6 +65,11 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
             result = result.filter(l => l.playedByMe);
             if (historyFilter === 'completed')   result = result.filter(l => l.completedByMe);
             if (historyFilter === 'uncompleted') result = result.filter(l => !l.completedByMe);
+        }
+
+        // Bookmarks tab: narrow to levels the user has bookmarked.
+        if (tab === 'bookmarks') {
+            result = result.filter(l => l.bookmarkedByMe);
         }
 
         // Title search (case-insensitive substring match).
@@ -87,6 +96,62 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
         if (!res.ok) { console.error('[BrowseLevels] failed to load level'); return; }
         const { level } = await res.json();
         emitEvent('main-menu-play-level', { levelId, levelData: level.data as LevelData });
+    }
+
+    /**
+     * Toggles a like on the given level. Updates state optimistically:
+     * flips likedByMe and adjusts likeCount by ±1 immediately so the UI
+     * responds without waiting for the server response.
+     */
+    async function handleLike(levelId: string) {
+        // Optimistic update — flip before awaiting the response.
+        setLevels(prev => prev.map(l =>
+            l.id === levelId
+                ? { ...l, likedByMe: !l.likedByMe, likeCount: l.likeCount + (l.likedByMe ? -1 : 1) }
+                : l
+        ));
+
+        const res = await apiFetch(`/api/levels/${levelId}/like`, { method: 'POST' });
+        if (!res.ok) {
+            // Roll back the optimistic update on failure.
+            setLevels(prev => prev.map(l =>
+                l.id === levelId
+                    ? { ...l, likedByMe: !l.likedByMe, likeCount: l.likeCount + (l.likedByMe ? -1 : 1) }
+                    : l
+            ));
+            return;
+        }
+        // Reconcile with the authoritative server value.
+        const { liked } = await res.json() as { liked: boolean };
+        setLevels(prev => prev.map(l =>
+            l.id === levelId
+                ? { ...l, likedByMe: liked, likeCount: l.likeCount + (liked !== l.likedByMe ? (liked ? 1 : -1) : 0) }
+                : l
+        ));
+    }
+
+    /**
+     * Toggles a bookmark on the given level. Updates bookmarkedByMe optimistically
+     * so the Bookmarks tab updates in real time without a reload.
+     */
+    async function handleBookmark(levelId: string) {
+        // Optimistic update.
+        setLevels(prev => prev.map(l =>
+            l.id === levelId ? { ...l, bookmarkedByMe: !l.bookmarkedByMe } : l
+        ));
+
+        const res = await apiFetch(`/api/levels/${levelId}/bookmark`, { method: 'POST' });
+        if (!res.ok) {
+            // Roll back on failure.
+            setLevels(prev => prev.map(l =>
+                l.id === levelId ? { ...l, bookmarkedByMe: !l.bookmarkedByMe } : l
+            ));
+            return;
+        }
+        const { bookmarked } = await res.json() as { bookmarked: boolean };
+        setLevels(prev => prev.map(l =>
+            l.id === levelId ? { ...l, bookmarkedByMe: bookmarked } : l
+        ));
     }
 
     return (
@@ -119,7 +184,7 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                 </select>
             </div>
 
-            {/* All / History tab switcher */}
+            {/* All / History / Bookmarks tab switcher */}
             <div className={styles.tabBar}>
                 <button
                     type="button"
@@ -137,6 +202,13 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                     {/* History tab filters on playedByMe / completedByMe flags already returned by
                         GET /api/levels — no separate history endpoint needed.
                         Wire POST /api/levels/:id/play from the play scene on level load to populate playedByMe. */}
+                </button>
+                <button
+                    type="button"
+                    className={`${styles.tab} ${tab === 'bookmarks' ? styles.tabActive : ''}`}
+                    onClick={() => setTab('bookmarks')}
+                >
+                    Bookmarks
                 </button>
             </div>
 
@@ -159,10 +231,12 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
             {/* Level list — gated behind loading/error states */}
             {loading && <div className={styles.emptyMsg}>Loading levels…</div>}
             {error   && <div className={styles.emptyMsg}>Error: {error}</div>}
-            {!loading && !error && (
+            {!loading && !error && tab !== 'bookmarks' && (
                 <LevelList
                     levels={filtered}
                     emptyMessage="No levels match your search."
+                    onLike={level => handleLike(level.id)}
+                    onBookmark={level => handleBookmark(level.id)}
                     renderActions={level => (
                         <button
                             type="button"
@@ -171,6 +245,33 @@ export default function BrowseLevels({ onBack }: BrowseLevelsProps) {
                         >
                             Play
                         </button>
+                    )}
+                />
+            )}
+            {!loading && !error && tab === 'bookmarks' && (
+                <LevelList
+                    levels={filtered}
+                    emptyMessage="You haven't bookmarked any levels yet."
+                    onLike={level => handleLike(level.id)}
+                    onBookmark={level => handleBookmark(level.id)}
+                    renderActions={level => (
+                        <>
+                            {/* Remove bookmark first so it's on the left, then Play */}
+                            <button
+                                type="button"
+                                className={`${styles.actionButton} ${styles.actionButtonDanger}`}
+                                onClick={() => handleBookmark(level.id)}
+                            >
+                                Remove
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.actionButton}
+                                onClick={() => handlePlay(level.id)}
+                            >
+                                Play
+                            </button>
+                        </>
                     )}
                 />
             )}

@@ -56,12 +56,13 @@ function makeLevelWithMeta(overrides: Partial<Level> = {}) {
 }
 
 // Builds a level as returned by queries that spread levelWithStatsSelect —
-// includes author username and an empty playHistory ready for withStats mapping.
+// includes author username, empty playHistory, and empty likes arrays ready for withStats mapping.
 function makeLevelWithStats(overrides: Partial<Level> = {}) {
   return {
     ...makeLevel(overrides),
     author: { username: "testuser" },
     playHistory: [] as Array<{ userId: string; playCount: number; completedAt: Date | null }>,
+    likes: [] as Array<{ userId: string }>,
   };
 }
 
@@ -289,6 +290,7 @@ describe("listPublishedLevels", () => {
         { userId: "user-2", playCount: 3, completedAt: new Date() },
         { userId: "user-3", playCount: 1, completedAt: null },
       ],
+      likes: [] as Array<{ userId: string }>,
     };
     vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
 
@@ -305,6 +307,7 @@ describe("listPublishedLevels", () => {
       ...makeLevel({ published: true }),
       author: { username: "testuser" },
       playHistory: [{ userId: "user-1", playCount: 2, completedAt: new Date() }],
+      likes: [] as Array<{ userId: string }>,
     };
     vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
 
@@ -335,6 +338,7 @@ describe("listMyLevels", () => {
         { userId: "user-2", playCount: 2, completedAt: new Date() },
         { userId: "user-1", playCount: 1, completedAt: new Date() },
       ],
+      likes: [] as Array<{ userId: string }>,
     };
     vi.mocked(prisma.level.findMany).mockResolvedValue([raw] as any);
 
