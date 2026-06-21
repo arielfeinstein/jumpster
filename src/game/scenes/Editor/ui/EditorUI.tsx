@@ -29,6 +29,7 @@ import {
     StartPlacementPayload,
     SpriteFrame,
 } from '../types/DockTypes';
+import { DropdownItemIcon } from './DropdownItemIcon';
 import ConfirmationDialog from './ConfirmationDialog';
 import ExitConfirmationDialog from './ExitConfirmationDialog';
 import SaveLevelDialog from './SaveLevelDialog';
@@ -254,40 +255,6 @@ function DockSlot({ config, placementActive, onEntitySelect, onCancelPlacement, 
         case 'popover':
             return <LevelSizePopoverSlot />;
     }
-}
-
-// ---------------------------------------------------------------------------
-// DropdownItemIcon
-// ---------------------------------------------------------------------------
-
-const DROPDOWN_ICON_PX = 22; // must match .dropdownItemIcon height in CSS module
-
-/**
- * Renders an icon from a standalone image or a specific frame within a spritesheet.
- * - If `spriteFrame` is provided, crops the correct frame using CSS custom properties
- *   (background-image / background-position) and the `.spriteIcon` CSS class.
- * - Otherwise renders `assetSrc` as a plain <img>.
- *
- * Used both for dropdown option icons and for the dock button's representative icon
- * when it points to a spritesheet.
- */
-function DropdownItemIcon({ assetSrc, spriteFrame, alt }: { assetSrc: string; spriteFrame?: SpriteFrame; alt: string }) {
-    if (spriteFrame) {
-        const { frameX, frameY, frameSize } = spriteFrame;
-        const scale = DROPDOWN_ICON_PX / frameSize;
-        return (
-            <div
-                className={`${styles.dropdownItemIcon} ${styles.spriteIcon}`}
-                role="img"
-                aria-label={alt}
-                style={{
-                    '--sprite-src': `url('${assetSrc}')`,
-                    '--sprite-pos': `-${frameX * scale}px -${frameY * scale}px`,
-                } as React.CSSProperties}
-            />
-        );
-    }
-    return <img src={assetSrc} className={styles.dropdownItemIcon} alt={alt} />;
 }
 
 // ---------------------------------------------------------------------------

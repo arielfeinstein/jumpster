@@ -477,6 +477,68 @@
     margin-bottom: 8px;
 }
 
+/* ── Help body ──────────────────────────────────────────────────────────────── */
+
+.helpBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #333 #0f0f1e;
+}
+
+.helpBody::-webkit-scrollbar { width: 8px; }
+.helpBody::-webkit-scrollbar-track { background: #0f0f1e; }
+.helpBody::-webkit-scrollbar-thumb { background: #333; border: 2px solid #0f0f1e; }
+.helpBody::-webkit-scrollbar-thumb:hover { background: #555; }
+
+/* ── Help item card ─────────────────────────────────────────────────────────── */
+
+.helpItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #0f0f1e;
+    border: 2px solid #2a2a4a;
+}
+
+/* ── Help item icon ─────────────────────────────────────────────────────────── */
+
+.helpItemIcon {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    color: #aaa;
+    width: 50px;
+    justify-content: center;
+}
+
+/* ── Help item text ─────────────────────────────────────────────────────────── */
+
+.helpItemTitle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: #ffd700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.helpItemText {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #888;
+    line-height: 1.8;
+    flex: 1;
+    min-width: 0;
+}
+
 /* ── Spinner ─────────────────────────────────────────────────────────────────── */
 
 @keyframes spin {
