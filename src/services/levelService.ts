@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from ".prisma/client";
 import { prisma } from "@/lib/db";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import type { Difficulty } from "@/game/shared/types/Difficulty";
@@ -119,7 +119,7 @@ export async function listPublishedLevels(userId: string) {
     where: { published: true, deletedAt: null },
     ...levelWithStatsSelect,
   });
-  return levels.map(l => withStats(l, userId));
+  return levels.map((l: (typeof levels)[number]) => withStats(l, userId));
 }
 
 /**
@@ -132,7 +132,7 @@ export async function listMyLevels(userId: string) {
     where: { authorId: userId, deletedAt: null },
     ...levelWithStatsSelect,
   });
-  return levels.map(l => withStats(l, userId));
+  return levels.map((l: (typeof levels)[number]) => withStats(l, userId));
 }
 
 /**
@@ -183,7 +183,7 @@ export async function getCompletionHistory(userId: string) {
     where:   { userId, completedAt: { not: null } },
     include: { level: { ...levelWithMeta } },
   });
-  return records.map(r => r.level);
+  return records.map((r: (typeof records)[number]) => r.level);
 }
 
 /**
