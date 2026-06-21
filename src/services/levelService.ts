@@ -11,10 +11,10 @@ const levelWithMeta = {
   },
 } as const;
 
-// Select clause for list queries that need per-user play/completion stats.
+// Select clause for list queries that need per-user play/completion/like stats.
 // Uses select (not include) so only explicitly listed fields reach the caller —
 // prevents leaking authorId, data, publishedAt, deletedAt over the wire.
-const levelWithStatsSelect = {
+export const levelWithStatsSelect = {
   select: {
     id:          true,
     title:       true,
@@ -23,21 +23,29 @@ const levelWithStatsSelect = {
     createdAt:   true,
     author:      { select: { username: true } },
     playHistory: { select: { userId: true, playCount: true, completedAt: true } },
+    likes:       { select: { userId: true } },
   },
 } as const;
 
-// Maps a raw DB row (with playHistory) to the display shape consumed by the frontend.
-function withStats<T extends { playHistory: Array<{ userId: string; playCount: number; completedAt: Date | null }> }>(
+// Maps a raw DB row (with playHistory and likes) to the display shape consumed by the frontend.
+// bookmarkedByMe defaults to false here; interactionService overrides it to true for bookmarked levels.
+export function withStats<T extends {
+  playHistory: Array<{ userId: string; playCount: number; completedAt: Date | null }>;
+  likes: Array<{ userId: string }>;
+}>(
   level: T,
   userId: string
 ) {
-  const { playHistory, ...rest } = level;
+  const { playHistory, likes, ...rest } = level;
   return {
     ...rest,
     totalPlays:     playHistory.reduce((sum, h) => sum + h.playCount, 0),
     completedCount: playHistory.filter(h => h.completedAt !== null).length,
     playedByMe:     playHistory.some(h => h.userId === userId),
     completedByMe:  playHistory.some(h => h.userId === userId && h.completedAt !== null),
+    likeCount:      likes.length,
+    likedByMe:      likes.some(l => l.userId === userId),
+    bookmarkedByMe: false,
   };
 }
 

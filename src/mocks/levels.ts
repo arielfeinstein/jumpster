@@ -4,11 +4,14 @@ export type Level = {
     difficulty: string;
     totalPlays: number;
     completedCount: number;
+    likeCount: number;
     author: { username: string };
     published: boolean;
     createdAt: string;
     playedByMe: boolean;
     completedByMe: boolean;
+    likedByMe: boolean;
+    bookmarkedByMe: boolean;
 };
 
 const now = Date.now();
@@ -23,11 +26,14 @@ export const mockPublishedLevels: Level[] = [
         difficulty: 'easy',
         totalPlays: 342,
         completedCount: 280,
+        likeCount: 0,
         author: { username: 'BlockBuster42' },
         published: true,
         createdAt: daysAgo(14),
         playedByMe: true,
         completedByMe: true,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'pub-2',
@@ -35,11 +41,14 @@ export const mockPublishedLevels: Level[] = [
         difficulty: 'medium',
         totalPlays: 93,
         completedCount: 31,
+        likeCount: 0,
         author: { username: 'BlockBuster42' },
         published: true,
         createdAt: daysAgo(3),
         playedByMe: true,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'pub-3',
@@ -47,11 +56,14 @@ export const mockPublishedLevels: Level[] = [
         difficulty: 'hard',
         totalPlays: 210,
         completedCount: 18,
+        likeCount: 0,
         author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(5),
         playedByMe: false,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'pub-4',
@@ -59,11 +71,14 @@ export const mockPublishedLevels: Level[] = [
         difficulty: 'hard',
         totalPlays: 55,
         completedCount: 4,
+        likeCount: 0,
         author: { username: 'BlockBuster42' },
         published: true,
         createdAt: hoursAgo(2),
         playedByMe: false,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'pub-5',
@@ -71,11 +86,14 @@ export const mockPublishedLevels: Level[] = [
         difficulty: 'easy',
         totalPlays: 128,
         completedCount: 74,
+        likeCount: 0,
         author: { username: 'BlockBuster42' },
         published: true,
         createdAt: daysAgo(2),
         playedByMe: true,
         completedByMe: true,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'pub-6',
@@ -83,11 +101,14 @@ export const mockPublishedLevels: Level[] = [
         difficulty: 'medium',
         totalPlays: 167,
         completedCount: 88,
+        likeCount: 0,
         author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(2),
         playedByMe: false,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
 ];
 
@@ -99,11 +120,14 @@ export const mockMyLevels: Level[] = [
         difficulty: 'hard',
         totalPlays: 210,
         completedCount: 18,
+        likeCount: 0,
         author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(5),
         playedByMe: false,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'my-2',
@@ -111,11 +135,14 @@ export const mockMyLevels: Level[] = [
         difficulty: 'medium',
         totalPlays: 167,
         completedCount: 88,
+        likeCount: 0,
         author: { username: 'PixelAriel' },
         published: true,
         createdAt: daysAgo(2),
         playedByMe: false,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'my-3',
@@ -123,11 +150,14 @@ export const mockMyLevels: Level[] = [
         difficulty: 'hard',
         totalPlays: 0,
         completedCount: 0,
+        likeCount: 0,
         author: { username: 'PixelAriel' },
         published: false,
         createdAt: hoursAgo(0.5),
         playedByMe: false,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
     {
         id: 'my-4',
@@ -135,10 +165,13 @@ export const mockMyLevels: Level[] = [
         difficulty: 'medium',
         totalPlays: 0,
         completedCount: 0,
+        likeCount: 0,
         author: { username: 'PixelAriel' },
         published: false,
         createdAt: daysAgo(1),
         playedByMe: false,
         completedByMe: false,
+        likedByMe: false,
+        bookmarkedByMe: false,
     },
 ];

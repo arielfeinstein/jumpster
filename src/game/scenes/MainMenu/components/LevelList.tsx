@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Heart, Bookmark } from 'lucide-react';
 import type { Level } from '@/mocks/levels';
 import styles from '../MainMenuUI.module.css';
 
@@ -8,16 +9,21 @@ interface LevelListProps {
     /** Rendered between the level info and stats columns — use for badges. */
     renderBadge?: (level: Level) => ReactNode;
     emptyMessage?: string;
+    onLike?: (level: Level) => void;
+    onBookmark?: (level: Level) => void;
 }
 
 /**
  * Presentational list of levels.
  *
- * Renders each level as a row showing its title, author, age, play/completion
+ * Renders each level as a row showing its title, author, age, play/completion/like
  * stats, and difficulty badge. Action buttons and optional status badges are
  * injected by the parent via render props, keeping this component view-only.
+ *
+ * onLike and onBookmark are optional — when provided they render icon buttons
+ * alongside the existing actions so callers opt in to interaction controls.
  */
-export default function LevelList({ levels, renderActions, renderBadge, emptyMessage = 'No levels found.' }: LevelListProps) {
+export default function LevelList({ levels, renderActions, renderBadge, emptyMessage = 'No levels found.', onLike, onBookmark }: LevelListProps) {
     if (levels.length === 0) {
         return <div className={styles.emptyMsg}>{emptyMessage}</div>;
     }
@@ -35,12 +41,39 @@ export default function LevelList({ levels, renderActions, renderBadge, emptyMes
                     <div className={styles.levelStats}>
                         <span className={styles.stat}>👁 {level.totalPlays}</span>
                         <span className={styles.stat}>✓ {level.completedCount}</span>
+                        {/* Like count — shows heart icon filled when the user has liked this level */}
+                        <span className={styles.stat}>
+                            <Heart size={10} fill={level.likedByMe ? 'currentColor' : 'none'} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 2 }} />
+                            {level.likeCount}
+                        </span>
                         <span className={`${styles.stat} ${diffClass(level.difficulty)}`}>
                             {level.difficulty}
                         </span>
                     </div>
                     <div className={styles.levelActions}>
                         {renderActions(level)}
+                        {/* Like button — only rendered when the parent provides an onLike handler */}
+                        {onLike && (
+                            <button
+                                type="button"
+                                className={`${styles.iconButton} ${level.likedByMe ? styles.iconButtonActive : ''}`}
+                                onClick={() => onLike(level)}
+                                title={level.likedByMe ? 'Unlike' : 'Like'}
+                            >
+                                <Heart size={10} fill={level.likedByMe ? 'currentColor' : 'none'} />
+                            </button>
+                        )}
+                        {/* Bookmark button — only rendered when the parent provides an onBookmark handler */}
+                        {onBookmark && (
+                            <button
+                                type="button"
+                                className={`${styles.iconButton} ${level.bookmarkedByMe ? styles.iconButtonBookmarkActive : ''}`}
+                                onClick={() => onBookmark(level)}
+                                title={level.bookmarkedByMe ? 'Remove bookmark' : 'Bookmark'}
+                            >
+                                <Bookmark size={10} fill={level.bookmarkedByMe ? 'currentColor' : 'none'} />
+                            </button>
+                        )}
                     </div>
                 </li>
             ))}
